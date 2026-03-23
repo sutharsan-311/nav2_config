@@ -15,6 +15,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QKeySequence
 
 from nav2_config.node import Nav2ConfigNode
+from nav2_config.core.node_discovery import NAV2_NODES
+from nav2_config.gui.node_panel import NodePanel
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +36,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self._node = node
         self._build_ui()
+        self._connect_signals()
 
     # ------------------------------------------------------------------
     # UI construction
@@ -89,16 +92,16 @@ class MainWindow(QMainWindow):
         help_menu.addAction(about_action)
 
     def _setup_central_splitter(self) -> None:
-        """Build horizontal QSplitter with three placeholder panels."""
+        """Build horizontal QSplitter with three panels."""
         splitter = QSplitter(Qt.Orientation.Horizontal, self)
         splitter.setChildrenCollapsible(True)
         splitter.setHandleWidth(2)
 
-        left = self._make_placeholder('Node List', '#1e1e1e')
+        self._node_panel = NodePanel()
         center = self._make_placeholder('Parameter Editor', '#1e1e1e')
         right = self._make_placeholder('YAML Preview', '#1e1e1e')
 
-        splitter.addWidget(left)
+        splitter.addWidget(self._node_panel)
         splitter.addWidget(center)
         splitter.addWidget(right)
 
@@ -138,6 +141,41 @@ class MainWindow(QMainWindow):
         status: QStatusBar = self.statusBar()
         status.showMessage('Disconnected — No Nav2 nodes found')
         self._status_bar = status
+
+    # ------------------------------------------------------------------
+    # Signal wiring
+    # ------------------------------------------------------------------
+
+    def _connect_signals(self) -> None:
+        """Wire ROS2 signals → GUI slots and panel cross-signals."""
+        # Discovery results → node panel display
+        self._node.signals.nodes_discovered.connect(self._node_panel.update_nodes)
+
+        # Discovery results → status bar
+        self._node.signals.nodes_discovered.connect(self._on_nodes_discovered)
+
+        # Node panel selection → (placeholder until param panel exists)
+        self._node_panel.node_selected.connect(self._on_node_selected)
+
+        # Refresh button → force immediate discovery pass
+        self._node_panel.refresh_requested.connect(self._node.force_discover)
+
+    # ------------------------------------------------------------------
+    # Private slots
+    # ------------------------------------------------------------------
+
+    def _on_nodes_discovered(self, status: dict[str, bool]) -> None:
+        """Update status bar when discovery results arrive."""
+        found = sum(1 for v in status.values() if v)
+        total = len(NAV2_NODES)
+        if found == 0:
+            self.set_status(f'Disconnected — No Nav2 nodes found (0/{total})')
+        else:
+            self.set_status(f'Connected — {found}/{total} Nav2 nodes discovered')
+
+    def _on_node_selected(self, node_path: str) -> None:
+        """Placeholder handler until ParamPanel is wired up (Phase 2)."""
+        logger.info('Node selected: %s', node_path)
 
     # ------------------------------------------------------------------
     # Public helpers (called by GUI slots once real panels are added)
