@@ -17,6 +17,7 @@ from PyQt6.QtGui import QAction, QKeySequence
 from nav2_config.node import Nav2ConfigNode
 from nav2_config.core.node_discovery import NAV2_NODES
 from nav2_config.gui.node_panel import NodePanel
+from nav2_config.gui.param_panel import ParamPanel
 
 logger = logging.getLogger(__name__)
 
@@ -98,11 +99,11 @@ class MainWindow(QMainWindow):
         splitter.setHandleWidth(2)
 
         self._node_panel = NodePanel()
-        center = self._make_placeholder('Parameter Editor', '#1e1e1e')
+        self._param_panel = ParamPanel()
         right = self._make_placeholder('YAML Preview', '#1e1e1e')
 
         splitter.addWidget(self._node_panel)
-        splitter.addWidget(center)
+        splitter.addWidget(self._param_panel)
         splitter.addWidget(right)
 
         # setSizes is proportional — use 240 / big stretch / 300.
@@ -154,11 +155,20 @@ class MainWindow(QMainWindow):
         # Discovery results → status bar
         self._node.signals.nodes_discovered.connect(self._on_nodes_discovered)
 
-        # Node panel selection → (placeholder until param panel exists)
+        # Node panel selection → fetch params → load into param panel
         self._node_panel.node_selected.connect(self._on_node_selected)
 
         # Refresh button → force immediate discovery pass
         self._node_panel.refresh_requested.connect(self._node.force_discover)
+
+        # ROS2 params received → populate param panel
+        self._node.signals.params_received.connect(self._on_params_received)
+
+        # Param panel change → ROS2 set_parameters
+        self._param_panel.param_change_requested.connect(self._on_param_change_requested)
+
+        # ROS2 set result → param panel visual feedback
+        self._node.signals.param_set_result.connect(self._on_param_set_result)
 
     # ------------------------------------------------------------------
     # Private slots
@@ -174,8 +184,39 @@ class MainWindow(QMainWindow):
             self.set_status(f'Connected — {found}/{total} Nav2 nodes discovered')
 
     def _on_node_selected(self, node_path: str) -> None:
-        """Placeholder handler until ParamPanel is wired up (Phase 2)."""
+        """Request a parameter fetch for the selected node."""
         logger.info('Node selected: %s', node_path)
+        self._param_panel.set_node_name(node_path)
+        self._node.request_fetch_params(node_path)
+
+    def _on_params_received(self, node_name: str, params: list) -> None:
+        """Load fetched parameters into the param panel."""
+        self._param_panel.load_params(params)
+        self.set_status(
+            f'Loaded {len(params)} parameters for {node_name.lstrip("/")}',
+        )
+
+    def _on_param_change_requested(
+        self, node_name: str, param_name: str, value: object
+    ) -> None:
+        """Forward a param change from the GUI to the ROS2 node."""
+        # Look up the schema type hint so the ROS2 client encodes correctly.
+        type_hint = ''
+        for row in self._param_panel._all_rows:
+            if row._param_value.definition.param == param_name:
+                type_hint = row._param_value.definition.type
+                break
+        self._node.request_set_param(node_name, param_name, value, type_hint)
+
+    def _on_param_set_result(
+        self, node_name: str, param_name: str, success: bool
+    ) -> None:
+        """Relay set-parameter result back to the param panel for visual feedback."""
+        self._param_panel.update_param_result(param_name, success)
+        if not success:
+            self.set_status(
+                f'Failed to set {node_name.lstrip("/")}/{param_name}'
+            )
 
     # ------------------------------------------------------------------
     # Public helpers (called by GUI slots once real panels are added)

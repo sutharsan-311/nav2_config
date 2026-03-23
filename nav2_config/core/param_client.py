@@ -293,20 +293,24 @@ class Nav2ParamClient:
         if not node_defs:
             return []
 
-        # TODO: Implement the merge logic here (about 10 lines).
-        #
-        # Steps:
-        #   1. Collect all param names for this node: [d.param for d in node_defs]
-        #   2. Call self.get_params(node_name, param_names) to get live values
-        #      (this returns {} if the node is not running — that's fine)
-        #   3. For each Nav2ParamDef in node_defs, build a ParamValue:
-        #        - If d.param is in the live_values dict:
-        #            current_value = live_values[d.param], is_live = True
-        #        - Else:
-        #            current_value = d.default,            is_live = False
-        #        - is_modified = (current_value != d.default)
-        #   4. Return the list, sorted by definition.param
-        #
-        # The ParamValue constructor is:
-        #   ParamValue(definition=d, current_value=..., is_modified=..., is_live=...)
-        raise NotImplementedError("Implement get_all_nav2_params above")
+        param_names = [d.param for d in node_defs]
+        live_values = self.get_params(node_name, param_names)
+
+        result: list[ParamValue] = []
+        for d in node_defs:
+            if d.param in live_values:
+                current_value = live_values[d.param]
+                is_live = True
+            else:
+                current_value = d.default
+                is_live = False
+            result.append(
+                ParamValue(
+                    definition=d,
+                    current_value=current_value,
+                    is_modified=(current_value != d.default),
+                    is_live=is_live,
+                )
+            )
+
+        return sorted(result, key=lambda pv: pv.definition.param)
