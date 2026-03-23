@@ -1,0 +1,262 @@
+{
+  "planners": [
+    {
+      "name": "NavFn",
+      "plugin_class": "nav2_navfn_planner::NavfnPlanner",
+      "category": "global_planner",
+      "description": "Classic grid-based global planner using Dijkstra's or A* on the global costmap. Fast and reliable for 2D differential-drive robots.",
+      "when_to_use": "Default choice for most indoor robots. Use when you need fast planning and the robot does not have strict kinematic constraints (e.g., no minimum turning radius).",
+      "strengths": ["Very fast", "Low CPU", "Works on any costmap resolution"],
+      "weaknesses": ["Not kinematically feasible for car-like robots", "Produces paths with sharp corners"],
+      "params": [
+        "GridBased.tolerance",
+        "GridBased.use_astar",
+        "GridBased.allow_unknown",
+        "GridBased.use_final_approach_orientation"
+      ]
+    },
+    {
+      "name": "SmacPlanner2D",
+      "plugin_class": "nav2_smac_planner::SmacPlanner2D",
+      "category": "global_planner",
+      "description": "SE2 (x, y, theta) lattice planner using A* with analytic expansions on a 2D grid. Better path quality than NavFn at moderate cost.",
+      "when_to_use": "When NavFn produces low-quality paths in complex environments. Good drop-in upgrade from NavFn for differential-drive robots.",
+      "strengths": ["Better path quality than NavFn", "Supports analytic heuristics", "Any-angle paths"],
+      "weaknesses": ["Slower than NavFn", "Still not suitable for car-like kinematics"],
+      "params": [
+        "GridBased.tolerance",
+        "GridBased.max_iterations",
+        "GridBased.allow_unknown",
+        "GridBased.smooth_path"
+      ]
+    },
+    {
+      "name": "SmacPlannerHybrid",
+      "plugin_class": "nav2_smac_planner::SmacPlannerHybrid",
+      "category": "global_planner",
+      "description": "Hybrid A* planner for car-like (Ackermann) and legged robots. Plans kinematically feasible paths respecting minimum turning radius.",
+      "when_to_use": "Required for car-like robots, forklifts, and any platform with a non-zero minimum turning radius. Also preferred for precision docking on any robot.",
+      "strengths": ["Kinematically feasible paths", "Supports reversing", "High-quality smooth paths"],
+      "weaknesses": ["Slower than NavFn", "Requires minimum_turning_radius to match robot", "More memory intensive"],
+      "params": [
+        "GridBased.minimum_turning_radius",
+        "GridBased.angle_quantization_bins",
+        "GridBased.max_iterations",
+        "GridBased.smooth_path",
+        "GridBased.allow_unknown"
+      ]
+    },
+    {
+      "name": "SmacPlannerLattice",
+      "plugin_class": "nav2_smac_planner::SmacPlannerLattice",
+      "category": "global_planner",
+      "description": "State lattice planner using pre-computed motion primitives for complex robot kinematics (omnidirectional, legged, etc.).",
+      "when_to_use": "When the robot has complex non-standard kinematics that cannot be captured by a single turning radius. Requires pre-generated lattice files.",
+      "strengths": ["Handles complex kinematics", "Exact motion primitive representation", "Supports omnidirectional motion"],
+      "weaknesses": ["Requires offline lattice generation", "Most complex to configure", "Highest computation"],
+      "params": [
+        "GridBased.max_iterations",
+        "GridBased.smooth_path",
+        "GridBased.allow_unknown"
+      ]
+    },
+    {
+      "name": "ThetaStarPlanner",
+      "plugin_class": "nav2_theta_star_planner::ThetaStarPlanner",
+      "category": "global_planner",
+      "description": "Any-angle path planner that produces straight-line paths between waypoints without being constrained to grid edges.",
+      "when_to_use": "When NavFn produces unnecessarily jagged paths in open spaces. Good for open warehouse or outdoor environments.",
+      "strengths": ["Any-angle paths (avoids grid artifacts)", "Smoother than NavFn in open space", "Low CPU"],
+      "weaknesses": ["Not kinematically feasible", "Less optimal than Smac in complex environments"],
+      "params": [
+        "GridBased.tolerance",
+        "GridBased.allow_unknown",
+        "GridBased.use_final_approach_orientation"
+      ]
+    }
+  ],
+  "controllers": [
+    {
+      "name": "RegulatedPurePursuit",
+      "plugin_class": "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController",
+      "category": "local_controller",
+      "description": "Geometric path-tracking controller based on pure pursuit with velocity regulation for curvature and obstacle proximity. The Nav2 default and recommended controller for most robots.",
+      "when_to_use": "Default for most differential-drive and holonomic robots. Excellent balance of performance and predictability. Use when path tracking matters more than dynamic obstacle avoidance.",
+      "strengths": ["Predictable behavior", "Good path tracking", "Built-in safety regulations", "Supports reversing"],
+      "weaknesses": ["Reactive to path deviations", "Does not optimize for dynamic obstacles like MPPI"],
+      "params": [
+        "FollowPath.desired_linear_vel",
+        "FollowPath.lookahead_dist",
+        "FollowPath.min_lookahead_dist",
+        "FollowPath.max_lookahead_dist",
+        "FollowPath.lookahead_time",
+        "FollowPath.use_velocity_scaled_lookahead_dist",
+        "FollowPath.use_regulated_linear_velocity_scaling",
+        "FollowPath.use_cost_regulated_linear_velocity_scaling",
+        "FollowPath.regulated_linear_scaling_min_radius",
+        "FollowPath.regulated_linear_scaling_min_speed",
+        "FollowPath.use_rotate_to_heading",
+        "FollowPath.rotate_to_heading_min_angle",
+        "FollowPath.rotate_to_heading_angular_vel",
+        "FollowPath.allow_reversing",
+        "FollowPath.use_collision_detection",
+        "FollowPath.max_allowed_time_to_collision_up_to_carrot"
+      ]
+    },
+    {
+      "name": "MPPI",
+      "plugin_class": "nav2_mppi_controller::MPPIController",
+      "category": "local_controller",
+      "description": "Model Predictive Path Integral controller. Samples thousands of trajectory rollouts and selects the optimal command. State-of-the-art for dynamic environments.",
+      "when_to_use": "When the robot operates in dynamic environments with many moving obstacles. Requires more CPU than RPP. Best for robots with significant compute (x86 with GPU or modern ARM).",
+      "strengths": ["Optimal trajectory selection", "Handles dynamic obstacles", "Smooth velocity profiles", "Highly configurable cost functions"],
+      "weaknesses": ["High CPU (parallel sampling required)", "More parameters to tune", "Less predictable than RPP"],
+      "params": []
+    },
+    {
+      "name": "DWB",
+      "plugin_class": "dwb_core::DWBLocalPlanner",
+      "category": "local_controller",
+      "description": "Dynamic Window Approach controller. Samples velocity commands in the robot's dynamic window and selects the best using configurable critics.",
+      "when_to_use": "Legacy controller. Prefer RPP or MPPI for new deployments. Use DWB if you are migrating from ROS1 nav_core and want minimal changes.",
+      "strengths": ["Mature and well-tested", "Highly configurable critics", "Familiar to ROS1 users"],
+      "weaknesses": ["Slower than RPP in open spaces", "More complex to tune than RPP", "Less smooth velocity profiles"],
+      "params": []
+    }
+  ],
+  "costmap_layers": [
+    {
+      "name": "StaticLayer",
+      "plugin_class": "nav2_costmap_2d::StaticLayer",
+      "category": "global_costmap_layer",
+      "description": "Loads a static occupancy grid from the map server and inserts it as the base costmap layer.",
+      "when_to_use": "Always present in the global costmap. Provides the pre-built map as the planning background.",
+      "params": [
+        "static_layer.enabled",
+        "static_layer.map_subscribe_transient_local"
+      ]
+    },
+    {
+      "name": "ObstacleLayer",
+      "plugin_class": "nav2_costmap_2d::ObstacleLayer",
+      "category": "costmap_layer",
+      "description": "2D obstacle layer that marks and clears cells based on 2D lidar or point cloud data using ray tracing.",
+      "when_to_use": "Standard choice for 2D lidar sensors. Used in both local and global costmaps for dynamic obstacle detection.",
+      "params": [
+        "obstacle_layer.enabled",
+        "obstacle_layer.obstacle_max_range",
+        "obstacle_layer.obstacle_min_range",
+        "obstacle_layer.raytrace_max_range"
+      ]
+    },
+    {
+      "name": "VoxelLayer",
+      "plugin_class": "nav2_costmap_2d::VoxelLayer",
+      "category": "costmap_layer",
+      "description": "3D voxel-based obstacle layer for processing RGB-D camera or 3D lidar point clouds. Projects 3D obstacles down to 2D.",
+      "when_to_use": "When the robot has a 3D sensor (Intel RealSense, Velodyne, Ouster). Captures obstacles that 2D lidar misses (low shelves, table legs).",
+      "params": [
+        "voxel_layer.enabled",
+        "voxel_layer.z_voxels",
+        "voxel_layer.z_resolution"
+      ]
+    },
+    {
+      "name": "InflationLayer",
+      "plugin_class": "nav2_costmap_2d::InflationLayer",
+      "category": "costmap_layer",
+      "description": "Expands obstacle cells with an exponentially decaying cost gradient. Keeps the robot away from obstacles without hard boundaries.",
+      "when_to_use": "Always present as the last layer in any costmap. The inflation radius and cost_scaling_factor are the most important safety tuning parameters.",
+      "params": [
+        "inflation_layer.inflation_radius",
+        "inflation_layer.cost_scaling_factor"
+      ]
+    },
+    {
+      "name": "SpeedLimitLayer",
+      "plugin_class": "nav2_costmap_2d::SpeedLimitLayer",
+      "category": "costmap_layer",
+      "description": "Applies speed limit zones from a speed limit map topic. The robot slows down in marked regions.",
+      "when_to_use": "When the environment has designated slow zones (pedestrian crossings, fragile floors, ramps). Requires a speed limit map publisher.",
+      "params": []
+    },
+    {
+      "name": "RangeSensorLayer",
+      "plugin_class": "range_sensor_layer::RangeSensorLayer",
+      "category": "costmap_layer",
+      "description": "Inserts obstacles from ultrasonic or IR range sensors modeled as cone-shaped detections.",
+      "when_to_use": "For robots with ultrasonic bumpers or IR cliff sensors where 2D lidar coverage has blind spots (low obstacles, rear sensors).",
+      "params": []
+    }
+  ],
+  "recovery_behaviors": [
+    {
+      "name": "Spin",
+      "plugin_class": "nav2_behaviors::Spin",
+      "category": "recovery",
+      "description": "Rotates the robot in place by a commanded angle to find a new escape path when stuck.",
+      "when_to_use": "Default recovery when the robot is stuck with a blocked forward path. The BT typically tries this before backup.",
+      "params": [
+        "spin.simulate_ahead_time"
+      ]
+    },
+    {
+      "name": "BackUp",
+      "plugin_class": "nav2_behaviors::BackUp",
+      "category": "recovery",
+      "description": "Drives the robot in reverse by a commanded distance to free itself from a stuck position.",
+      "when_to_use": "Second recovery attempt after spin. Clears the robot from a position blocked on all forward sides.",
+      "params": [
+        "backup.simulate_ahead_time"
+      ]
+    },
+    {
+      "name": "DriveOnHeading",
+      "plugin_class": "nav2_behaviors::DriveOnHeading",
+      "category": "recovery",
+      "description": "Drives forward on the robot's current heading by a commanded distance.",
+      "when_to_use": "Recovery when the robot needs to move slightly forward to clear a stuck position before replanning.",
+      "params": []
+    },
+    {
+      "name": "Wait",
+      "plugin_class": "nav2_behaviors::Wait",
+      "category": "recovery",
+      "description": "Waits in place for a commanded duration. Used in BTs to pause before re-attempting navigation.",
+      "when_to_use": "Final recovery attempt or when dynamic obstacles are expected to clear. Prevents rapid retry loops.",
+      "params": []
+    },
+    {
+      "name": "AssistedTeleop",
+      "plugin_class": "nav2_behaviors::AssistedTeleop",
+      "category": "recovery",
+      "description": "Filters and forwards teleop commands through collision checking. Allows manual control while preventing collisions.",
+      "when_to_use": "In semi-autonomous deployments where an operator can take over during stuck situations. Add to behavior_plugins list.",
+      "params": []
+    }
+  ],
+  "smoothers": [
+    {
+      "name": "SimpleSmoother",
+      "plugin_class": "nav2_smoother::SimpleSmoother",
+      "category": "path_smoother",
+      "description": "Iterative gradient-descent path smoother. Minimizes a weighted combination of smoothness and path fidelity.",
+      "when_to_use": "Default choice. Works well with NavFn and ThetaStar planners to remove grid artifacts from paths.",
+      "params": [
+        "simple_smoother.tolerance",
+        "simple_smoother.max_its",
+        "simple_smoother.w_smooth",
+        "simple_smoother.w_data",
+        "simple_smoother.do_refinement"
+      ]
+    },
+    {
+      "name": "ConstrainedSmoother",
+      "plugin_class": "nav2_constrained_smoother::ConstrainedSmoother",
+      "category": "path_smoother",
+      "description": "Optimization-based smoother using CasADi/IPOPT that respects kinematic constraints (curvature limits).",
+      "when_to_use": "When SmacPlannerHybrid paths need further post-processing to respect turning radius constraints. More accurate but significantly slower than SimpleSmoother.",
+      "params": []
+    }
+  ]
+}
