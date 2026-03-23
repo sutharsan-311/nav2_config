@@ -1,12 +1,18 @@
 """ROS2 node for nav2_config: discovers Nav2 nodes and manages parameter I/O."""
 
+from __future__ import annotations
+
 import logging
+import queue
+from typing import Any
 
 import rclpy
 from rclpy.node import Node
 from PyQt6.QtCore import QObject, pyqtSignal
 
 from nav2_config.core.node_discovery import NAV2_NODES, discover_nav2_nodes
+from nav2_config.core.param_client import Nav2ParamClient
+from nav2_config.types.params import Nav2ParamDef, ParamValue
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +27,8 @@ class SignalBridge(QObject):
     # Emitted when Nav2 node discovery completes; carries {node_path: bool} map.
     nodes_discovered = pyqtSignal(dict)
 
-    # Emitted when parameters for a node arrive; carries (node_name, param_dict).
-    params_received = pyqtSignal(str, dict)
+    # Emitted when parameters for a node arrive; carries (node_name, list[ParamValue]).
+    params_received = pyqtSignal(str, list)
 
     # Emitted after a set_parameters call; carries (node_name, param_name, success).
     param_set_result = pyqtSignal(str, str, bool)
@@ -36,22 +42,94 @@ class Nav2ConfigNode(Node):
 
     Runs on a background thread via rclpy.spin(). Communicates with the
     Qt GUI exclusively through SignalBridge Qt signals.
+
+    Parameter operations (fetch / set) are requested by the GUI by calling
+    :meth:`request_fetch_params` or :meth:`request_set_param`.  These methods
+    place work items on an internal queue which is drained on the next ROS2
+    timer tick, keeping all service calls on the ROS2 thread.
     """
 
     #: Seconds between automatic discovery polls.
     DISCOVERY_INTERVAL: float = 3.0
 
-    def __init__(self) -> None:
+    def __init__(self, schema: list[Nav2ParamDef] | None = None) -> None:
         super().__init__('nav2_config_node')
         self.signals = SignalBridge()
+
+        #: Loaded parameter schema (all nodes).  Set after construction when
+        #: the schema file has been read, or pass directly for testing.
+        self._schema: list[Nav2ParamDef] = schema or []
+
+        #: Parameter service client.
+        self._param_client = Nav2ParamClient(self)
+
+        #: Thread-safe queue for GUI → ROS2 parameter operation requests.
+        #: Each item is a tuple: ("fetch", node_name) or ("set", node_name, param_name, value, type_hint).
+        self._request_queue: queue.SimpleQueue[tuple] = queue.SimpleQueue()
 
         # None sentinel means "first tick — always emit".
         self._prev_discovered: set[str] | None = None
 
         # ROS2 timer fires on the spin thread every DISCOVERY_INTERVAL seconds.
-        self.create_timer(self.DISCOVERY_INTERVAL, self._on_discovery_tick)
+        self.create_timer(self.DISCOVERY_INTERVAL, self._on_timer_tick)
 
         self.get_logger().info('Nav2 Config GUI started')
+
+    # ------------------------------------------------------------------
+    # Schema
+    # ------------------------------------------------------------------
+
+    def set_schema(self, schema: list[Nav2ParamDef]) -> None:
+        """Replace the loaded schema.  Safe to call before spinning starts."""
+        self._schema = schema
+
+    # ------------------------------------------------------------------
+    # GUI-facing request methods (safe to call from any thread)
+    # ------------------------------------------------------------------
+
+    def request_fetch_params(self, node_name: str) -> None:
+        """Ask the ROS2 thread to fetch all parameters for *node_name*.
+
+        Non-blocking.  When the fetch completes, ``signals.params_received``
+        is emitted with ``(node_name, list[ParamValue])``.
+
+        Args:
+            node_name: Full ROS2 node path, e.g. ``"/controller_server"``.
+        """
+        self._request_queue.put(("fetch", node_name))
+
+    def request_set_param(
+        self,
+        node_name: str,
+        param_name: str,
+        value: Any,
+        type_hint: str = "",
+    ) -> None:
+        """Ask the ROS2 thread to set a parameter on *node_name*.
+
+        Non-blocking.  When the call completes, ``signals.param_set_result``
+        is emitted with ``(node_name, param_name, success)``.
+
+        Args:
+            node_name: Full ROS2 node path.
+            param_name: Parameter name.
+            value: New value (Python native type).
+            type_hint: Schema type string to encode the value correctly.
+        """
+        self._request_queue.put(("set", node_name, param_name, value, type_hint))
+
+    # ------------------------------------------------------------------
+    # ROS2 timer callback
+    # ------------------------------------------------------------------
+
+    def _on_timer_tick(self) -> None:
+        """Called by the ROS2 timer on the spin thread every DISCOVERY_INTERVAL.
+
+        Performs node discovery, then drains any pending parameter requests
+        from the GUI.
+        """
+        self._on_discovery_tick()
+        self._drain_request_queue()
 
     # ------------------------------------------------------------------
     # Node discovery
@@ -90,3 +168,59 @@ class Nav2ConfigNode(Node):
         Safe to call from any thread; discovery result is emitted via signal.
         """
         self._on_discovery_tick()
+
+    # ------------------------------------------------------------------
+    # Parameter request processing (ROS2 thread only)
+    # ------------------------------------------------------------------
+
+    def _drain_request_queue(self) -> None:
+        """Process all pending GUI parameter requests from the queue."""
+        while not self._request_queue.empty():
+            try:
+                item = self._request_queue.get_nowait()
+            except queue.Empty:
+                break
+            self._handle_request(item)
+
+    def _handle_request(self, item: tuple) -> None:
+        """Dispatch a single request tuple to the appropriate handler."""
+        op = item[0]
+        if op == "fetch":
+            _, node_name = item
+            self._fetch_params_for_node(node_name)
+        elif op == "set":
+            _, node_name, param_name, value, type_hint = item
+            self._set_param(node_name, param_name, value, type_hint)
+        else:
+            logger.warning("Unknown request op: %r", op)
+
+    def _fetch_params_for_node(self, node_name: str) -> None:
+        """Fetch all schema-defined params for *node_name* and emit the result.
+
+        Called on the ROS2 thread.  Emits ``signals.params_received``.
+        """
+        param_values: list[ParamValue] = self._param_client.get_all_nav2_params(
+            node_name, self._schema
+        )
+        self.signals.params_received.emit(node_name, param_values)
+        self.get_logger().debug(
+            "Fetched %d params for %s", len(param_values), node_name
+        )
+
+    def _set_param(
+        self,
+        node_name: str,
+        param_name: str,
+        value: Any,
+        type_hint: str,
+    ) -> None:
+        """Set a single parameter and emit the result signal.
+
+        Called on the ROS2 thread.  Emits ``signals.param_set_result``.
+        """
+        success = self._param_client.set_param(node_name, param_name, value, type_hint)
+        self.signals.param_set_result.emit(node_name, param_name, success)
+        if success:
+            self.get_logger().info("Set %s/%s = %r", node_name, param_name, value)
+        else:
+            self.get_logger().warning("Failed to set %s/%s", node_name, param_name)
