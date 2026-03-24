@@ -221,6 +221,9 @@ class ParamPanel(QWidget):
         shortcut = QShortcut(QKeySequence('Ctrl+K'), self)
         shortcut.activated.connect(self._search.setFocus)
 
+        escape = QShortcut(QKeySequence('Escape'), self)
+        escape.activated.connect(self._clear_search)
+
         return bar
 
     # ------------------------------------------------------------------
@@ -281,13 +284,19 @@ class ParamPanel(QWidget):
         if self._search.text():
             self._on_search_changed(self._search.text())
 
+    def _clear_search(self) -> None:
+        """Clear the search field and restore all parameter rows."""
+        if self._search.text():
+            self._search.clear()
+
     def _on_search_changed(self, query: str) -> None:
         total_visible = 0
         for section in self._sections.values():
             total_visible += section.apply_filter(query)
 
         if query:
-            self._count_label.setText(f'{total_visible} matching')
+            total_all = len(self._all_rows)
+            self._count_label.setText(f'Showing {total_visible} of {total_all}')
         else:
             self._refresh_count_label()
 
@@ -392,6 +401,19 @@ class ParamPanel(QWidget):
     # ------------------------------------------------------------------
     # Private: param change handler
     # ------------------------------------------------------------------
+
+    def highlight_external_change(self, param_name: str) -> None:
+        """Flash a param row with ROS2 blue to indicate an externally-set change.
+
+        Args:
+            param_name: Name of the parameter that changed externally.
+        """
+        from PyQt6.QtCore import QTimer
+        for row in self._all_rows:
+            if row._param_value.definition.param == param_name:
+                row.setStyleSheet('QWidget { background: #4fc3f722; }')  # ROS2 blue
+                QTimer.singleShot(1500, lambda r=row: r.setStyleSheet(''))
+                break
 
     def scroll_to_param(self, param_name: str) -> None:
         """Scroll the parameter list to the row matching *param_name*.

@@ -12,6 +12,7 @@ from PyQt6.QtCore import QObject, pyqtSignal
 
 from nav2_config.core.node_discovery import NAV2_NODES, discover_nav2_nodes
 from nav2_config.core.param_client import Nav2ParamClient
+from nav2_config.core.param_watcher import ParamWatcher
 from nav2_config.types.params import Nav2ParamDef, ParamValue
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,10 @@ class SignalBridge(QObject):
     # Emitted when the overall ROS2 connection state changes.
     connection_status = pyqtSignal(bool)
 
+    # Emitted when an external tool changes a watched param.
+    # Carries (node_name, list[tuple[param_name, new_value]]).
+    params_externally_changed = pyqtSignal(str, list)
+
 
 class Nav2ConfigNode(Node):
     """ROS2 node that connects to a running Nav2 stack.
@@ -51,6 +56,8 @@ class Nav2ConfigNode(Node):
 
     #: Seconds between automatic discovery polls.
     DISCOVERY_INTERVAL: float = 3.0
+    #: Seconds between parameter polls for external-change detection.
+    POLL_INTERVAL: float = 2.0
 
     def __init__(self, schema: list[Nav2ParamDef] | None = None) -> None:
         super().__init__('nav2_config_node')
@@ -67,11 +74,16 @@ class Nav2ConfigNode(Node):
         #: Each item is a tuple: ("fetch", node_name) or ("set", node_name, param_name, value, type_hint).
         self._request_queue: queue.SimpleQueue[tuple] = queue.SimpleQueue()
 
+        #: Watches the selected node for external parameter changes.
+        self._watcher = ParamWatcher()
+
         # None sentinel means "first tick — always emit".
         self._prev_discovered: set[str] | None = None
 
         # ROS2 timer fires on the spin thread every DISCOVERY_INTERVAL seconds.
         self.create_timer(self.DISCOVERY_INTERVAL, self._on_timer_tick)
+        # Separate 2-second polling timer for external-change detection.
+        self.create_timer(self.POLL_INTERVAL, self._on_poll_tick)
 
         self.get_logger().info('Nav2 Config GUI started')
 
@@ -118,8 +130,23 @@ class Nav2ConfigNode(Node):
         """
         self._request_queue.put(("set", node_name, param_name, value, type_hint))
 
+    def watch_node(self, node_name: str) -> None:
+        """Start polling *node_name* for external parameter changes.
+
+        Safe to call from any thread.  The watcher fires on the ROS2 poll
+        timer and emits ``signals.params_externally_changed`` if values differ.
+
+        Args:
+            node_name: Full ROS2 node path, e.g. ``"/controller_server"``.
+        """
+        self._watcher.watch(node_name)
+
+    def unwatch_node(self) -> None:
+        """Stop polling for external parameter changes."""
+        self._watcher.unwatch()
+
     # ------------------------------------------------------------------
-    # ROS2 timer callback
+    # ROS2 timer callbacks
     # ------------------------------------------------------------------
 
     def _on_timer_tick(self) -> None:
@@ -130,6 +157,24 @@ class Nav2ConfigNode(Node):
         """
         self._on_discovery_tick()
         self._drain_request_queue()
+
+    def _on_poll_tick(self) -> None:
+        """2-second timer callback: re-fetch watched node params for external changes."""
+        watched = self._watcher.watched_node
+        if not watched:
+            return
+        try:
+            fresh = self._param_client.get_all_nav2_params(watched, self._schema)
+        except Exception:
+            return  # Node may have gone offline — silently skip this tick.
+        changed = self._watcher.diff(fresh)
+        if changed:
+            self.signals.params_externally_changed.emit(watched, changed)
+            self.get_logger().info(
+                'External param changes on %s: %s',
+                watched,
+                ', '.join(f'{n}={v}' for n, v in changed),
+            )
 
     # ------------------------------------------------------------------
     # Node discovery
@@ -202,6 +247,9 @@ class Nav2ConfigNode(Node):
         param_values: list[ParamValue] = self._param_client.get_all_nav2_params(
             node_name, self._schema
         )
+        # Update watcher baseline so poll doesn't flag these values as external changes.
+        if self._watcher.watched_node == node_name:
+            self._watcher.set_baseline(param_values)
         self.signals.params_received.emit(node_name, param_values)
         self.get_logger().debug(
             "Fetched %d params for %s", len(param_values), node_name

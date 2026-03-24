@@ -1,17 +1,22 @@
 """Main window for nav2_config: three-panel splitter layout."""
 
+import json
 import logging
+from pathlib import Path
 from typing import Any
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QAction, QKeySequence
+from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QAction, QCloseEvent, QKeySequence
 from PyQt6.QtWidgets import (
+    QDialog,
+    QDialogButtonBox,
     QLabel,
     QMainWindow,
     QMenu,
     QMenuBar,
     QSplitter,
     QStatusBar,
+    QTextBrowser,
     QVBoxLayout,
     QWidget,
 )
@@ -26,6 +31,9 @@ from nav2_config.gui.preset_dialog import PresetDialog
 from nav2_config.gui.yaml_panel import YamlPanel
 from nav2_config.node import Nav2ConfigNode
 from nav2_config.types.params import ParamValue
+
+#: Persisted window state path.
+_CONFIG_PATH = Path.home() / '.config' / 'nav2_config' / 'settings.json'
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +56,11 @@ class MainWindow(QMainWindow):
         # Accumulate params from every node the user has selected so that
         # cross-node health checks (e.g. costmap vs controller) can fire.
         self._all_node_params: dict[str, list[ParamValue]] = {}
+        # Saved panel sizes for Ctrl+1/2/3 toggle (index = splitter child).
+        self._saved_panel_sizes: list[int] = [240, 10000, 300]
         self._build_ui()
         self._connect_signals()
+        self._restore_window_state()
 
     # ------------------------------------------------------------------
     # UI construction
@@ -72,7 +83,7 @@ class MainWindow(QMainWindow):
         file_menu: QMenu = bar.addMenu('File')
 
         import_action = QAction('Import YAML…', self)
-        import_action.setShortcut(QKeySequence('Ctrl+O'))
+        import_action.setShortcut(QKeySequence('Ctrl+I'))
         import_action.triggered.connect(self._on_import)
         file_menu.addAction(import_action)
 
@@ -80,6 +91,13 @@ class MainWindow(QMainWindow):
         export_action.setShortcut(QKeySequence('Ctrl+S'))
         export_action.triggered.connect(self._on_export)
         file_menu.addAction(export_action)
+
+        file_menu.addSeparator()
+
+        refresh_action = QAction('Refresh Nodes', self)
+        refresh_action.setShortcut(QKeySequence('Ctrl+R'))
+        refresh_action.triggered.connect(self._node.force_discover)
+        file_menu.addAction(refresh_action)
 
         file_menu.addSeparator()
 
@@ -99,9 +117,18 @@ class MainWindow(QMainWindow):
             )
             presets_menu.addAction(action)
 
+        # ── View ─────────────────────────────────────────────────────────
+        view_menu: QMenu = bar.addMenu('View')
+        for i, label in enumerate(('Toggle Node Panel', 'Toggle Param Panel', 'Toggle YAML Panel'), 1):
+            action = QAction(label, self)
+            action.setShortcut(QKeySequence(f'Ctrl+{i}'))
+            action.triggered.connect(lambda _checked, idx=i - 1: self._toggle_panel(idx))
+            view_menu.addAction(action)
+
         # ── Help ─────────────────────────────────────────────────────────
         help_menu: QMenu = bar.addMenu('Help')
         about_action = QAction('About nav2_config', self)
+        about_action.triggered.connect(self._show_about)
         help_menu.addAction(about_action)
 
     def _setup_central_splitter(self) -> None:
@@ -162,9 +189,26 @@ class MainWindow(QMainWindow):
         return widget
 
     def _setup_status_bar(self) -> None:
-        """Configure the bottom status bar."""
+        """Configure the bottom status bar with three sections.
+
+        Left (permanent):  connection state + node / param counts.
+        Center (message):  current node name / transient feedback.
+        Right (permanent): last-set param result with success/fail colour.
+        """
         status: QStatusBar = self.statusBar()
-        status.showMessage('Disconnected — No Nav2 nodes found')
+
+        # Left section — connection state.
+        self._status_connection = QLabel('Disconnected')
+        self._status_connection.setStyleSheet(
+            'color: #f44336; padding: 0 8px; font-size: 11px;'
+        )
+        status.addWidget(self._status_connection)
+
+        # Right section — last set-param result.
+        self._status_last_set = QLabel('')
+        self._status_last_set.setStyleSheet('color: #6d6d6d; padding: 0 8px; font-size: 11px;')
+        status.addPermanentWidget(self._status_last_set)
+
         self._status_bar = status
 
     # ------------------------------------------------------------------
@@ -197,25 +241,48 @@ class MainWindow(QMainWindow):
         # Health panel → scroll param panel to the clicked param
         self._health_panel.param_focus_requested.connect(self._param_panel.scroll_to_param)
 
+        # External param changes (another tool changed a value)
+        self._node.signals.params_externally_changed.connect(self._on_params_externally_changed)
+
     # ------------------------------------------------------------------
     # Private slots
     # ------------------------------------------------------------------
 
     def _on_nodes_discovered(self, status: dict[str, bool]) -> None:
-        """Update status bar when discovery results arrive."""
+        """Update the left status label when discovery results arrive."""
         found = sum(1 for v in status.values() if v)
         total = len(NAV2_NODES)
+        total_params = sum(len(p) for p in self._all_node_params.values())
+
         if found == 0:
-            self.set_status(f'Disconnected — No Nav2 nodes found (0/{total})')
+            self._status_connection.setText(f'Disconnected  ·  0/{total} nodes')
+            self._status_connection.setStyleSheet(
+                'color: #f44336; padding: 0 8px; font-size: 11px;'
+            )
         else:
-            self.set_status(f'Connected — {found}/{total} Nav2 nodes discovered')
+            param_part = f'  ·  {total_params} params' if total_params else ''
+            self._status_connection.setText(f'Connected  ·  {found}/{total} nodes{param_part}')
+            self._status_connection.setStyleSheet(
+                'color: #4caf50; padding: 0 8px; font-size: 11px;'
+            )
+
+        # Warn if the currently-edited node just went offline.
+        current = self._param_panel._node_name
+        if current:
+            for path, running in status.items():
+                if path == current and not running:
+                    self.set_status(f'⚠  Node {current.lstrip("/")} went offline')
+                    break
 
     def _on_node_selected(self, node_path: str) -> None:
-        """Request a parameter fetch for the selected node."""
+        """Request a parameter fetch for the selected node and start polling."""
         logger.info('Node selected: %s', node_path)
         self._param_panel.set_node_name(node_path)
         self._yaml_panel.set_current_node(node_path)
+        self._node.watch_node(node_path)
         self._node.request_fetch_params(node_path)
+        bare = node_path.lstrip('/')
+        self._status_bar.showMessage(f'Editing  {bare}')
 
     def _on_params_received(self, node_name: str, params: list) -> None:
         """Load fetched parameters into the param panel and refresh YAML preview."""
@@ -227,9 +294,18 @@ class MainWindow(QMainWindow):
         self._yaml_panel.update_yaml(
             params, plugin_filter=self._param_panel._selected_plugin
         )
-        self.set_status(
-            f'Loaded {len(params)} parameters for {bare}',
-        )
+        self._status_bar.showMessage(f'Editing  {bare}  ·  {len(params)} params')
+
+        # Refresh left label with updated param count.
+        total_params = sum(len(p) for p in self._all_node_params.values())
+        found_text = self._status_connection.text()
+        # Replace param count suffix if present, else append.
+        if '·' in found_text and 'params' in found_text:
+            base = found_text.rsplit('·', 1)[0].rstrip()
+            self._status_connection.setText(f'{base}  ·  {total_params} params')
+        elif '·' in found_text:
+            self._status_connection.setText(f'{found_text}  ·  {total_params} params')
+
         # Schedule debounced health check with all accumulated params.
         self._schedule_health_check()
 
@@ -254,11 +330,27 @@ class MainWindow(QMainWindow):
     def _on_param_set_result(
         self, node_name: str, param_name: str, success: bool
     ) -> None:
-        """Relay set-parameter result back to the param panel for visual feedback."""
+        """Relay set-parameter result back to the param panel and right status."""
         self._param_panel.update_param_result(param_name, success)
-        if not success:
+        if success:
+            # Find the new value from the current param list for display.
+            val: object = '?'
+            for pv in self._current_params:
+                if pv.definition.param == param_name:
+                    val = pv.live_value
+                    break
+            self._status_last_set.setText(f'Last set: {param_name} = {val}  ✓')
+            self._status_last_set.setStyleSheet(
+                'color: #4caf50; padding: 0 8px; font-size: 11px;'
+            )
+            logger.debug('Set %s/%s = %r', node_name, param_name, val)
+        else:
+            self._status_last_set.setText(f'Failed: {param_name}  ✗')
+            self._status_last_set.setStyleSheet(
+                'color: #f44336; padding: 0 8px; font-size: 11px;'
+            )
             self.set_status(
-                f'Failed to set {node_name.lstrip("/")}/{param_name}'
+                f'⚠  Failed to set {node_name.lstrip("/")}/{param_name}'
             )
 
     def _on_export(self) -> None:
@@ -302,6 +394,111 @@ class MainWindow(QMainWindow):
             f'Importing {total} parameters from {filepath.split("/")[-1]}…'
         )
 
+    def _on_params_externally_changed(self, node_name: str, changed: list) -> None:
+        """Handle externally-changed parameters detected by the poll watcher."""
+        for param_name, _new_value in changed:
+            self._param_panel.highlight_external_change(param_name)
+        if len(changed) == 1:
+            name, val = changed[0]
+            self.set_status(f'External change: {name} = {val}')
+        else:
+            self.set_status(
+                f'{len(changed)} params changed externally on {node_name.lstrip("/")}'
+            )
+        logger.info('External changes on %s: %s', node_name, changed)
+
+    def _toggle_panel(self, index: int) -> None:
+        """Collapse or expand splitter panel *index* (0=left, 1=center, 2=right)."""
+        sizes = self._splitter.sizes()
+        if sizes[index] > 0:
+            self._saved_panel_sizes[index] = sizes[index]
+            sizes[index] = 0
+        else:
+            sizes[index] = max(self._saved_panel_sizes[index], 100)
+        self._splitter.setSizes(sizes)
+
+    def _show_about(self) -> None:
+        """Show the About nav2_config dialog."""
+        dialog = QDialog(self)
+        dialog.setWindowTitle('About nav2_config')
+        dialog.setFixedSize(420, 260)
+        dialog.setStyleSheet('QDialog { background: #2d2d2d; }')
+
+        layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(24, 20, 24, 16)
+        layout.setSpacing(8)
+
+        title = QLabel('nav2_config  v0.1.0')
+        title.setStyleSheet('color: #f57c00; font-size: 18px; font-weight: bold;')
+        layout.addWidget(title)
+
+        subtitle = QLabel('Real-time Nav2 parameter tuning')
+        subtitle.setStyleSheet('color: #d4d4d4; font-size: 13px;')
+        layout.addWidget(subtitle)
+
+        layout.addSpacing(8)
+
+        info = QTextBrowser()
+        info.setOpenExternalLinks(True)
+        info.setStyleSheet(
+            'QTextBrowser { background: #1e1e1e; border: 1px solid #3e3e42; '
+            'color: #d4d4d4; font-size: 12px; padding: 8px; }'
+        )
+        info.setHtml(
+            '<p>Built by <b>Sutharsan</b><br>'
+            'A ROS2 desktop GUI for live Nav2 parameter tuning — '
+            'no node restarts required.</p>'
+            '<p><a href="https://github.com/ros-navigation/navigation2" '
+            'style="color:#4fc3f7;">Navigation2 on GitHub</a></p>'
+        )
+        info.setMaximumHeight(100)
+        layout.addWidget(info)
+
+        layout.addStretch()
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        dialog.exec()
+
+    def _save_window_state(self) -> None:
+        """Persist window geometry and splitter sizes to the config file."""
+        try:
+            _CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+            state = {
+                'geometry': {
+                    'x': self.x(),
+                    'y': self.y(),
+                    'width': self.width(),
+                    'height': self.height(),
+                },
+                'splitter_sizes': self._splitter.sizes(),
+            }
+            _CONFIG_PATH.write_text(json.dumps(state, indent=2))
+        except Exception:
+            logger.warning('Failed to save window state', exc_info=True)
+
+    def _restore_window_state(self) -> None:
+        """Restore window geometry and splitter sizes from the config file."""
+        if not _CONFIG_PATH.exists():
+            return
+        try:
+            state = json.loads(_CONFIG_PATH.read_text())
+            if 'geometry' in state:
+                g = state['geometry']
+                self.setGeometry(g['x'], g['y'], g['width'], g['height'])
+            if 'splitter_sizes' in state:
+                self._splitter.setSizes(state['splitter_sizes'])
+        except Exception:
+            logger.warning('Failed to restore window state', exc_info=True)
+
+    def closeEvent(self, event: QCloseEvent) -> None:  # type: ignore[override]
+        """Save window state and stop the watcher before closing."""
+        self._save_window_state()
+        self._node.unwatch_node()
+        super().closeEvent(event)
+
     # ------------------------------------------------------------------
     # Health check scheduling
     # ------------------------------------------------------------------
@@ -341,6 +538,11 @@ class MainWindow(QMainWindow):
     # Public helpers
     # ------------------------------------------------------------------
 
-    def set_status(self, message: str) -> None:
-        """Update the status bar message."""
-        self._status_bar.showMessage(message)
+    def set_status(self, message: str, timeout_ms: int = 5000) -> None:
+        """Update the center status bar message.
+
+        Args:
+            message: Text to display in the center section.
+            timeout_ms: Auto-clear after this many ms (0 = permanent).
+        """
+        self._status_bar.showMessage(message, timeout_ms)
