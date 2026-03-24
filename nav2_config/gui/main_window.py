@@ -1,6 +1,8 @@
 """Main window for nav2_config: three-panel splitter layout."""
 
 import logging
+from typing import Any
+
 from PyQt6.QtWidgets import (
     QMainWindow,
     QSplitter,
@@ -18,6 +20,9 @@ from nav2_config.node import Nav2ConfigNode
 from nav2_config.core.node_discovery import NAV2_NODES
 from nav2_config.gui.node_panel import NodePanel
 from nav2_config.gui.param_panel import ParamPanel
+from nav2_config.gui.yaml_panel import YamlPanel
+from nav2_config.gui.import_export import ExportDialog, ImportDialog
+from nav2_config.types.params import ParamValue
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +41,7 @@ class MainWindow(QMainWindow):
     def __init__(self, node: Nav2ConfigNode) -> None:
         super().__init__()
         self._node = node
+        self._current_params: list[ParamValue] = []
         self._build_ui()
         self._connect_signals()
 
@@ -61,10 +67,12 @@ class MainWindow(QMainWindow):
 
         import_action = QAction('Import YAML…', self)
         import_action.setShortcut(QKeySequence('Ctrl+O'))
+        import_action.triggered.connect(self._on_import)
         file_menu.addAction(import_action)
 
         export_action = QAction('Export YAML…', self)
         export_action.setShortcut(QKeySequence('Ctrl+S'))
+        export_action.triggered.connect(self._on_export)
         file_menu.addAction(export_action)
 
         file_menu.addSeparator()
@@ -100,11 +108,11 @@ class MainWindow(QMainWindow):
 
         self._node_panel = NodePanel()
         self._param_panel = ParamPanel()
-        right = self._make_placeholder('YAML Preview', '#1e1e1e')
+        self._yaml_panel = YamlPanel()
 
         splitter.addWidget(self._node_panel)
         splitter.addWidget(self._param_panel)
-        splitter.addWidget(right)
+        splitter.addWidget(self._yaml_panel)
 
         # setSizes is proportional — use 240 / big stretch / 300.
         splitter.setSizes([240, 10000, 300])
@@ -164,7 +172,7 @@ class MainWindow(QMainWindow):
         # ROS2 params received → populate param panel
         self._node.signals.params_received.connect(self._on_params_received)
 
-        # Param panel change → ROS2 set_parameters
+        # Param panel change → ROS2 set_parameters + YAML update
         self._param_panel.param_change_requested.connect(self._on_param_change_requested)
 
         # ROS2 set result → param panel visual feedback
@@ -187,11 +195,16 @@ class MainWindow(QMainWindow):
         """Request a parameter fetch for the selected node."""
         logger.info('Node selected: %s', node_path)
         self._param_panel.set_node_name(node_path)
+        self._yaml_panel.set_current_node(node_path)
         self._node.request_fetch_params(node_path)
 
     def _on_params_received(self, node_name: str, params: list) -> None:
-        """Load fetched parameters into the param panel."""
+        """Load fetched parameters into the param panel and refresh YAML preview."""
+        self._current_params = params
         self._param_panel.load_params(params)
+        self._yaml_panel.update_yaml(
+            params, plugin_filter=self._param_panel._selected_plugin
+        )
         self.set_status(
             f'Loaded {len(params)} parameters for {node_name.lstrip("/")}',
         )
@@ -199,7 +212,7 @@ class MainWindow(QMainWindow):
     def _on_param_change_requested(
         self, node_name: str, param_name: str, value: object
     ) -> None:
-        """Forward a param change from the GUI to the ROS2 node."""
+        """Forward a param change from the GUI to the ROS2 node and refresh YAML."""
         # Look up the schema type hint so the ROS2 client encodes correctly.
         type_hint = ''
         for row in self._param_panel._all_rows:
@@ -207,6 +220,10 @@ class MainWindow(QMainWindow):
                 type_hint = row._param_value.definition.type
                 break
         self._node.request_set_param(node_name, param_name, value, type_hint)
+        # ParamValue.update() was already called by ParamRow — re-render YAML.
+        self._yaml_panel.update_yaml(
+            self._current_params, plugin_filter=self._param_panel._selected_plugin
+        )
 
     def _on_param_set_result(
         self, node_name: str, param_name: str, success: bool
@@ -217,6 +234,47 @@ class MainWindow(QMainWindow):
             self.set_status(
                 f'Failed to set {node_name.lstrip("/")}/{param_name}'
             )
+
+    def _on_export(self) -> None:
+        """Open the Export YAML dialog and save the current YAML preview."""
+        yaml_str = self._yaml_panel._editor.toPlainText()
+        ExportDialog.run(self, yaml_str)
+
+    def _on_import(self) -> None:
+        """Open the Import YAML dialog and apply the loaded parameters live."""
+        ImportDialog.run(self, self._apply_imported_params)
+
+    def _apply_imported_params(
+        self, filepath: str, data: dict[str, dict[str, Any]]
+    ) -> None:
+        """Forward imported parameter values to running Nav2 nodes.
+
+        For each (node, param, value) in the imported YAML, submits a
+        request_set_param call on the ROS2 thread.  Type hints are resolved
+        from the currently loaded param list; unknown params get best-effort
+        type inference.
+
+        Args:
+            filepath: Path the YAML was imported from (used for status message).
+            data: Parsed data from import_yaml: ``{node: {param: value}}``.
+        """
+        # Build a quick lookup from param name to schema type for the current node.
+        type_map: dict[str, str] = {
+            pv.definition.param: pv.definition.type
+            for pv in self._current_params
+        }
+
+        total = 0
+        for node_name, params in data.items():
+            full_node = node_name if node_name.startswith('/') else f'/{node_name}'
+            for param_name, value in params.items():
+                type_hint = type_map.get(param_name, '')
+                self._node.request_set_param(full_node, param_name, value, type_hint)
+                total += 1
+
+        self.set_status(
+            f'Importing {total} parameters from {filepath.split("/")[-1]}…'
+        )
 
     # ------------------------------------------------------------------
     # Public helpers (called by GUI slots once real panels are added)
