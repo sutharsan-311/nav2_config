@@ -150,9 +150,9 @@ class ParamPanel(QWidget):
         layout.addWidget(self._make_search_bar())
 
         # Scroll area for the parameter rows
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._scroll_area = QScrollArea()
+        self._scroll_area.setWidgetResizable(True)
+        self._scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         self._scroll_content = QWidget()
         self._scroll_layout = QVBoxLayout(self._scroll_content)
@@ -160,8 +160,8 @@ class ParamPanel(QWidget):
         self._scroll_layout.setSpacing(0)
         self._scroll_layout.addStretch()
 
-        scroll.setWidget(self._scroll_content)
-        layout.addWidget(scroll, stretch=1)
+        self._scroll_area.setWidget(self._scroll_content)
+        layout.addWidget(self._scroll_area, stretch=1)
 
     def _make_title_bar(self) -> QWidget:
         bar = QWidget()
@@ -392,6 +392,22 @@ class ParamPanel(QWidget):
     # ------------------------------------------------------------------
     # Private: param change handler
     # ------------------------------------------------------------------
+
+    def scroll_to_param(self, param_name: str) -> None:
+        """Scroll the parameter list to the row matching *param_name*.
+
+        Also expands the containing category section if it was collapsed.
+
+        Args:
+            param_name: The parameter name to navigate to.
+        """
+        for section in self._sections.values():
+            for row in section.rows:
+                if row._param_value.definition.param == param_name:
+                    if not section._expanded:
+                        section._toggle()
+                    self._scroll_area.ensureWidgetVisible(row)
+                    return
 
     def _on_param_changed(self, param_name: str, value: Any) -> None:
         self.param_change_requested.emit(self._node_name, param_name, value)

@@ -3,25 +3,28 @@
 import logging
 from typing import Any
 
-from PyQt6.QtWidgets import (
-    QMainWindow,
-    QSplitter,
-    QWidget,
-    QLabel,
-    QVBoxLayout,
-    QStatusBar,
-    QMenuBar,
-    QMenu,
-)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QKeySequence
+from PyQt6.QtWidgets import (
+    QLabel,
+    QMainWindow,
+    QMenu,
+    QMenuBar,
+    QSplitter,
+    QStatusBar,
+    QVBoxLayout,
+    QWidget,
+)
 
-from nav2_config.node import Nav2ConfigNode
 from nav2_config.core.node_discovery import NAV2_NODES
+from nav2_config.core.presets import PRESET_META, PRESET_ORDER, apply_preset
+from nav2_config.gui.health_panel import HealthPanel
+from nav2_config.gui.import_export import ExportDialog, ImportDialog
 from nav2_config.gui.node_panel import NodePanel
 from nav2_config.gui.param_panel import ParamPanel
+from nav2_config.gui.preset_dialog import PresetDialog
 from nav2_config.gui.yaml_panel import YamlPanel
-from nav2_config.gui.import_export import ExportDialog, ImportDialog
+from nav2_config.node import Nav2ConfigNode
 from nav2_config.types.params import ParamValue
 
 logger = logging.getLogger(__name__)
@@ -42,6 +45,9 @@ class MainWindow(QMainWindow):
         super().__init__()
         self._node = node
         self._current_params: list[ParamValue] = []
+        # Accumulate params from every node the user has selected so that
+        # cross-node health checks (e.g. costmap vs controller) can fire.
+        self._all_node_params: dict[str, list[ParamValue]] = {}
         self._build_ui()
         self._connect_signals()
 
@@ -84,15 +90,13 @@ class MainWindow(QMainWindow):
 
         # ── Presets ──────────────────────────────────────────────────────
         presets_menu: QMenu = bar.addMenu('Presets')
-        preset_names = [
-            'Hospital Corridor',
-            'Open Warehouse',
-            'Outdoor Campus',
-            'Simulation (TurtleBot3)',
-            'Tight Retail',
-        ]
-        for name in preset_names:
-            action = QAction(name, self)
+        for key in PRESET_ORDER:
+            meta = PRESET_META.get(key, {})
+            display_name = meta.get('name', key)
+            action = QAction(display_name, self)
+            action.triggered.connect(
+                lambda _checked, k=key: self._open_preset_dialog(k)
+            )
             presets_menu.addAction(action)
 
         # ── Help ─────────────────────────────────────────────────────────
@@ -101,17 +105,29 @@ class MainWindow(QMainWindow):
         help_menu.addAction(about_action)
 
     def _setup_central_splitter(self) -> None:
-        """Build horizontal QSplitter with three panels."""
+        """Build horizontal QSplitter with three panels.
+
+        The center column is itself a vertical splitter containing the
+        ParamPanel (top) and the HealthPanel (bottom).
+        """
         splitter = QSplitter(Qt.Orientation.Horizontal, self)
         splitter.setChildrenCollapsible(True)
         splitter.setHandleWidth(2)
 
         self._node_panel = NodePanel()
         self._param_panel = ParamPanel()
+        self._health_panel = HealthPanel()
         self._yaml_panel = YamlPanel()
 
+        # Vertical splitter for center column: params on top, health below.
+        center_splitter = QSplitter(Qt.Orientation.Vertical)
+        center_splitter.setHandleWidth(2)
+        center_splitter.addWidget(self._param_panel)
+        center_splitter.addWidget(self._health_panel)
+        center_splitter.setSizes([10000, 180])
+
         splitter.addWidget(self._node_panel)
-        splitter.addWidget(self._param_panel)
+        splitter.addWidget(center_splitter)
         splitter.addWidget(self._yaml_panel)
 
         # setSizes is proportional — use 240 / big stretch / 300.
@@ -178,6 +194,9 @@ class MainWindow(QMainWindow):
         # ROS2 set result → param panel visual feedback
         self._node.signals.param_set_result.connect(self._on_param_set_result)
 
+        # Health panel → scroll param panel to the clicked param
+        self._health_panel.param_focus_requested.connect(self._param_panel.scroll_to_param)
+
     # ------------------------------------------------------------------
     # Private slots
     # ------------------------------------------------------------------
@@ -201,13 +220,18 @@ class MainWindow(QMainWindow):
     def _on_params_received(self, node_name: str, params: list) -> None:
         """Load fetched parameters into the param panel and refresh YAML preview."""
         self._current_params = params
+        # Accumulate per-node params for cross-node health checks.
+        bare = node_name.lstrip('/')
+        self._all_node_params[bare] = params
         self._param_panel.load_params(params)
         self._yaml_panel.update_yaml(
             params, plugin_filter=self._param_panel._selected_plugin
         )
         self.set_status(
-            f'Loaded {len(params)} parameters for {node_name.lstrip("/")}',
+            f'Loaded {len(params)} parameters for {bare}',
         )
+        # Schedule debounced health check with all accumulated params.
+        self._schedule_health_check()
 
     def _on_param_change_requested(
         self, node_name: str, param_name: str, value: object
@@ -224,6 +248,8 @@ class MainWindow(QMainWindow):
         self._yaml_panel.update_yaml(
             self._current_params, plugin_filter=self._param_panel._selected_plugin
         )
+        # Re-schedule health check — fires 1 s after the last change.
+        self._schedule_health_check()
 
     def _on_param_set_result(
         self, node_name: str, param_name: str, success: bool
@@ -277,7 +303,42 @@ class MainWindow(QMainWindow):
         )
 
     # ------------------------------------------------------------------
-    # Public helpers (called by GUI slots once real panels are added)
+    # Health check scheduling
+    # ------------------------------------------------------------------
+
+    def _schedule_health_check(self) -> None:
+        """Collect all accumulated params and schedule a debounced health check."""
+        all_params: list[ParamValue] = []
+        for params in self._all_node_params.values():
+            all_params.extend(params)
+        self._health_panel.schedule_check(all_params)
+
+    # ------------------------------------------------------------------
+    # Preset handling
+    # ------------------------------------------------------------------
+
+    def _open_preset_dialog(self, initial_preset: str | None = None) -> None:
+        """Open the preset selection dialog."""
+        dialog = PresetDialog(
+            on_apply=self._apply_preset,
+            initial_preset=initial_preset,
+            parent=self,
+        )
+        dialog.exec()
+
+    def _apply_preset(
+        self, preset_name: str, preset_data: dict[str, dict]
+    ) -> None:
+        """Apply a loaded preset to the running Nav2 nodes."""
+        count = apply_preset(self._node, preset_data, self._node._schema)
+        display_name = PRESET_META.get(preset_name, {}).get('name', preset_name)
+        self.set_status(
+            f'Applying preset "{display_name}" — {count} parameter updates queued'
+        )
+        logger.info('Applied preset %r: %d params queued', preset_name, count)
+
+    # ------------------------------------------------------------------
+    # Public helpers
     # ------------------------------------------------------------------
 
     def set_status(self, message: str) -> None:
