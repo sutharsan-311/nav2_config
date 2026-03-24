@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-and-test:
+    name: Build & Test (ROS2 Humble, Ubuntu 22.04)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: src/nav2_config
+
+      - name: Set up ROS2 Humble
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: humble
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pyqt6
+
+      - name: Install rosdep dependencies
+        run: |
+          source /opt/ros/humble/setup.bash
+          cd "$GITHUB_WORKSPACE"
+          rosdep update
+          rosdep install --from-paths src --ignore-src -r -y
+
+      - name: Build
+        run: |
+          source /opt/ros/humble/setup.bash
+          cd "$GITHUB_WORKSPACE"
+          colcon build --packages-select nav2_config --event-handlers console_cohesion+
+
+      - name: Test
+        run: |
+          source /opt/ros/humble/setup.bash
+          source "$GITHUB_WORKSPACE/install/setup.bash"
+          cd "$GITHUB_WORKSPACE"
+          colcon test --packages-select nav2_config --event-handlers console_cohesion+
+          colcon test-result --verbose

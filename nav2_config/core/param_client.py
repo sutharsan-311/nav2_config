@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+import rclpy
 from rclpy.node import Node
 from rcl_interfaces.msg import Parameter, ParameterType, ParameterValue
 from rcl_interfaces.srv import GetParameters, ListParameters, SetParameters
@@ -147,7 +148,6 @@ class Nav2ParamClient:
 
         future = client.call_async(request)
         # Spin this node until the future resolves (or we time out).
-        import rclpy
         rclpy.spin_until_future_complete(
             self._node, future, timeout_sec=_SERVICE_TIMEOUT
         )

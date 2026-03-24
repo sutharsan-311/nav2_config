@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Nav2 Config
+Comment=Real-time Nav2 parameter tuning GUI
+Exec=ros2 run nav2_config gui
+Icon=nav2_config
+Type=Application
+Categories=Development;ROS;
+Terminal=false
+StartupNotify=true
