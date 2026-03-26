@@ -8,9 +8,9 @@ of creating a new client on every call.
 from __future__ import annotations
 
 import logging
+import threading
 from typing import Any
 
-import rclpy
 from rclpy.node import Node
 from rcl_interfaces.msg import Parameter, ParameterType, ParameterValue
 from rcl_interfaces.srv import GetParameters, ListParameters, SetParameters
@@ -113,14 +113,22 @@ class Nav2ParamClient:
         node: The ``rclpy.Node`` used to create service clients.
     """
 
-    def __init__(self, node: Node) -> None:
+    def __init__(self, node: Node, callback_group: Any = None) -> None:
         self._node = node
+        self._callback_group = callback_group
         # Cache: (node_name, service_class) -> rclpy client
         self._clients: dict[tuple[str, type], Any] = {}
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    # ROS2 param service names are snake_case; map from the Python class names.
+    _SRV_NAMES: dict[type, str] = {
+        ListParameters: "list_parameters",
+        GetParameters: "get_parameters",
+        SetParameters: "set_parameters",
+    }
 
     def _get_client(self, node_name: str, srv_class: type) -> Any:
         """Return a cached (or newly created) service client.
@@ -131,14 +139,21 @@ class Nav2ParamClient:
         """
         key = (node_name, srv_class)
         if key not in self._clients:
-            # srv_class.__name__ gives e.g. "ListParameters"
-            service_name = f"{node_name}/{srv_class.__name__.lower()}"
-            self._clients[key] = self._node.create_client(srv_class, service_name)
+            srv_name = self._SRV_NAMES[srv_class]
+            service_name = f"{node_name}/{srv_name}"
+            self._clients[key] = self._node.create_client(
+                srv_class, service_name, callback_group=self._callback_group
+            )
             logger.debug("Created service client for %s", service_name)
         return self._clients[key]
 
     def _call(self, client: Any, request: Any) -> Any | None:
         """Send *request* and block until the response arrives or times out.
+
+        Uses threading.Event rather than rclpy.spin_until_future_complete so
+        that this method is safe to call from inside a running executor
+        callback.  The MultiThreadedExecutor in main.py can process the
+        service response on a different thread while this one waits.
 
         Returns the response object, or ``None`` on timeout / unavailable.
         """
@@ -147,14 +162,20 @@ class Nav2ParamClient:
             return None
 
         future = client.call_async(request)
-        # Spin this node until the future resolves (or we time out).
-        rclpy.spin_until_future_complete(
-            self._node, future, timeout_sec=_SERVICE_TIMEOUT
-        )
-        if future.result() is None:
+
+        done_event = threading.Event()
+        result_holder: list[Any] = [None]
+
+        def _on_done(fut: Any) -> None:
+            result_holder[0] = fut.result()
+            done_event.set()
+
+        future.add_done_callback(_on_done)
+
+        if not done_event.wait(timeout=_SERVICE_TIMEOUT):
             logger.warning("Service call to %s timed out", client.srv_name)
             return None
-        return future.result()
+        return result_holder[0]
 
     # ------------------------------------------------------------------
     # Public API
@@ -283,9 +304,13 @@ class Nav2ParamClient:
             List of :class:`~nav2_config.types.params.ParamValue` objects, one
             per matching schema entry, sorted by param name.
         """
-        # Strip the leading '/' to compare against schema node names
-        # e.g. "/controller_server" -> "controller_server"
-        bare_node = node_name.lstrip("/")
+        # Extract the bare node name from the full ROS2 node path.
+        # ROS2 reports namespaced nodes as "/namespace/node_name", so we take
+        # the last path segment:
+        #   "/controller_server"              -> "controller_server"
+        #   "/local_costmap/local_costmap"    -> "local_costmap"
+        #   "/global_costmap/global_costmap"  -> "global_costmap"
+        bare_node = node_name.rstrip("/").rsplit("/", 1)[-1]
 
         # Filter schema to only this node's params
         node_defs = [d for d in schema if d.node == bare_node]
@@ -293,13 +318,18 @@ class Nav2ParamClient:
         if not node_defs:
             return []
 
-        param_names = [d.param for d in node_defs]
-        live_values = self.get_params(node_name, param_names)
+        # GetParameters fails silently (returns 0 values) if ANY requested param
+        # is not declared on the node.  Call list_parameters first, then
+        # intersect using the ros2_name (the exact name the node knows) so we
+        # only request params that actually exist on the running node.
+        existing_names: set[str] = set(self.list_params(node_name))
+        ros2_names = [d.ros2_name for d in node_defs if d.ros2_name in existing_names]
+        live_values = self.get_params(node_name, ros2_names) if ros2_names else {}
 
         result: list[ParamValue] = []
         for d in node_defs:
-            if d.param in live_values:
-                current_value = live_values[d.param]
+            if d.ros2_name in live_values:
+                current_value = live_values[d.ros2_name]
                 is_live = True
             else:
                 current_value = d.default

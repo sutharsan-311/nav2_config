@@ -15,12 +15,14 @@ import sys
 import threading
 
 import rclpy
+from rclpy.executors import MultiThreadedExecutor
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication
 
 from nav2_config.node import Nav2ConfigNode
 from nav2_config.gui.main_window import MainWindow
 from nav2_config.gui.theme import apply_theme
+from nav2_config.types.params import load_schema
 
 logging.basicConfig(
     level=logging.INFO,
@@ -32,11 +34,14 @@ logger = logging.getLogger(__name__)
 def _spin_node(node: Nav2ConfigNode) -> None:
     """Target function for the ROS2 background thread.
 
-    Calls rclpy.spin() which blocks until the node is shut down.
-    Runs as a daemon so the process exits when Qt's main thread ends.
+    Uses MultiThreadedExecutor so that service response callbacks can be
+    processed on a separate thread while a timer callback is waiting for a
+    future.  This prevents deadlocks in Nav2ParamClient._call().
     """
+    executor = MultiThreadedExecutor()
+    executor.add_node(node)
     try:
-        rclpy.spin(node)
+        executor.spin()
     except Exception:
         logger.exception('ROS2 spin thread raised an exception')
 
@@ -46,6 +51,15 @@ def main() -> None:
     # ── 1. Initialise ROS2 ─────────────────────────────────────────────
     rclpy.init(args=sys.argv)
     node = Nav2ConfigNode()
+
+    # Load the parameter schema and inject it into the node so param fetches
+    # have descriptions, defaults, and ranges to merge against live values.
+    try:
+        schema = load_schema()
+        node.set_schema(schema)
+        logger.info('Loaded %d param schema entries', len(schema))
+    except Exception:
+        logger.exception('Failed to load nav2_params.json — params will show live values only')
 
     # ── 2. Start ROS2 spin on a background daemon thread ───────────────
     # Daemon=True means the thread is killed automatically when the main

@@ -7,6 +7,7 @@ import queue
 from typing import Any
 
 import rclpy
+from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.node import Node
 from PyQt6.QtCore import QObject, pyqtSignal
 
@@ -67,8 +68,14 @@ class Nav2ConfigNode(Node):
         #: the schema file has been read, or pass directly for testing.
         self._schema: list[Nav2ParamDef] = schema or []
 
+        # Reentrant callback group so that timer callbacks can block waiting
+        # for service futures without starving the service response callbacks.
+        # With the default MutuallyExclusiveCallbackGroup the timer would hold
+        # the group lock while blocking, and the service client could never fire.
+        self._cb_group = ReentrantCallbackGroup()
+
         #: Parameter service client.
-        self._param_client = Nav2ParamClient(self)
+        self._param_client = Nav2ParamClient(self, self._cb_group)
 
         #: Thread-safe queue for GUI → ROS2 parameter operation requests.
         #: Each item is a tuple: ("fetch", node_name) or ("set", node_name, param_name, value, type_hint).
@@ -80,10 +87,12 @@ class Nav2ConfigNode(Node):
         # None sentinel means "first tick — always emit".
         self._prev_discovered: set[str] | None = None
 
-        # ROS2 timer fires on the spin thread every DISCOVERY_INTERVAL seconds.
-        self.create_timer(self.DISCOVERY_INTERVAL, self._on_timer_tick)
-        # Separate 2-second polling timer for external-change detection.
-        self.create_timer(self.POLL_INTERVAL, self._on_poll_tick)
+        # ROS2 timers share the same reentrant group so that service calls
+        # issued inside these callbacks can complete concurrently.
+        self.create_timer(self.DISCOVERY_INTERVAL, self._on_timer_tick,
+                          callback_group=self._cb_group)
+        self.create_timer(self.POLL_INTERVAL, self._on_poll_tick,
+                          callback_group=self._cb_group)
 
         self.get_logger().info('Nav2 Config GUI started')
 
@@ -159,7 +168,8 @@ class Nav2ConfigNode(Node):
         self._drain_request_queue()
 
     def _on_poll_tick(self) -> None:
-        """2-second timer callback: re-fetch watched node params for external changes."""
+        """2-second timer callback: drain request queue, then re-fetch watched node params."""
+        self._drain_request_queue()
         watched = self._watcher.watched_node
         if not watched:
             return
@@ -171,9 +181,7 @@ class Nav2ConfigNode(Node):
         if changed:
             self.signals.params_externally_changed.emit(watched, changed)
             self.get_logger().info(
-                'External param changes on %s: %s',
-                watched,
-                ', '.join(f'{n}={v}' for n, v in changed),
+                f"External param changes on {watched}: {', '.join(f'{n}={v}' for n, v in changed)}"
             )
 
     # ------------------------------------------------------------------
@@ -200,9 +208,9 @@ class Nav2ConfigNode(Node):
 
         # Log appeared / lost nodes.
         for path in discovered - self._prev_discovered:
-            self.get_logger().info('Nav2 node appeared: %s (%s)', path, NAV2_NODES.get(path, path))
+            self.get_logger().info(f"Nav2 node appeared: {path} ({NAV2_NODES.get(path, path)})")
         for path in self._prev_discovered - discovered:
-            self.get_logger().info('Nav2 node lost: %s (%s)', path, NAV2_NODES.get(path, path))
+            self.get_logger().info(f"Nav2 node lost: {path} ({NAV2_NODES.get(path, path)})")
 
         self._prev_discovered = discovered
         self.signals.nodes_discovered.emit(status)
@@ -251,9 +259,7 @@ class Nav2ConfigNode(Node):
         if self._watcher.watched_node == node_name:
             self._watcher.set_baseline(param_values)
         self.signals.params_received.emit(node_name, param_values)
-        self.get_logger().debug(
-            "Fetched %d params for %s", len(param_values), node_name
-        )
+        self.get_logger().debug(f"Fetched {len(param_values)} params for {node_name}")
 
     def _set_param(
         self,
@@ -269,6 +275,6 @@ class Nav2ConfigNode(Node):
         success = self._param_client.set_param(node_name, param_name, value, type_hint)
         self.signals.param_set_result.emit(node_name, param_name, success)
         if success:
-            self.get_logger().info("Set %s/%s = %r", node_name, param_name, value)
+            self.get_logger().info(f"Set {node_name}/{param_name} = {value!r}")
         else:
-            self.get_logger().warning("Failed to set %s/%s", node_name, param_name)
+            self.get_logger().warning(f"Failed to set {node_name}/{param_name}")

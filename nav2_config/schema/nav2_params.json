@@ -4,7 +4,10 @@
     "param": "controller_frequency",
     "type": "double",
     "default": 20.0,
-    "range": { "min": 1.0, "max": 100.0 },
+    "range": {
+      "min": 1.0,
+      "max": 100.0
+    },
     "unit": "Hz",
     "description": "Rate at which the controller server computes velocity commands.",
     "impact": "Higher values give smoother control but increase CPU load. Lower values may cause jerky motion or tracking lag.",
@@ -12,14 +15,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["controller", "frequency", "performance"]
+    "tags": [
+      "controller",
+      "frequency",
+      "performance"
+    ]
   },
   {
     "node": "controller_server",
     "param": "min_x_velocity_threshold",
     "type": "double",
     "default": 0.0001,
-    "range": { "min": 0.0, "max": 0.1 },
+    "range": {
+      "min": 0.0,
+      "max": 0.1
+    },
     "unit": "m/s",
     "description": "Minimum absolute x velocity for the robot to be considered moving.",
     "impact": "Used to detect if the robot is stuck. Too high and slight drift triggers stuck detection; too low and a truly stuck robot is not detected.",
@@ -27,14 +37,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["controller", "velocity", "stuck"]
+    "tags": [
+      "controller",
+      "velocity",
+      "stuck"
+    ]
   },
   {
     "node": "controller_server",
     "param": "min_y_velocity_threshold",
     "type": "double",
     "default": 0.0001,
-    "range": { "min": 0.0, "max": 0.1 },
+    "range": {
+      "min": 0.0,
+      "max": 0.1
+    },
     "unit": "m/s",
     "description": "Minimum absolute y velocity (for holonomic robots) to be considered moving.",
     "impact": "Only relevant for holonomic platforms. Ignored for differential-drive robots.",
@@ -42,14 +59,22 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["controller", "velocity", "stuck", "holonomic"]
+    "tags": [
+      "controller",
+      "velocity",
+      "stuck",
+      "holonomic"
+    ]
   },
   {
     "node": "controller_server",
     "param": "min_theta_velocity_threshold",
     "type": "double",
     "default": 0.0001,
-    "range": { "min": 0.0, "max": 0.5 },
+    "range": {
+      "min": 0.0,
+      "max": 0.5
+    },
     "unit": "rad/s",
     "description": "Minimum absolute angular velocity to be considered rotating.",
     "impact": "Used in stuck detection. Robots that spin slowly in place may falsely appear stuck if set too high.",
@@ -57,14 +82,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["controller", "velocity", "stuck"]
+    "tags": [
+      "controller",
+      "velocity",
+      "stuck"
+    ]
   },
   {
     "node": "controller_server",
     "param": "failure_tolerance",
     "type": "double",
     "default": 0.3,
-    "range": { "min": 0.0, "max": 10.0 },
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
     "unit": "s",
     "description": "Duration the controller is allowed to fail before the action server returns failure.",
     "impact": "Longer tolerance allows temporary obstacles to clear. Too long and the robot remains stuck waiting.",
@@ -72,7 +104,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["controller", "failure", "recovery"]
+    "tags": [
+      "controller",
+      "failure",
+      "recovery"
+    ]
   },
   {
     "node": "controller_server",
@@ -87,13 +123,19 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["controller", "plugin", "progress"]
+    "tags": [
+      "controller",
+      "plugin",
+      "progress"
+    ]
   },
   {
     "node": "controller_server",
     "param": "goal_checker_plugins",
     "type": "string_array",
-    "default": ["goal_checker"],
+    "default": [
+      "goal_checker"
+    ],
     "range": null,
     "unit": "",
     "description": "List of goal checker plugin names used to determine when the goal is reached.",
@@ -102,13 +144,19 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["controller", "plugin", "goal"]
+    "tags": [
+      "controller",
+      "plugin",
+      "goal"
+    ]
   },
   {
     "node": "controller_server",
     "param": "controller_plugins",
     "type": "string_array",
-    "default": ["FollowPath"],
+    "default": [
+      "FollowPath"
+    ],
     "range": null,
     "unit": "",
     "description": "List of controller plugin names loaded by the controller server.",
@@ -117,18 +165,23 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["controller", "plugin"]
+    "tags": [
+      "controller",
+      "plugin"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.plugin",
     "type": "string",
     "default": "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController",
-    "range": { "options": [
-      "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController",
-      "nav2_mppi_controller::MPPIController",
-      "dwb_core::DWBLocalPlanner"
-    ]},
+    "range": {
+      "options": [
+        "nav2_regulated_pure_pursuit_controller::RegulatedPurePursuitController",
+        "nav2_mppi_controller::MPPIController",
+        "dwb_core::DWBLocalPlanner"
+      ]
+    },
     "unit": "",
     "description": "C++ plugin class for the FollowPath controller action.",
     "impact": "Requires node restart. Switching between DWB, RPP, and MPPI changes the entire control strategy.",
@@ -136,14 +189,21 @@
     "plugin_specific": true,
     "plugin": "FollowPath",
     "hot_reload": false,
-    "tags": ["controller", "plugin", "followpath"]
+    "tags": [
+      "controller",
+      "plugin",
+      "followpath"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.desired_linear_vel",
     "type": "double",
     "default": 0.5,
-    "range": { "min": 0.1, "max": 2.0 },
+    "range": {
+      "min": 0.1,
+      "max": 2.0
+    },
     "unit": "m/s",
     "description": "Target forward speed for the RegulatedPurePursuit controller.",
     "impact": "Higher speeds reduce traversal time but decrease safety margins and path tracking accuracy.",
@@ -151,14 +211,22 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "velocity", "speed"]
+    "tags": [
+      "controller",
+      "rpp",
+      "velocity",
+      "speed"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.lookahead_dist",
     "type": "double",
     "default": 0.6,
-    "range": { "min": 0.1, "max": 3.0 },
+    "range": {
+      "min": 0.1,
+      "max": 3.0
+    },
     "unit": "m",
     "description": "Fixed lookahead distance for RPP when adaptive lookahead is disabled.",
     "impact": "Larger values produce smoother paths but may cut corners. Smaller values track the path more precisely but can cause oscillation.",
@@ -166,14 +234,21 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "lookahead"]
+    "tags": [
+      "controller",
+      "rpp",
+      "lookahead"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.min_lookahead_dist",
     "type": "double",
     "default": 0.3,
-    "range": { "min": 0.1, "max": 1.0 },
+    "range": {
+      "min": 0.1,
+      "max": 1.0
+    },
     "unit": "m",
     "description": "Minimum lookahead distance when adaptive lookahead is enabled.",
     "impact": "Prevents the lookahead point from being so close that the robot oscillates.",
@@ -181,14 +256,21 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "lookahead"]
+    "tags": [
+      "controller",
+      "rpp",
+      "lookahead"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.max_lookahead_dist",
     "type": "double",
     "default": 0.9,
-    "range": { "min": 0.3, "max": 5.0 },
+    "range": {
+      "min": 0.3,
+      "max": 5.0
+    },
     "unit": "m",
     "description": "Maximum lookahead distance when adaptive lookahead is enabled.",
     "impact": "Caps how far ahead the robot looks. Too large and it may leave the path in narrow spaces.",
@@ -196,14 +278,21 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "lookahead"]
+    "tags": [
+      "controller",
+      "rpp",
+      "lookahead"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.lookahead_time",
     "type": "double",
     "default": 1.5,
-    "range": { "min": 0.5, "max": 5.0 },
+    "range": {
+      "min": 0.5,
+      "max": 5.0
+    },
     "unit": "s",
     "description": "Time horizon used to compute adaptive lookahead distance (dist = speed * time).",
     "impact": "Longer time makes the robot look further ahead at higher speeds, adapting to velocity.",
@@ -211,7 +300,12 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "lookahead", "adaptive"]
+    "tags": [
+      "controller",
+      "rpp",
+      "lookahead",
+      "adaptive"
+    ]
   },
   {
     "node": "controller_server",
@@ -226,14 +320,22 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "lookahead", "adaptive"]
+    "tags": [
+      "controller",
+      "rpp",
+      "lookahead",
+      "adaptive"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.min_approach_linear_velocity",
     "type": "double",
     "default": 0.05,
-    "range": { "min": 0.01, "max": 0.5 },
+    "range": {
+      "min": 0.01,
+      "max": 0.5
+    },
     "unit": "m/s",
     "description": "Minimum speed when approaching the goal to prevent stopping before reaching it.",
     "impact": "Too low and the robot creeps at the goal; too high and it overshoots.",
@@ -241,14 +343,22 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "goal", "velocity"]
+    "tags": [
+      "controller",
+      "rpp",
+      "goal",
+      "velocity"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.approach_velocity_scaling_dist",
     "type": "double",
     "default": 0.6,
-    "range": { "min": 0.1, "max": 3.0 },
+    "range": {
+      "min": 0.1,
+      "max": 3.0
+    },
     "unit": "m",
     "description": "Distance from the goal at which the robot begins slowing down.",
     "impact": "Larger values cause earlier deceleration. Tune based on robot mass and max speed.",
@@ -256,7 +366,12 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "goal", "velocity"]
+    "tags": [
+      "controller",
+      "rpp",
+      "goal",
+      "velocity"
+    ]
   },
   {
     "node": "controller_server",
@@ -271,7 +386,12 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "regulation", "curvature"]
+    "tags": [
+      "controller",
+      "rpp",
+      "regulation",
+      "curvature"
+    ]
   },
   {
     "node": "controller_server",
@@ -286,14 +406,23 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "regulation", "cost", "obstacles"]
+    "tags": [
+      "controller",
+      "rpp",
+      "regulation",
+      "cost",
+      "obstacles"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.regulated_linear_scaling_min_radius",
     "type": "double",
     "default": 0.9,
-    "range": { "min": 0.1, "max": 5.0 },
+    "range": {
+      "min": 0.1,
+      "max": 5.0
+    },
     "unit": "m",
     "description": "Path curvature radius below which linear velocity scaling activates.",
     "impact": "Smaller values only slow down for very tight turns; larger values slow for moderate curves too.",
@@ -301,14 +430,22 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "regulation", "curvature"]
+    "tags": [
+      "controller",
+      "rpp",
+      "regulation",
+      "curvature"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.regulated_linear_scaling_min_speed",
     "type": "double",
     "default": 0.25,
-    "range": { "min": 0.05, "max": 1.0 },
+    "range": {
+      "min": 0.05,
+      "max": 1.0
+    },
     "unit": "m/s",
     "description": "Minimum speed the regulated velocity scaling will reduce to (floor).",
     "impact": "Prevents the robot from stopping completely when regulated. Tune with approach velocity.",
@@ -316,22 +453,35 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "regulation", "velocity"]
+    "tags": [
+      "controller",
+      "rpp",
+      "regulation",
+      "velocity"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.max_angular_accel",
     "type": "double",
     "default": 3.2,
-    "range": { "min": 0.1, "max": 10.0 },
-    "unit": "rad/s²",
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
+    "unit": "rad/s\u00b2",
     "description": "Maximum angular acceleration applied during heading correction.",
     "impact": "Limits how quickly the robot spins. Low values give smooth turns; high values allow fast corrections but may tip cargo.",
     "category": "dynamics",
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "acceleration", "angular"]
+    "tags": [
+      "controller",
+      "rpp",
+      "acceleration",
+      "angular"
+    ]
   },
   {
     "node": "controller_server",
@@ -346,29 +496,44 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "rotation"]
+    "tags": [
+      "controller",
+      "rpp",
+      "rotation"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.rotate_to_heading_min_angle",
     "type": "double",
     "default": 0.785,
-    "range": { "min": 0.1, "max": 3.14 },
+    "range": {
+      "min": 0.1,
+      "max": 3.14
+    },
     "unit": "rad",
     "description": "Minimum heading error before the rotate-to-heading behavior activates.",
-    "impact": "~45° default. Smaller values cause frequent in-place rotations; larger values allow more heading error before correcting.",
+    "impact": "~45\u00b0 default. Smaller values cause frequent in-place rotations; larger values allow more heading error before correcting.",
     "category": "behavior",
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "rotation", "heading"]
+    "tags": [
+      "controller",
+      "rpp",
+      "rotation",
+      "heading"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.rotate_to_heading_angular_vel",
     "type": "double",
     "default": 1.8,
-    "range": { "min": 0.1, "max": 5.0 },
+    "range": {
+      "min": 0.1,
+      "max": 5.0
+    },
     "unit": "rad/s",
     "description": "Angular velocity used during in-place rotate-to-heading maneuvers.",
     "impact": "Higher values rotate faster but may overshoot. Lower values are smoother but slower.",
@@ -376,7 +541,12 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "rotation", "velocity"]
+    "tags": [
+      "controller",
+      "rpp",
+      "rotation",
+      "velocity"
+    ]
   },
   {
     "node": "controller_server",
@@ -391,13 +561,19 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "reversing"]
+    "tags": [
+      "controller",
+      "rpp",
+      "reversing"
+    ]
   },
   {
     "node": "planner_server",
     "param": "planner_plugins",
     "type": "string_array",
-    "default": ["GridBased"],
+    "default": [
+      "GridBased"
+    ],
     "range": null,
     "unit": "",
     "description": "List of planner plugin names loaded by the planner server.",
@@ -406,14 +582,20 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["planner", "plugin"]
+    "tags": [
+      "planner",
+      "plugin"
+    ]
   },
   {
     "node": "planner_server",
     "param": "expected_planner_frequency",
     "type": "double",
     "default": 20.0,
-    "range": { "min": 0.1, "max": 50.0 },
+    "range": {
+      "min": 0.1,
+      "max": 50.0
+    },
     "unit": "Hz",
     "description": "Expected rate at which planning requests will arrive. Used for timeout warning.",
     "impact": "Does not directly control the planning rate. A mismatch logs warnings.",
@@ -421,20 +603,26 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["planner", "frequency", "performance"]
+    "tags": [
+      "planner",
+      "frequency",
+      "performance"
+    ]
   },
   {
     "node": "planner_server",
     "param": "GridBased.plugin",
     "type": "string",
     "default": "nav2_navfn_planner::NavfnPlanner",
-    "range": { "options": [
-      "nav2_navfn_planner::NavfnPlanner",
-      "nav2_smac_planner::SmacPlanner2D",
-      "nav2_smac_planner::SmacPlannerHybrid",
-      "nav2_smac_planner::SmacPlannerLattice",
-      "nav2_theta_star_planner::ThetaStarPlanner"
-    ]},
+    "range": {
+      "options": [
+        "nav2_navfn_planner::NavfnPlanner",
+        "nav2_smac_planner::SmacPlanner2D",
+        "nav2_smac_planner::SmacPlannerHybrid",
+        "nav2_smac_planner::SmacPlannerLattice",
+        "nav2_theta_star_planner::ThetaStarPlanner"
+      ]
+    },
     "unit": "",
     "description": "C++ plugin class for the GridBased path planner.",
     "impact": "Requires node restart. NavFn is fast but non-kinematically-feasible; SmacHybrid produces car-like paths; ThetaStar uses any-angle paths.",
@@ -442,14 +630,21 @@
     "plugin_specific": true,
     "plugin": "GridBased",
     "hot_reload": false,
-    "tags": ["planner", "plugin", "gridbased"]
+    "tags": [
+      "planner",
+      "plugin",
+      "gridbased"
+    ]
   },
   {
     "node": "planner_server",
     "param": "GridBased.tolerance",
     "type": "double",
     "default": 0.5,
-    "range": { "min": 0.0, "max": 2.0 },
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
     "unit": "m",
     "description": "Distance tolerance from the goal for NavFn/Theta* planners to consider planning successful.",
     "impact": "Larger tolerance allows planning to approximate goals in cluttered areas. Smaller values require an exact path to the goal.",
@@ -457,7 +652,11 @@
     "plugin_specific": true,
     "plugin": "NavfnPlanner",
     "hot_reload": true,
-    "tags": ["planner", "navfn", "tolerance"]
+    "tags": [
+      "planner",
+      "navfn",
+      "tolerance"
+    ]
   },
   {
     "node": "planner_server",
@@ -472,7 +671,12 @@
     "plugin_specific": true,
     "plugin": "NavfnPlanner",
     "hot_reload": true,
-    "tags": ["planner", "navfn", "astar", "algorithm"]
+    "tags": [
+      "planner",
+      "navfn",
+      "astar",
+      "algorithm"
+    ]
   },
   {
     "node": "planner_server",
@@ -487,14 +691,22 @@
     "plugin_specific": true,
     "plugin": "NavfnPlanner",
     "hot_reload": true,
-    "tags": ["planner", "navfn", "unknown", "exploration"]
+    "tags": [
+      "planner",
+      "navfn",
+      "unknown",
+      "exploration"
+    ]
   },
   {
     "node": "planner_server",
     "param": "GridBased.max_iterations",
     "type": "int",
     "default": 1000000,
-    "range": { "min": 1000, "max": 10000000 },
+    "range": {
+      "min": 1000,
+      "max": 10000000
+    },
     "unit": "",
     "description": "Maximum number of SmacPlanner iterations before declaring planning failed.",
     "impact": "Prevents infinite planning loops. Set lower in time-critical applications; higher for large maps.",
@@ -502,14 +714,22 @@
     "plugin_specific": true,
     "plugin": "SmacPlanner2D",
     "hot_reload": true,
-    "tags": ["planner", "smac", "iterations", "performance"]
+    "tags": [
+      "planner",
+      "smac",
+      "iterations",
+      "performance"
+    ]
   },
   {
     "node": "planner_server",
     "param": "GridBased.minimum_turning_radius",
     "type": "double",
     "default": 0.4,
-    "range": { "min": 0.0, "max": 5.0 },
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
     "unit": "m",
     "description": "Minimum turning radius for the SmacPlannerHybrid (Ackermann/car-like constraint).",
     "impact": "Must match the physical robot. Too small: the plan is kinematically infeasible. Too large: the robot cannot navigate tight spaces.",
@@ -517,22 +737,37 @@
     "plugin_specific": true,
     "plugin": "SmacPlannerHybrid",
     "hot_reload": true,
-    "tags": ["planner", "smac", "hybrid", "turning_radius", "kinematics"]
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "turning_radius",
+      "kinematics"
+    ]
   },
   {
     "node": "planner_server",
     "param": "GridBased.angle_quantization_bins",
     "type": "int",
     "default": 72,
-    "range": { "min": 8, "max": 360 },
+    "range": {
+      "min": 8,
+      "max": 360
+    },
     "unit": "",
     "description": "Number of discrete heading angles in the SmacPlannerHybrid search space.",
-    "impact": "More bins give finer heading resolution but increase memory and planning time. 72 bins = 5° resolution.",
+    "impact": "More bins give finer heading resolution but increase memory and planning time. 72 bins = 5\u00b0 resolution.",
     "category": "planning",
     "plugin_specific": true,
     "plugin": "SmacPlannerHybrid",
     "hot_reload": false,
-    "tags": ["planner", "smac", "hybrid", "heading", "resolution"]
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "heading",
+      "resolution"
+    ]
   },
   {
     "node": "planner_server",
@@ -547,14 +782,21 @@
     "plugin_specific": true,
     "plugin": "SmacPlannerHybrid",
     "hot_reload": true,
-    "tags": ["planner", "smac", "smoothing"]
+    "tags": [
+      "planner",
+      "smac",
+      "smoothing"
+    ]
   },
   {
     "node": "amcl",
     "param": "min_particles",
     "type": "int",
     "default": 500,
-    "range": { "min": 10, "max": 5000 },
+    "range": {
+      "min": 10,
+      "max": 5000
+    },
     "unit": "",
     "description": "Minimum number of particles maintained by the AMCL particle filter.",
     "impact": "Fewer particles reduce CPU usage but decrease localization accuracy. Critical in ambiguous environments.",
@@ -562,14 +804,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "particles", "localization"]
+    "tags": [
+      "amcl",
+      "particles",
+      "localization"
+    ]
   },
   {
     "node": "amcl",
     "param": "max_particles",
     "type": "int",
     "default": 2000,
-    "range": { "min": 100, "max": 20000 },
+    "range": {
+      "min": 100,
+      "max": 20000
+    },
     "unit": "",
     "description": "Maximum number of particles allowed. The filter scales up to this during high uncertainty.",
     "impact": "Higher values improve localization during recovery but increase CPU and memory. Tune with min_particles.",
@@ -577,14 +826,24 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "particles", "localization"]
+    "tags": [
+      "amcl",
+      "particles",
+      "localization"
+    ]
   },
   {
     "node": "amcl",
     "param": "laser_model_type",
     "type": "string",
     "default": "likelihood_field",
-    "range": { "options": ["likelihood_field", "beam", "likelihood_field_prob"] },
+    "range": {
+      "options": [
+        "likelihood_field",
+        "beam",
+        "likelihood_field_prob"
+      ]
+    },
     "unit": "",
     "description": "Sensor model used to weight particles against laser scan data.",
     "impact": "likelihood_field is fast and works well for most 2D lidars. beam is more accurate for ray-traced maps but slower.",
@@ -592,14 +851,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["amcl", "laser", "sensor_model"]
+    "tags": [
+      "amcl",
+      "laser",
+      "sensor_model"
+    ]
   },
   {
     "node": "amcl",
     "param": "laser_max_range",
     "type": "double",
     "default": 100.0,
-    "range": { "min": 1.0, "max": 200.0 },
+    "range": {
+      "min": 1.0,
+      "max": 200.0
+    },
     "unit": "m",
     "description": "Maximum valid laser range. Readings beyond this are discarded.",
     "impact": "Set to the lidar's spec max. Ignoring distant returns reduces noise from reflections off glass or mirrors.",
@@ -607,14 +873,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "laser", "range"]
+    "tags": [
+      "amcl",
+      "laser",
+      "range"
+    ]
   },
   {
     "node": "amcl",
     "param": "laser_min_range",
     "type": "double",
     "default": -1.0,
-    "range": { "min": -1.0, "max": 2.0 },
+    "range": {
+      "min": -1.0,
+      "max": 2.0
+    },
     "unit": "m",
     "description": "Minimum valid laser range. -1 uses the lidar's own minimum. Readings closer than this are discarded.",
     "impact": "Eliminates returns from the robot's own body. Set to the clearance radius of the sensor mount.",
@@ -622,14 +895,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "laser", "range"]
+    "tags": [
+      "amcl",
+      "laser",
+      "range"
+    ]
   },
   {
     "node": "amcl",
     "param": "max_beams",
     "type": "int",
     "default": 60,
-    "range": { "min": 10, "max": 1000 },
+    "range": {
+      "min": 10,
+      "max": 1000
+    },
     "unit": "",
     "description": "Number of evenly-spaced laser beams used per update. Downsamples the full scan.",
     "impact": "Fewer beams reduce computation. More beams improve accuracy in geometrically complex environments.",
@@ -637,14 +917,22 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "laser", "beams", "performance"]
+    "tags": [
+      "amcl",
+      "laser",
+      "beams",
+      "performance"
+    ]
   },
   {
     "node": "amcl",
     "param": "z_hit",
     "type": "double",
     "default": 0.5,
-    "range": { "min": 0.0, "max": 1.0 },
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
     "unit": "",
     "description": "Likelihood field model: weight for hits (beam lands on occupied map cell).",
     "impact": "Together with z_rand, z_max, z_short these must sum to 1.0. Higher z_hit makes the filter trust map matches more.",
@@ -652,14 +940,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "laser", "weights"]
+    "tags": [
+      "amcl",
+      "laser",
+      "weights"
+    ]
   },
   {
     "node": "amcl",
     "param": "z_rand",
     "type": "double",
     "default": 0.5,
-    "range": { "min": 0.0, "max": 1.0 },
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
     "unit": "",
     "description": "Likelihood field model: weight for random/uniform returns (glass, mirrors, dynamic objects).",
     "impact": "Increase in noisy or dynamic environments. Reduces sensitivity to outlier laser returns.",
@@ -667,14 +962,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "laser", "weights"]
+    "tags": [
+      "amcl",
+      "laser",
+      "weights"
+    ]
   },
   {
     "node": "amcl",
     "param": "sigma_hit",
     "type": "double",
     "default": 0.2,
-    "range": { "min": 0.01, "max": 1.0 },
+    "range": {
+      "min": 0.01,
+      "max": 1.0
+    },
     "unit": "m",
     "description": "Standard deviation of the Gaussian used for hit probability in the likelihood field model.",
     "impact": "Larger values widen the acceptance window around map obstacles. Tune to your lidar's measurement noise.",
@@ -682,29 +984,45 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "laser", "weights"]
+    "tags": [
+      "amcl",
+      "laser",
+      "weights"
+    ]
   },
   {
     "node": "amcl",
-    "param": "odom_model_type",
+    "param": "robot_model_type",
     "type": "string",
-    "default": "diff-corrected",
-    "range": { "options": ["diff", "omni", "diff-corrected", "omni-corrected"] },
+    "default": "nav2_amcl::DifferentialMotionModel",
+    "range": {
+      "options": [
+        "nav2_amcl::DifferentialMotionModel",
+        "nav2_amcl::OmnidirectionalMotionModel"
+      ]
+    },
     "unit": "",
-    "description": "Motion model type: diff for differential-drive, omni for holonomic robots.",
-    "impact": "Must match the robot's drive type. Using diff on an omni robot will produce poor localization. -corrected variants have improved noise models.",
+    "description": "Motion model plugin type: differential for diff-drive, omnidirectional for holonomic robots.",
+    "impact": "Must match the robot's drive type. Using differential on an omni robot will produce poor localization.",
     "category": "motion_model",
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["amcl", "odom", "motion_model"]
+    "tags": [
+      "amcl",
+      "odom",
+      "motion_model"
+    ]
   },
   {
     "node": "amcl",
     "param": "alpha1",
     "type": "double",
     "default": 0.2,
-    "range": { "min": 0.0, "max": 1.0 },
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
     "unit": "",
     "description": "Odometry noise: rotation error from rotation.",
     "impact": "Increase if the robot's heading drifts during pure rotation (e.g., slipping wheels).",
@@ -712,14 +1030,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "odom", "noise"]
+    "tags": [
+      "amcl",
+      "odom",
+      "noise"
+    ]
   },
   {
     "node": "amcl",
     "param": "alpha2",
     "type": "double",
     "default": 0.2,
-    "range": { "min": 0.0, "max": 1.0 },
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
     "unit": "",
     "description": "Odometry noise: rotation error from translation.",
     "impact": "Increase if the robot's heading drifts while driving straight.",
@@ -727,14 +1052,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "odom", "noise"]
+    "tags": [
+      "amcl",
+      "odom",
+      "noise"
+    ]
   },
   {
     "node": "amcl",
     "param": "alpha3",
     "type": "double",
     "default": 0.2,
-    "range": { "min": 0.0, "max": 1.0 },
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
     "unit": "",
     "description": "Odometry noise: translation error from translation.",
     "impact": "Increase for robots with high wheel slip. Affects how spread the particle cloud becomes when driving.",
@@ -742,14 +1074,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "odom", "noise"]
+    "tags": [
+      "amcl",
+      "odom",
+      "noise"
+    ]
   },
   {
     "node": "amcl",
     "param": "alpha4",
     "type": "double",
     "default": 0.2,
-    "range": { "min": 0.0, "max": 1.0 },
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
     "unit": "",
     "description": "Odometry noise: translation error from rotation.",
     "impact": "Increase if the robot moves slightly forward when commanded to rotate in place.",
@@ -757,14 +1096,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "odom", "noise"]
+    "tags": [
+      "amcl",
+      "odom",
+      "noise"
+    ]
   },
   {
     "node": "amcl",
     "param": "update_min_d",
     "type": "double",
     "default": 0.25,
-    "range": { "min": 0.0, "max": 2.0 },
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
     "unit": "m",
     "description": "Minimum translation the robot must travel before an AMCL update is triggered.",
     "impact": "Smaller values update more frequently (better accuracy, more CPU). Larger values reduce CPU but may allow localization to lag.",
@@ -772,14 +1118,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "update", "trigger"]
+    "tags": [
+      "amcl",
+      "update",
+      "trigger"
+    ]
   },
   {
     "node": "amcl",
     "param": "update_min_a",
     "type": "double",
     "default": 0.2,
-    "range": { "min": 0.0, "max": 1.57 },
+    "range": {
+      "min": 0.0,
+      "max": 1.57
+    },
     "unit": "rad",
     "description": "Minimum rotation the robot must perform before an AMCL update is triggered.",
     "impact": "Smaller values trigger updates for tiny rotations. Tune with update_min_d to avoid redundant updates when stationary.",
@@ -787,14 +1140,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "update", "trigger"]
+    "tags": [
+      "amcl",
+      "update",
+      "trigger"
+    ]
   },
   {
     "node": "amcl",
     "param": "resample_interval",
     "type": "int",
     "default": 1,
-    "range": { "min": 1, "max": 10 },
+    "range": {
+      "min": 1,
+      "max": 10
+    },
     "unit": "",
     "description": "Number of filter updates between particle resampling steps.",
     "impact": "Higher values reduce particle deprivation by allowing more observation updates before resampling.",
@@ -802,14 +1162,20 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "resampling"]
+    "tags": [
+      "amcl",
+      "resampling"
+    ]
   },
   {
     "node": "amcl",
     "param": "recovery_alpha_slow",
     "type": "double",
     "default": 0.0,
-    "range": { "min": 0.0, "max": 1.0 },
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
     "unit": "",
     "description": "Exponential decay rate for the slow average weight filter used in global localization recovery.",
     "impact": "0.0 disables recovery. Non-zero enables injecting random particles when the filter diverges (kidnapped robot).",
@@ -817,14 +1183,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "recovery", "global_localization"]
+    "tags": [
+      "amcl",
+      "recovery",
+      "global_localization"
+    ]
   },
   {
     "node": "amcl",
     "param": "recovery_alpha_fast",
     "type": "double",
     "default": 0.0,
-    "range": { "min": 0.0, "max": 1.0 },
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
     "unit": "",
     "description": "Exponential decay rate for the fast average weight filter used in global localization recovery.",
     "impact": "Used with recovery_alpha_slow. When fast/slow weight ratio drops, random particles are injected.",
@@ -832,7 +1205,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "recovery", "global_localization"]
+    "tags": [
+      "amcl",
+      "recovery",
+      "global_localization"
+    ]
   },
   {
     "node": "amcl",
@@ -847,7 +1224,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["amcl", "frames", "tf"]
+    "tags": [
+      "amcl",
+      "frames",
+      "tf"
+    ]
   },
   {
     "node": "amcl",
@@ -856,13 +1237,17 @@
     "default": "odom",
     "range": null,
     "unit": "",
-    "description": "The odometry frame used by AMCL to compute the map→odom correction.",
+    "description": "The odometry frame used by AMCL to compute the map\u2192odom correction.",
     "impact": "Must match the TF tree published by your odometry source. Changing requires a node restart.",
     "category": "frames",
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["amcl", "frames", "tf"]
+    "tags": [
+      "amcl",
+      "frames",
+      "tf"
+    ]
   },
   {
     "node": "amcl",
@@ -877,7 +1262,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["amcl", "frames", "tf"]
+    "tags": [
+      "amcl",
+      "frames",
+      "tf"
+    ]
   },
   {
     "node": "amcl",
@@ -886,20 +1275,27 @@
     "default": true,
     "range": null,
     "unit": "",
-    "description": "Whether AMCL broadcasts the map→odom TF transform.",
+    "description": "Whether AMCL broadcasts the map\u2192odom TF transform.",
     "impact": "Disable if another node (e.g., a GPS fuser) provides this transform. Having two sources causes TF conflicts.",
     "category": "frames",
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "tf", "broadcast"]
+    "tags": [
+      "amcl",
+      "tf",
+      "broadcast"
+    ]
   },
   {
     "node": "bt_navigator",
     "param": "bt_loop_duration",
     "type": "int",
     "default": 10,
-    "range": { "min": 1, "max": 100 },
+    "range": {
+      "min": 1,
+      "max": 100
+    },
     "unit": "ms",
     "description": "Tick rate of the Behavior Tree main loop in milliseconds.",
     "impact": "Lower values (faster tick) improve responsiveness but increase CPU. 10ms (100Hz) is standard.",
@@ -907,14 +1303,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["bt_navigator", "behavior_tree", "performance"]
+    "tags": [
+      "bt_navigator",
+      "behavior_tree",
+      "performance"
+    ]
   },
   {
     "node": "bt_navigator",
     "param": "default_server_timeout",
     "type": "int",
     "default": 20,
-    "range": { "min": 1, "max": 300 },
+    "range": {
+      "min": 1,
+      "max": 300
+    },
     "unit": "s",
     "description": "Default timeout for BT action server calls that do not specify their own timeout.",
     "impact": "Prevents the BT from hanging indefinitely if a server does not respond. Tune per deployment complexity.",
@@ -922,14 +1325,20 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["bt_navigator", "timeout"]
+    "tags": [
+      "bt_navigator",
+      "timeout"
+    ]
   },
   {
     "node": "bt_navigator",
     "param": "wait_for_service_timeout",
     "type": "double",
     "default": 1.0,
-    "range": { "min": 0.1, "max": 30.0 },
+    "range": {
+      "min": 0.1,
+      "max": 30.0
+    },
     "unit": "s",
     "description": "How long to wait for a ROS2 service to become available before timing out.",
     "impact": "Increase in slow-startup environments (arm-embedded hardware). Lower for fast-boot systems.",
@@ -937,7 +1346,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["bt_navigator", "timeout", "service"]
+    "tags": [
+      "bt_navigator",
+      "timeout",
+      "service"
+    ]
   },
   {
     "node": "bt_navigator",
@@ -952,7 +1365,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["bt_navigator", "frames", "tf"]
+    "tags": [
+      "bt_navigator",
+      "frames",
+      "tf"
+    ]
   },
   {
     "node": "bt_navigator",
@@ -967,7 +1384,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["bt_navigator", "frames", "tf"]
+    "tags": [
+      "bt_navigator",
+      "frames",
+      "tf"
+    ]
   },
   {
     "node": "bt_navigator",
@@ -982,14 +1403,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["bt_navigator", "groot", "debug"]
+    "tags": [
+      "bt_navigator",
+      "groot",
+      "debug"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "update_frequency",
     "type": "double",
     "default": 5.0,
-    "range": { "min": 0.5, "max": 20.0 },
+    "range": {
+      "min": 0.5,
+      "max": 20.0
+    },
     "unit": "Hz",
     "description": "Rate at which the local costmap updates from sensor data.",
     "impact": "Higher values react faster to new obstacles but increase CPU. Must be at or below the sensor publish rate.",
@@ -997,14 +1425,22 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["local_costmap", "costmap", "frequency", "performance"]
+    "tags": [
+      "local_costmap",
+      "costmap",
+      "frequency",
+      "performance"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "publish_frequency",
     "type": "double",
     "default": 2.0,
-    "range": { "min": 0.5, "max": 10.0 },
+    "range": {
+      "min": 0.5,
+      "max": 10.0
+    },
     "unit": "Hz",
     "description": "Rate at which the local costmap is published for visualization (RViz, Foxglove).",
     "impact": "Does not affect navigation performance. Lower values reduce bandwidth.",
@@ -1012,7 +1448,12 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["local_costmap", "costmap", "frequency", "visualization"]
+    "tags": [
+      "local_costmap",
+      "costmap",
+      "frequency",
+      "visualization"
+    ]
   },
   {
     "node": "local_costmap",
@@ -1027,7 +1468,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["local_costmap", "frames", "tf"]
+    "tags": [
+      "local_costmap",
+      "frames",
+      "tf"
+    ]
   },
   {
     "node": "local_costmap",
@@ -1042,7 +1487,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["local_costmap", "frames", "tf"]
+    "tags": [
+      "local_costmap",
+      "frames",
+      "tf"
+    ]
   },
   {
     "node": "local_costmap",
@@ -1057,14 +1506,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["local_costmap", "rolling_window", "geometry"]
+    "tags": [
+      "local_costmap",
+      "rolling_window",
+      "geometry"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "width",
     "type": "int",
     "default": 3,
-    "range": { "min": 1, "max": 20 },
+    "range": {
+      "min": 1,
+      "max": 20
+    },
     "unit": "m",
     "description": "Width of the local costmap in meters.",
     "impact": "Larger maps give the controller more obstacle context but use more memory and computation.",
@@ -1072,14 +1528,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["local_costmap", "size", "geometry"]
+    "tags": [
+      "local_costmap",
+      "size",
+      "geometry"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "height",
     "type": "int",
     "default": 3,
-    "range": { "min": 1, "max": 20 },
+    "range": {
+      "min": 1,
+      "max": 20
+    },
     "unit": "m",
     "description": "Height of the local costmap in meters.",
     "impact": "Larger maps give the controller more obstacle context but use more memory and computation.",
@@ -1087,14 +1550,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["local_costmap", "size", "geometry"]
+    "tags": [
+      "local_costmap",
+      "size",
+      "geometry"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "resolution",
     "type": "double",
     "default": 0.05,
-    "range": { "min": 0.01, "max": 0.5 },
+    "range": {
+      "min": 0.01,
+      "max": 0.5
+    },
     "unit": "m/cell",
     "description": "Cell size of the local costmap grid.",
     "impact": "Finer resolution (smaller value) captures narrow obstacles but increases computation. Should match the lidar's angular resolution.",
@@ -1102,7 +1572,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["local_costmap", "resolution", "geometry"]
+    "tags": [
+      "local_costmap",
+      "resolution",
+      "geometry"
+    ]
   },
   {
     "node": "local_costmap",
@@ -1117,14 +1591,22 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["local_costmap", "footprint", "collision", "geometry"]
+    "tags": [
+      "local_costmap",
+      "footprint",
+      "collision",
+      "geometry"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "robot_radius",
     "type": "double",
     "default": 0.3,
-    "range": { "min": 0.05, "max": 2.0 },
+    "range": {
+      "min": 0.05,
+      "max": 2.0
+    },
     "unit": "m",
     "description": "Circular approximation of the robot radius for costmap collision checks (used when footprint is not set).",
     "impact": "Set to the robot's actual radius including payload. Larger values add safety margin but restrict narrow passage navigation.",
@@ -1132,13 +1614,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["local_costmap", "robot_radius", "collision", "geometry"]
+    "tags": [
+      "local_costmap",
+      "robot_radius",
+      "collision",
+      "geometry"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "plugins",
     "type": "string_array",
-    "default": ["voxel_layer", "inflation_layer"],
+    "default": [
+      "voxel_layer",
+      "inflation_layer"
+    ],
     "range": null,
     "unit": "",
     "description": "Ordered list of costmap layer plugins. Layers are stacked in order.",
@@ -1147,14 +1637,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["local_costmap", "plugins", "layers"]
+    "tags": [
+      "local_costmap",
+      "plugins",
+      "layers"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "inflation_layer.inflation_radius",
     "type": "double",
     "default": 0.55,
-    "range": { "min": 0.1, "max": 3.0 },
+    "range": {
+      "min": 0.1,
+      "max": 3.0
+    },
     "unit": "m",
     "description": "Radius around obstacles that gets inflated with a cost gradient.",
     "impact": "Key safety parameter. Must be >= robot_radius + clearance. Too small causes collisions; too large blocks narrow corridors.",
@@ -1162,14 +1659,21 @@
     "plugin_specific": true,
     "plugin": "InflationLayer",
     "hot_reload": true,
-    "tags": ["local_costmap", "inflation", "safety"]
+    "tags": [
+      "local_costmap",
+      "inflation",
+      "safety"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "inflation_layer.cost_scaling_factor",
     "type": "double",
     "default": 3.0,
-    "range": { "min": 0.1, "max": 20.0 },
+    "range": {
+      "min": 0.1,
+      "max": 20.0
+    },
     "unit": "",
     "description": "Exponential decay rate for the inflation cost gradient away from obstacles.",
     "impact": "Higher values create steeper drop-off (robot prefers paths further from obstacles). Lower values create a gentler gradient.",
@@ -1177,7 +1681,12 @@
     "plugin_specific": true,
     "plugin": "InflationLayer",
     "hot_reload": true,
-    "tags": ["local_costmap", "inflation", "safety", "cost"]
+    "tags": [
+      "local_costmap",
+      "inflation",
+      "safety",
+      "cost"
+    ]
   },
   {
     "node": "local_costmap",
@@ -1192,14 +1701,20 @@
     "plugin_specific": true,
     "plugin": "ObstacleLayer",
     "hot_reload": true,
-    "tags": ["local_costmap", "obstacle_layer"]
+    "tags": [
+      "local_costmap",
+      "obstacle_layer"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "obstacle_layer.obstacle_max_range",
     "type": "double",
     "default": 2.5,
-    "range": { "min": 0.5, "max": 20.0 },
+    "range": {
+      "min": 0.5,
+      "max": 20.0
+    },
     "unit": "m",
     "description": "Maximum range at which new obstacles are inserted into the obstacle layer.",
     "impact": "Larger values populate the costmap with distant obstacles. Too large: cluttered costmap from far noise. Too small: late obstacle detection.",
@@ -1207,14 +1722,21 @@
     "plugin_specific": true,
     "plugin": "ObstacleLayer",
     "hot_reload": true,
-    "tags": ["local_costmap", "obstacle_layer", "range"]
+    "tags": [
+      "local_costmap",
+      "obstacle_layer",
+      "range"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "obstacle_layer.obstacle_min_range",
     "type": "double",
     "default": 0.0,
-    "range": { "min": 0.0, "max": 2.0 },
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
     "unit": "m",
     "description": "Minimum range for obstacle insertion. Readings closer than this are ignored.",
     "impact": "Filters out returns from the robot body. Set equal to the lidar mount clearance from the robot's edge.",
@@ -1222,14 +1744,21 @@
     "plugin_specific": true,
     "plugin": "ObstacleLayer",
     "hot_reload": true,
-    "tags": ["local_costmap", "obstacle_layer", "range"]
+    "tags": [
+      "local_costmap",
+      "obstacle_layer",
+      "range"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "obstacle_layer.raytrace_max_range",
     "type": "double",
     "default": 3.0,
-    "range": { "min": 0.5, "max": 20.0 },
+    "range": {
+      "min": 0.5,
+      "max": 20.0
+    },
     "unit": "m",
     "description": "Maximum range for ray-tracing free space through the obstacle layer.",
     "impact": "Longer ray traces clear more space in front of the robot as it moves, removing stale obstacles faster.",
@@ -1237,7 +1766,11 @@
     "plugin_specific": true,
     "plugin": "ObstacleLayer",
     "hot_reload": true,
-    "tags": ["local_costmap", "obstacle_layer", "raytrace"]
+    "tags": [
+      "local_costmap",
+      "obstacle_layer",
+      "raytrace"
+    ]
   },
   {
     "node": "local_costmap",
@@ -1252,14 +1785,20 @@
     "plugin_specific": true,
     "plugin": "VoxelLayer",
     "hot_reload": true,
-    "tags": ["local_costmap", "voxel_layer"]
+    "tags": [
+      "local_costmap",
+      "voxel_layer"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "voxel_layer.z_voxels",
     "type": "int",
     "default": 10,
-    "range": { "min": 2, "max": 40 },
+    "range": {
+      "min": 2,
+      "max": 40
+    },
     "unit": "",
     "description": "Number of vertical voxel layers in the 3D voxel grid.",
     "impact": "More layers capture taller obstacles (overhead beams) but increase memory. Tune to the sensor's vertical FOV.",
@@ -1267,14 +1806,21 @@
     "plugin_specific": true,
     "plugin": "VoxelLayer",
     "hot_reload": false,
-    "tags": ["local_costmap", "voxel_layer", "3d"]
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "3d"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "voxel_layer.z_resolution",
     "type": "double",
     "default": 0.2,
-    "range": { "min": 0.05, "max": 1.0 },
+    "range": {
+      "min": 0.05,
+      "max": 1.0
+    },
     "unit": "m",
     "description": "Height of each voxel in the z dimension.",
     "impact": "Smaller values detect thinner horizontal obstacles (low beams, thresholds) but increase computation.",
@@ -1282,14 +1828,22 @@
     "plugin_specific": true,
     "plugin": "VoxelLayer",
     "hot_reload": false,
-    "tags": ["local_costmap", "voxel_layer", "3d", "resolution"]
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "3d",
+      "resolution"
+    ]
   },
   {
     "node": "global_costmap",
     "param": "update_frequency",
     "type": "double",
     "default": 1.0,
-    "range": { "min": 0.1, "max": 10.0 },
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
     "unit": "Hz",
     "description": "Rate at which the global costmap updates. Usually slower than local since it covers the whole map.",
     "impact": "Lower values reduce CPU for large maps. Must be at least as fast as the planning rate.",
@@ -1297,14 +1851,22 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["global_costmap", "costmap", "frequency", "performance"]
+    "tags": [
+      "global_costmap",
+      "costmap",
+      "frequency",
+      "performance"
+    ]
   },
   {
     "node": "global_costmap",
     "param": "publish_frequency",
     "type": "double",
     "default": 1.0,
-    "range": { "min": 0.1, "max": 5.0 },
+    "range": {
+      "min": 0.1,
+      "max": 5.0
+    },
     "unit": "Hz",
     "description": "Rate at which the global costmap is published for visualization.",
     "impact": "Lower values reduce bandwidth on large maps. Does not affect planning.",
@@ -1312,7 +1874,12 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["global_costmap", "costmap", "frequency", "visualization"]
+    "tags": [
+      "global_costmap",
+      "costmap",
+      "frequency",
+      "visualization"
+    ]
   },
   {
     "node": "global_costmap",
@@ -1327,7 +1894,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["global_costmap", "frames", "tf"]
+    "tags": [
+      "global_costmap",
+      "frames",
+      "tf"
+    ]
   },
   {
     "node": "global_costmap",
@@ -1342,14 +1913,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["global_costmap", "frames", "tf"]
+    "tags": [
+      "global_costmap",
+      "frames",
+      "tf"
+    ]
   },
   {
     "node": "global_costmap",
     "param": "resolution",
     "type": "double",
     "default": 0.05,
-    "range": { "min": 0.01, "max": 0.5 },
+    "range": {
+      "min": 0.01,
+      "max": 0.5
+    },
     "unit": "m/cell",
     "description": "Cell size of the global costmap grid. Should match or be a multiple of the map server resolution.",
     "impact": "Finer resolution enables more precise path planning but increases memory. For large environments, 0.1m may be appropriate.",
@@ -1357,13 +1935,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["global_costmap", "resolution", "geometry"]
+    "tags": [
+      "global_costmap",
+      "resolution",
+      "geometry"
+    ]
   },
   {
     "node": "global_costmap",
     "param": "plugins",
     "type": "string_array",
-    "default": ["static_layer", "obstacle_layer", "inflation_layer"],
+    "default": [
+      "static_layer",
+      "obstacle_layer",
+      "inflation_layer"
+    ],
     "range": null,
     "unit": "",
     "description": "Ordered list of global costmap layer plugins.",
@@ -1372,7 +1958,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["global_costmap", "plugins", "layers"]
+    "tags": [
+      "global_costmap",
+      "plugins",
+      "layers"
+    ]
   },
   {
     "node": "global_costmap",
@@ -1387,7 +1977,10 @@
     "plugin_specific": true,
     "plugin": "StaticLayer",
     "hot_reload": true,
-    "tags": ["global_costmap", "static_layer"]
+    "tags": [
+      "global_costmap",
+      "static_layer"
+    ]
   },
   {
     "node": "global_costmap",
@@ -1402,14 +1995,21 @@
     "plugin_specific": true,
     "plugin": "StaticLayer",
     "hot_reload": false,
-    "tags": ["global_costmap", "static_layer", "qos"]
+    "tags": [
+      "global_costmap",
+      "static_layer",
+      "qos"
+    ]
   },
   {
     "node": "global_costmap",
     "param": "inflation_layer.inflation_radius",
     "type": "double",
     "default": 0.55,
-    "range": { "min": 0.1, "max": 3.0 },
+    "range": {
+      "min": 0.1,
+      "max": 3.0
+    },
     "unit": "m",
     "description": "Radius around obstacles inflated in the global costmap.",
     "impact": "Key safety parameter for path planning. Controls how close to walls and obstacles the global path can go.",
@@ -1417,14 +2017,21 @@
     "plugin_specific": true,
     "plugin": "InflationLayer",
     "hot_reload": true,
-    "tags": ["global_costmap", "inflation", "safety"]
+    "tags": [
+      "global_costmap",
+      "inflation",
+      "safety"
+    ]
   },
   {
     "node": "global_costmap",
     "param": "inflation_layer.cost_scaling_factor",
     "type": "double",
     "default": 3.0,
-    "range": { "min": 0.1, "max": 20.0 },
+    "range": {
+      "min": 0.1,
+      "max": 20.0
+    },
     "unit": "",
     "description": "Exponential cost decay away from obstacles in the global costmap inflation layer.",
     "impact": "Higher values keep the planner further from walls. Must be consistent with the local costmap for smooth handoff.",
@@ -1432,13 +2039,20 @@
     "plugin_specific": true,
     "plugin": "InflationLayer",
     "hot_reload": true,
-    "tags": ["global_costmap", "inflation", "safety", "cost"]
+    "tags": [
+      "global_costmap",
+      "inflation",
+      "safety",
+      "cost"
+    ]
   },
   {
     "node": "smoother_server",
     "param": "smoother_plugins",
     "type": "string_array",
-    "default": ["simple_smoother"],
+    "default": [
+      "simple_smoother"
+    ],
     "range": null,
     "unit": "",
     "description": "List of path smoother plugin names.",
@@ -1447,14 +2061,20 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["smoother", "plugin"]
+    "tags": [
+      "smoother",
+      "plugin"
+    ]
   },
   {
     "node": "smoother_server",
     "param": "simple_smoother.tolerance",
     "type": "double",
-    "default": 1.0e-10,
-    "range": { "min": 1.0e-15, "max": 1.0e-3 },
+    "default": 1e-10,
+    "range": {
+      "min": 1e-15,
+      "max": 0.001
+    },
     "unit": "",
     "description": "Convergence tolerance for the simple smoother. Smaller values run more iterations.",
     "impact": "Very small values produce smoother paths but increase CPU. The default is already very tight.",
@@ -1462,14 +2082,21 @@
     "plugin_specific": true,
     "plugin": "SimpleSmoother",
     "hot_reload": true,
-    "tags": ["smoother", "simple_smoother", "tolerance"]
+    "tags": [
+      "smoother",
+      "simple_smoother",
+      "tolerance"
+    ]
   },
   {
     "node": "smoother_server",
     "param": "simple_smoother.max_its",
     "type": "int",
     "default": 1000,
-    "range": { "min": 10, "max": 100000 },
+    "range": {
+      "min": 10,
+      "max": 100000
+    },
     "unit": "",
     "description": "Maximum smoothing iterations per path.",
     "impact": "Caps computation time. Paths that don't converge within this limit use the best result so far.",
@@ -1477,14 +2104,22 @@
     "plugin_specific": true,
     "plugin": "SimpleSmoother",
     "hot_reload": true,
-    "tags": ["smoother", "simple_smoother", "iterations", "performance"]
+    "tags": [
+      "smoother",
+      "simple_smoother",
+      "iterations",
+      "performance"
+    ]
   },
   {
     "node": "smoother_server",
     "param": "simple_smoother.w_smooth",
     "type": "double",
     "default": 0.3,
-    "range": { "min": 0.0, "max": 1.0 },
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
     "unit": "",
     "description": "Weight for the smoothness cost (pulls waypoints toward their neighbors).",
     "impact": "Higher values produce smoother but shorter paths that may deviate from the original. Must balance with w_data.",
@@ -1492,28 +2127,44 @@
     "plugin_specific": true,
     "plugin": "SimpleSmoother",
     "hot_reload": true,
-    "tags": ["smoother", "simple_smoother", "weights"]
+    "tags": [
+      "smoother",
+      "simple_smoother",
+      "weights"
+    ]
   },
   {
     "node": "smoother_server",
     "param": "simple_smoother.w_data",
     "type": "double",
     "default": 0.2,
-    "range": { "min": 0.0, "max": 1.0 },
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
     "unit": "",
-    "description": "Weight for the data (path fidelity) cost — keeps waypoints close to the original path.",
+    "description": "Weight for the data (path fidelity) cost \u2014 keeps waypoints close to the original path.",
     "impact": "Higher values preserve the original path shape more faithfully. Balance with w_smooth.",
     "category": "planning",
     "plugin_specific": true,
     "plugin": "SimpleSmoother",
     "hot_reload": true,
-    "tags": ["smoother", "simple_smoother", "weights"]
+    "tags": [
+      "smoother",
+      "simple_smoother",
+      "weights"
+    ]
   },
   {
     "node": "behavior_server",
     "param": "behavior_plugins",
     "type": "string_array",
-    "default": ["spin", "backup", "drive_on_heading", "wait"],
+    "default": [
+      "spin",
+      "backup",
+      "drive_on_heading",
+      "wait"
+    ],
     "range": null,
     "unit": "",
     "description": "List of recovery behavior plugin names available to the BT navigator.",
@@ -1522,14 +2173,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["behavior_server", "recovery", "plugin"]
+    "tags": [
+      "behavior_server",
+      "recovery",
+      "plugin"
+    ]
   },
   {
     "node": "behavior_server",
     "param": "spin.simulate_ahead_time",
     "type": "double",
     "default": 2.0,
-    "range": { "min": 0.5, "max": 10.0 },
+    "range": {
+      "min": 0.5,
+      "max": 10.0
+    },
     "unit": "s",
     "description": "How far ahead in time the spin behavior simulates its rotation to check for collisions.",
     "impact": "Longer look-ahead prevents spinning into obstacles but may abort valid recovery spins.",
@@ -1537,14 +2195,22 @@
     "plugin_specific": true,
     "plugin": "Spin",
     "hot_reload": true,
-    "tags": ["behavior_server", "spin", "simulation", "safety"]
+    "tags": [
+      "behavior_server",
+      "spin",
+      "simulation",
+      "safety"
+    ]
   },
   {
     "node": "behavior_server",
     "param": "backup.simulate_ahead_time",
     "type": "double",
     "default": 2.0,
-    "range": { "min": 0.5, "max": 10.0 },
+    "range": {
+      "min": 0.5,
+      "max": 10.0
+    },
     "unit": "s",
     "description": "How far ahead in time the backup behavior simulates its reverse motion for collision checking.",
     "impact": "Prevents backing into unseen obstacles. Too conservative and valid backups are aborted.",
@@ -1552,7 +2218,12 @@
     "plugin_specific": true,
     "plugin": "BackUp",
     "hot_reload": true,
-    "tags": ["behavior_server", "backup", "simulation", "safety"]
+    "tags": [
+      "behavior_server",
+      "backup",
+      "simulation",
+      "safety"
+    ]
   },
   {
     "node": "behavior_server",
@@ -1567,7 +2238,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["behavior_server", "frames", "tf"]
+    "tags": [
+      "behavior_server",
+      "frames",
+      "tf"
+    ]
   },
   {
     "node": "behavior_server",
@@ -1582,14 +2257,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["behavior_server", "frames", "tf"]
+    "tags": [
+      "behavior_server",
+      "frames",
+      "tf"
+    ]
   },
   {
     "node": "velocity_smoother",
     "param": "smoothing_frequency",
     "type": "double",
     "default": 20.0,
-    "range": { "min": 1.0, "max": 100.0 },
+    "range": {
+      "min": 1.0,
+      "max": 100.0
+    },
     "unit": "Hz",
     "description": "Rate at which velocity commands are smoothed and republished.",
     "impact": "Higher values produce more responsive output. Must be >= the controller frequency to avoid introducing latency.",
@@ -1597,7 +2279,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["velocity_smoother", "frequency", "performance"]
+    "tags": [
+      "velocity_smoother",
+      "frequency",
+      "performance"
+    ]
   },
   {
     "node": "velocity_smoother",
@@ -1612,14 +2298,22 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["velocity_smoother", "scaling"]
+    "tags": [
+      "velocity_smoother",
+      "scaling"
+    ]
   },
   {
     "node": "velocity_smoother",
     "param": "feedback",
     "type": "string",
     "default": "OPEN_LOOP",
-    "range": { "options": ["OPEN_LOOP", "CLOSED_LOOP"] },
+    "range": {
+      "options": [
+        "OPEN_LOOP",
+        "CLOSED_LOOP"
+      ]
+    },
     "unit": "",
     "description": "Velocity feedback mode. OPEN_LOOP uses commanded velocities; CLOSED_LOOP uses odometry.",
     "impact": "CLOSED_LOOP is more accurate for robots with slippage but requires reliable odometry. OPEN_LOOP is simpler and works without odom feedback.",
@@ -1627,7 +2321,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["velocity_smoother", "feedback", "odometry"]
+    "tags": [
+      "velocity_smoother",
+      "feedback",
+      "odometry"
+    ]
   },
   {
     "node": "velocity_smoother",
@@ -1642,7 +2340,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["velocity_smoother", "velocity", "limits"]
+    "tags": [
+      "velocity_smoother",
+      "velocity",
+      "limits"
+    ]
   },
   {
     "node": "velocity_smoother",
@@ -1657,7 +2359,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["velocity_smoother", "velocity", "limits"]
+    "tags": [
+      "velocity_smoother",
+      "velocity",
+      "limits"
+    ]
   },
   {
     "node": "velocity_smoother",
@@ -1665,14 +2371,18 @@
     "type": "string",
     "default": "[2.5, 0.0, 3.2]",
     "range": null,
-    "unit": "m/s², m/s², rad/s²",
+    "unit": "m/s\u00b2, m/s\u00b2, rad/s\u00b2",
     "description": "Maximum [x, y, theta] acceleration limits.",
     "impact": "Must match the robot's physical limits. Too high: wheel slip or tip-over. Too low: sluggish response.",
     "category": "dynamics",
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["velocity_smoother", "acceleration", "limits"]
+    "tags": [
+      "velocity_smoother",
+      "acceleration",
+      "limits"
+    ]
   },
   {
     "node": "velocity_smoother",
@@ -1680,14 +2390,18 @@
     "type": "string",
     "default": "[-2.5, 0.0, -3.2]",
     "range": null,
-    "unit": "m/s², m/s², rad/s²",
+    "unit": "m/s\u00b2, m/s\u00b2, rad/s\u00b2",
     "description": "Maximum [x, y, theta] deceleration limits (negative values).",
     "impact": "Controls stopping distance. Conservative (small magnitude) values produce gentle stops. Aggressive values stop fast but may tip cargo.",
     "category": "dynamics",
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["velocity_smoother", "deceleration", "limits"]
+    "tags": [
+      "velocity_smoother",
+      "deceleration",
+      "limits"
+    ]
   },
   {
     "node": "velocity_smoother",
@@ -1702,14 +2416,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["velocity_smoother", "deadband", "velocity"]
+    "tags": [
+      "velocity_smoother",
+      "deadband",
+      "velocity"
+    ]
   },
   {
     "node": "velocity_smoother",
     "param": "velocity_timeout",
     "type": "double",
     "default": 1.0,
-    "range": { "min": 0.1, "max": 5.0 },
+    "range": {
+      "min": 0.1,
+      "max": 5.0
+    },
     "unit": "s",
     "description": "Time after which a velocity command is considered stale and zeroed.",
     "impact": "Safety feature: robot stops if no new commands arrive. Lower values are safer but may cause stops during momentary message drops.",
@@ -1717,14 +2438,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["velocity_smoother", "timeout", "safety"]
+    "tags": [
+      "velocity_smoother",
+      "timeout",
+      "safety"
+    ]
   },
   {
     "node": "waypoint_follower",
     "param": "loop_rate",
     "type": "int",
     "default": 20,
-    "range": { "min": 1, "max": 100 },
+    "range": {
+      "min": 1,
+      "max": 100
+    },
     "unit": "Hz",
     "description": "Rate at which the waypoint follower checks for goal completion.",
     "impact": "Higher values detect goal completion sooner. Rarely needs tuning.",
@@ -1732,7 +2460,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["waypoint_follower", "frequency", "performance"]
+    "tags": [
+      "waypoint_follower",
+      "frequency",
+      "performance"
+    ]
   },
   {
     "node": "waypoint_follower",
@@ -1747,7 +2479,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["waypoint_follower", "failure", "behavior"]
+    "tags": [
+      "waypoint_follower",
+      "failure",
+      "behavior"
+    ]
   },
   {
     "node": "waypoint_follower",
@@ -1762,22 +2498,33 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["waypoint_follower", "plugin", "task"]
+    "tags": [
+      "waypoint_follower",
+      "plugin",
+      "task"
+    ]
   },
   {
     "node": "waypoint_follower",
-    "param": "wait_at_waypoint.wait_duration",
-    "type": "double",
-    "default": 0.0,
-    "range": { "min": 0.0, "max": 60.0 },
-    "unit": "s",
-    "description": "Time to wait at each waypoint before proceeding to the next.",
+    "param": "wait_at_waypoint.waypoint_pause_duration",
+    "type": "int",
+    "default": 0,
+    "range": {
+      "min": 0,
+      "max": 60000
+    },
+    "unit": "ms",
+    "description": "Time to pause at each waypoint before proceeding to the next, in milliseconds.",
     "impact": "Non-zero enables dwell time at waypoints. Useful for loading/unloading stations.",
     "category": "behavior",
     "plugin_specific": true,
     "plugin": "WaitAtWaypoint",
     "hot_reload": true,
-    "tags": ["waypoint_follower", "wait", "dwell"]
+    "tags": [
+      "waypoint_follower",
+      "wait",
+      "dwell"
+    ]
   },
   {
     "node": "map_server",
@@ -1792,7 +2539,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["map_server", "map", "file"]
+    "tags": [
+      "map_server",
+      "map",
+      "file"
+    ]
   },
   {
     "node": "map_server",
@@ -1807,7 +2558,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["map_server", "topic", "map"]
+    "tags": [
+      "map_server",
+      "topic",
+      "map"
+    ]
   },
   {
     "node": "map_server",
@@ -1822,14 +2577,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["map_server", "frames", "tf"]
+    "tags": [
+      "map_server",
+      "frames",
+      "tf"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.max_robot_pose_search_dist",
     "type": "double",
     "default": 1.5707963267948966,
-    "range": { "min": 0.1, "max": 10.0 },
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
     "unit": "m",
     "description": "Search distance along the path to find the closest point to the robot's current pose.",
     "impact": "Larger values handle more path deviations but increase CPU. Set to half the robot's typical deviation from the path.",
@@ -1837,7 +2599,11 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "path_tracking"]
+    "tags": [
+      "controller",
+      "rpp",
+      "path_tracking"
+    ]
   },
   {
     "node": "controller_server",
@@ -1852,7 +2618,12 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "goal", "curvature"]
+    "tags": [
+      "controller",
+      "rpp",
+      "goal",
+      "curvature"
+    ]
   },
   {
     "node": "amcl",
@@ -1867,7 +2638,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["amcl", "initialization", "pose"]
+    "tags": [
+      "amcl",
+      "initialization",
+      "pose"
+    ]
   },
   {
     "node": "amcl",
@@ -1882,7 +2657,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["amcl", "initialization", "pose"]
+    "tags": [
+      "amcl",
+      "initialization",
+      "pose"
+    ]
   },
   {
     "node": "amcl",
@@ -1897,14 +2676,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["amcl", "initialization", "pose"]
+    "tags": [
+      "amcl",
+      "initialization",
+      "pose"
+    ]
   },
   {
     "node": "amcl",
     "param": "initial_pose.yaw",
     "type": "double",
     "default": 0.0,
-    "range": { "min": -3.14159, "max": 3.14159 },
+    "range": {
+      "min": -3.14159,
+      "max": 3.14159
+    },
     "unit": "rad",
     "description": "Initial heading estimate in the map frame.",
     "impact": "Wrong initial heading is the most common cause of AMCL failing to converge. Use a compass or fiducial to calibrate.",
@@ -1912,7 +2698,12 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["amcl", "initialization", "pose", "heading"]
+    "tags": [
+      "amcl",
+      "initialization",
+      "pose",
+      "heading"
+    ]
   },
   {
     "node": "planner_server",
@@ -1927,13 +2718,21 @@
     "plugin_specific": true,
     "plugin": "NavfnPlanner",
     "hot_reload": true,
-    "tags": ["planner", "navfn", "goal", "orientation"]
+    "tags": [
+      "planner",
+      "navfn",
+      "goal",
+      "orientation"
+    ]
   },
   {
     "node": "bt_navigator",
     "param": "navigators",
     "type": "string_array",
-    "default": ["navigate_to_pose", "navigate_through_poses"],
+    "default": [
+      "navigate_to_pose",
+      "navigate_through_poses"
+    ],
     "range": null,
     "unit": "",
     "description": "List of navigator plugins loaded by the BT navigator.",
@@ -1942,7 +2741,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["bt_navigator", "plugin", "navigator"]
+    "tags": [
+      "bt_navigator",
+      "plugin",
+      "navigator"
+    ]
   },
   {
     "node": "bt_navigator",
@@ -1957,7 +2760,11 @@
     "plugin_specific": true,
     "plugin": "navigate_to_pose",
     "hot_reload": false,
-    "tags": ["bt_navigator", "behavior_tree", "navigate_to_pose"]
+    "tags": [
+      "bt_navigator",
+      "behavior_tree",
+      "navigate_to_pose"
+    ]
   },
   {
     "node": "controller_server",
@@ -1972,14 +2779,22 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "collision", "safety"]
+    "tags": [
+      "controller",
+      "rpp",
+      "collision",
+      "safety"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.max_allowed_time_to_collision_up_to_carrot",
     "type": "double",
     "default": 1.0,
-    "range": { "min": 0.1, "max": 10.0 },
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
     "unit": "s",
     "description": "Maximum time-to-collision allowed when projecting the robot forward to the lookahead carrot point.",
     "impact": "Lower values stop the robot earlier before hitting obstacles. Higher values allow passing closer to obstacles.",
@@ -1987,7 +2802,12 @@
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "collision", "safety"]
+    "tags": [
+      "controller",
+      "rpp",
+      "collision",
+      "safety"
+    ]
   },
   {
     "node": "smoother_server",
@@ -2002,7 +2822,11 @@
     "plugin_specific": true,
     "plugin": "SimpleSmoother",
     "hot_reload": true,
-    "tags": ["smoother", "simple_smoother", "refinement"]
+    "tags": [
+      "smoother",
+      "simple_smoother",
+      "refinement"
+    ]
   },
   {
     "node": "behavior_server",
@@ -2017,14 +2841,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["behavior_server", "frames", "tf"]
+    "tags": [
+      "behavior_server",
+      "frames",
+      "tf"
+    ]
   },
   {
     "node": "behavior_server",
     "param": "cycle_frequency",
     "type": "double",
     "default": 10.0,
-    "range": { "min": 1.0, "max": 50.0 },
+    "range": {
+      "min": 1.0,
+      "max": 50.0
+    },
     "unit": "Hz",
     "description": "Rate at which the behavior server checks collision and updates recovery behavior state.",
     "impact": "Higher values improve collision detection during recovery but increase CPU.",
@@ -2032,7 +2863,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["behavior_server", "frequency", "performance"]
+    "tags": [
+      "behavior_server",
+      "frequency",
+      "performance"
+    ]
   },
   {
     "node": "velocity_smoother",
@@ -2047,14 +2882,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": false,
-    "tags": ["velocity_smoother", "odom", "topic"]
+    "tags": [
+      "velocity_smoother",
+      "odom",
+      "topic"
+    ]
   },
   {
     "node": "velocity_smoother",
     "param": "odom_duration",
     "type": "double",
     "default": 0.1,
-    "range": { "min": 0.01, "max": 1.0 },
+    "range": {
+      "min": 0.01,
+      "max": 1.0
+    },
     "unit": "s",
     "description": "Time window for smoothing odometry data in CLOSED_LOOP mode.",
     "impact": "Larger values smooth noisy odom but add latency. Smaller values are more responsive.",
@@ -2062,7 +2904,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["velocity_smoother", "odom", "smoothing"]
+    "tags": [
+      "velocity_smoother",
+      "odom",
+      "smoothing"
+    ]
   },
   {
     "node": "local_costmap",
@@ -2077,7 +2923,11 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["local_costmap", "publish", "performance"]
+    "tags": [
+      "local_costmap",
+      "publish",
+      "performance"
+    ]
   },
   {
     "node": "global_costmap",
@@ -2092,29 +2942,44 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["global_costmap", "publish", "performance"]
+    "tags": [
+      "global_costmap",
+      "publish",
+      "performance"
+    ]
   },
   {
     "node": "controller_server",
     "param": "FollowPath.transform_tolerance",
     "type": "double",
     "default": 0.1,
-    "range": { "min": 0.0, "max": 1.0 },
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
     "unit": "s",
-    "description": "TF transform timestamp tolerance — how old a transform can be and still be accepted.",
+    "description": "TF transform timestamp tolerance \u2014 how old a transform can be and still be accepted.",
     "impact": "Increase if TF latency warnings appear (slow systems). Too large and stale transforms cause navigation drift.",
     "category": "connectivity",
     "plugin_specific": true,
     "plugin": "RegulatedPurePursuitController",
     "hot_reload": true,
-    "tags": ["controller", "rpp", "tf", "latency"]
+    "tags": [
+      "controller",
+      "rpp",
+      "tf",
+      "latency"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "transform_tolerance",
     "type": "double",
     "default": 0.3,
-    "range": { "min": 0.0, "max": 1.0 },
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
     "unit": "s",
     "description": "Maximum age of TF transforms accepted by the local costmap.",
     "impact": "Increase on slow hardware or when tf_static latency causes frequent warnings.",
@@ -2122,14 +2987,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["local_costmap", "tf", "latency"]
+    "tags": [
+      "local_costmap",
+      "tf",
+      "latency"
+    ]
   },
   {
     "node": "global_costmap",
     "param": "transform_tolerance",
     "type": "double",
     "default": 0.3,
-    "range": { "min": 0.0, "max": 1.0 },
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
     "unit": "s",
     "description": "Maximum age of TF transforms accepted by the global costmap.",
     "impact": "Increase on slow hardware. The global costmap updates rarely so this rarely causes issues.",
@@ -2137,14 +3009,21 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["global_costmap", "tf", "latency"]
+    "tags": [
+      "global_costmap",
+      "tf",
+      "latency"
+    ]
   },
   {
     "node": "amcl",
     "param": "transform_tolerance",
     "type": "double",
     "default": 1.0,
-    "range": { "min": 0.0, "max": 5.0 },
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
     "unit": "s",
     "description": "Maximum age of TF transforms accepted by AMCL.",
     "impact": "AMCL uses a larger tolerance by default because it processes asynchronously. Reduce if localization lags behind true pose.",
@@ -2152,11 +3031,15 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "tf", "latency"]
+    "tags": [
+      "amcl",
+      "tf",
+      "latency"
+    ]
   },
   {
     "node": "controller_server",
-    "param": "goal_checker.stateful",
+    "param": "general_goal_checker.stateful",
     "type": "bool",
     "default": true,
     "range": null,
@@ -2167,44 +3050,67 @@
     "plugin_specific": true,
     "plugin": "SimpleGoalChecker",
     "hot_reload": true,
-    "tags": ["controller", "goal_checker", "state"]
+    "tags": [
+      "controller",
+      "goal_checker",
+      "state"
+    ]
   },
   {
     "node": "controller_server",
-    "param": "goal_checker.xy_goal_tolerance",
+    "param": "general_goal_checker.xy_goal_tolerance",
     "type": "double",
     "default": 0.25,
-    "range": { "min": 0.01, "max": 1.0 },
+    "range": {
+      "min": 0.01,
+      "max": 1.0
+    },
     "unit": "m",
-    "description": "Positional tolerance for goal achievement — how close the robot must be to the goal XY.",
+    "description": "Positional tolerance for goal achievement \u2014 how close the robot must be to the goal XY.",
     "impact": "Smaller values require precise stopping. Larger values declare success sooner. Must be > AMCL localization noise.",
     "category": "behavior",
     "plugin_specific": true,
     "plugin": "SimpleGoalChecker",
     "hot_reload": true,
-    "tags": ["controller", "goal_checker", "tolerance", "goal"]
+    "tags": [
+      "controller",
+      "goal_checker",
+      "tolerance",
+      "goal"
+    ]
   },
   {
     "node": "controller_server",
-    "param": "goal_checker.yaw_goal_tolerance",
+    "param": "general_goal_checker.yaw_goal_tolerance",
     "type": "double",
     "default": 0.25,
-    "range": { "min": 0.01, "max": 1.57 },
+    "range": {
+      "min": 0.01,
+      "max": 1.57
+    },
     "unit": "rad",
-    "description": "Heading tolerance for goal achievement — how close the robot's heading must be to the goal yaw.",
-    "impact": "~14° default. Tighter tolerances improve docking accuracy but may cause spinning at the goal.",
+    "description": "Heading tolerance for goal achievement \u2014 how close the robot's heading must be to the goal yaw.",
+    "impact": "~14\u00b0 default. Tighter tolerances improve docking accuracy but may cause spinning at the goal.",
     "category": "behavior",
     "plugin_specific": true,
     "plugin": "SimpleGoalChecker",
     "hot_reload": true,
-    "tags": ["controller", "goal_checker", "tolerance", "heading"]
+    "tags": [
+      "controller",
+      "goal_checker",
+      "tolerance",
+      "heading"
+    ]
   },
   {
     "node": "controller_server",
     "param": "progress_checker.required_movement_radius",
     "type": "double",
     "default": 0.5,
-    "range": { "min": 0.05, "max": 2.0 },
+    "range": {
+      "min": 0.05,
+      "max": 2.0
+    },
     "unit": "m",
     "description": "Minimum distance the robot must travel within the time window to be considered making progress.",
     "impact": "Smaller values detect stuck situations faster. Too small and a slow robot in a narrow corridor appears stuck.",
@@ -2212,14 +3118,21 @@
     "plugin_specific": true,
     "plugin": "SimpleProgressChecker",
     "hot_reload": true,
-    "tags": ["controller", "progress_checker", "stuck"]
+    "tags": [
+      "controller",
+      "progress_checker",
+      "stuck"
+    ]
   },
   {
     "node": "controller_server",
     "param": "progress_checker.movement_time_allowance",
     "type": "double",
     "default": 10.0,
-    "range": { "min": 1.0, "max": 60.0 },
+    "range": {
+      "min": 1.0,
+      "max": 60.0
+    },
     "unit": "s",
     "description": "Time window over which required_movement_radius must be achieved.",
     "impact": "Longer windows allow slow passages (tight corridors). Shorter windows cause earlier recovery triggering.",
@@ -2227,14 +3140,22 @@
     "plugin_specific": true,
     "plugin": "SimpleProgressChecker",
     "hot_reload": true,
-    "tags": ["controller", "progress_checker", "stuck", "time"]
+    "tags": [
+      "controller",
+      "progress_checker",
+      "stuck",
+      "time"
+    ]
   },
   {
     "node": "amcl",
     "param": "pf_err",
     "type": "double",
     "default": 0.05,
-    "range": { "min": 0.001, "max": 0.5 },
+    "range": {
+      "min": 0.001,
+      "max": 0.5
+    },
     "unit": "",
     "description": "KLD sampling: maximum allowed error between the true and estimated distributions.",
     "impact": "Smaller values require more particles for the same confidence level. Increase to reduce CPU at the cost of localization accuracy.",
@@ -2242,14 +3163,22 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "kld", "particles", "sampling"]
+    "tags": [
+      "amcl",
+      "kld",
+      "particles",
+      "sampling"
+    ]
   },
   {
     "node": "amcl",
     "param": "pf_z",
     "type": "double",
     "default": 0.99,
-    "range": { "min": 0.5, "max": 0.9999 },
+    "range": {
+      "min": 0.5,
+      "max": 0.9999
+    },
     "unit": "",
     "description": "KLD sampling: upper standard normal quantile for the (1 - delta) confidence interval.",
     "impact": "Higher confidence (closer to 1.0) requires more particles. 0.99 = 99% confidence the error is within pf_err.",
@@ -2257,29 +3186,44 @@
     "plugin_specific": false,
     "plugin": null,
     "hot_reload": true,
-    "tags": ["amcl", "kld", "particles", "sampling"]
+    "tags": [
+      "amcl",
+      "kld",
+      "particles",
+      "sampling"
+    ]
   },
   {
     "node": "local_costmap",
     "param": "obstacle_layer.combination_method",
     "type": "int",
     "default": 1,
-    "range": { "min": 0, "max": 2 },
+    "range": {
+      "min": 0,
+      "max": 2
+    },
     "unit": "",
     "description": "How the obstacle layer combines with layers below it: 0=Overwrite, 1=Max, 2=MaxWithoutUnknownOverwrite.",
-    "impact": "Max (1) is the standard choice — keeps the highest cost across layers. Overwrite (0) ignores the static map cost under obstacles.",
+    "impact": "Max (1) is the standard choice \u2014 keeps the highest cost across layers. Overwrite (0) ignores the static map cost under obstacles.",
     "category": "plugins",
     "plugin_specific": true,
     "plugin": "ObstacleLayer",
     "hot_reload": true,
-    "tags": ["local_costmap", "obstacle_layer", "combination"]
+    "tags": [
+      "local_costmap",
+      "obstacle_layer",
+      "combination"
+    ]
   },
   {
     "node": "global_costmap",
     "param": "obstacle_layer.combination_method",
     "type": "int",
     "default": 1,
-    "range": { "min": 0, "max": 2 },
+    "range": {
+      "min": 0,
+      "max": 2
+    },
     "unit": "",
     "description": "How the global obstacle layer combines with layers below it: 0=Overwrite, 1=Max, 2=MaxWithoutUnknownOverwrite.",
     "impact": "Max (1) is standard. For the global costmap, MaxWithoutUnknownOverwrite (2) prevents obstacles from overwriting unknown cells, which is useful during exploration.",
@@ -2287,6 +3231,2764 @@
     "plugin_specific": true,
     "plugin": "ObstacleLayer",
     "hot_reload": true,
-    "tags": ["global_costmap", "obstacle_layer", "combination"]
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "combination"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "alpha5",
+    "type": "double",
+    "default": 0.2,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Odometry noise: translation error from rotation and translation (omni model only).",
+    "impact": "Only used by the OmnidirectionalMotionModel. Ignored for differential drive robots.",
+    "category": "motion_model",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "amcl",
+      "odom",
+      "noise",
+      "omni"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "always_reset_initial_pose",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Re-initialise the particle filter from initial_pose parameters on every restart (not just first run).",
+    "impact": "Useful in automated testing where the robot always starts at the same pose. Disable in production to preserve localisation across restarts.",
+    "category": "initialization",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "amcl",
+      "initialization",
+      "pose"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "do_beamskip",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Enable beam-skip outlier rejection: ignore beams that consistently miss the map.",
+    "impact": "Improves robustness in environments with glass walls or dynamic obstacles. Requires beam model type.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "amcl",
+      "laser",
+      "beam_skip"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "beam_skip_distance",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "unit": "m",
+    "description": "A beam is considered a candidate for skipping if it misses the map by more than this distance.",
+    "impact": "Tune to the expected thickness of glass walls or transient obstacles in the environment.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "amcl",
+      "laser",
+      "beam_skip"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "beam_skip_threshold",
+    "type": "double",
+    "default": 0.3,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Fraction of particles that must agree a beam should be skipped before it is actually skipped.",
+    "impact": "Higher values require stronger consensus before a beam is dismissed. Lower values skip beams more aggressively.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "amcl",
+      "laser",
+      "beam_skip"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "beam_skip_error_threshold",
+    "type": "double",
+    "default": 0.9,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "If more than this fraction of beams are skipped in a single scan, skip the entire scan update.",
+    "impact": "Prevents the filter from running on completely unreliable scans (e.g., the robot is in a glass room).",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "amcl",
+      "laser",
+      "beam_skip"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "first_map_only",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Only process the first received map message; ignore subsequent map updates.",
+    "impact": "Enable if your map server republishes the same map repeatedly. Disable if using a live SLAM map.",
+    "category": "connectivity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "amcl",
+      "map"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "lambda_short",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "1/m",
+    "description": "Exponential decay rate for the short-range sensor model component (beam model only).",
+    "impact": "Controls how quickly the probability of a short unexpected hit decays with distance. Higher = shorter expected occlusions.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "amcl",
+      "laser",
+      "beam_model"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "laser_likelihood_max_dist",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Maximum distance to an obstacle in the map for the likelihood field model lookup.",
+    "impact": "Larger values allow hits further from map obstacles to still contribute. Must be larger than sigma_hit to be meaningful.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "amcl",
+      "laser",
+      "likelihood_field"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "map_topic",
+    "type": "string",
+    "default": "map",
+    "range": null,
+    "unit": "",
+    "description": "Topic name on which AMCL subscribes for the occupancy grid map.",
+    "impact": "Must match the map server's publish topic. Changing requires a node restart.",
+    "category": "connectivity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "amcl",
+      "map",
+      "topic"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "save_pose_rate",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "Hz",
+    "description": "Rate at which AMCL saves the best pose estimate to the parameter server for persistence across restarts.",
+    "impact": "0.0 disables pose saving. Useful for robots that restart often and want to resume from last known pose.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "amcl",
+      "pose",
+      "persistence"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "scan_topic",
+    "type": "string",
+    "default": "scan",
+    "range": null,
+    "unit": "",
+    "description": "Topic name on which AMCL subscribes for laser scan data.",
+    "impact": "Must match the lidar driver's publish topic. Changing requires a node restart.",
+    "category": "connectivity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "amcl",
+      "laser",
+      "topic"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "z_max",
+    "type": "double",
+    "default": 0.05,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Beam model weight for max-range returns (beam hits at the sensor's maximum range).",
+    "impact": "Increase if your lidar reports many max-range returns from open areas. Part of the z_hit + z_rand + z_max + z_short = 1.0 constraint.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "amcl",
+      "laser",
+      "weights",
+      "beam_model"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "z_short",
+    "type": "double",
+    "default": 0.05,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Beam model weight for unexpectedly short returns (caused by unknown obstacles or people).",
+    "impact": "Increase in environments with many moving obstacles. Part of the z_hit + z_rand + z_max + z_short = 1.0 constraint.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "amcl",
+      "laser",
+      "weights",
+      "beam_model"
+    ]
+  },
+  {
+    "node": "amcl",
+    "param": "initial_pose.z",
+    "type": "double",
+    "default": 0.0,
+    "range": null,
+    "unit": "m",
+    "description": "Initial z position (unused in 2D navigation; kept for message compatibility).",
+    "impact": "Always 0.0 for ground robots. Present in the parameter list for 3D pose message compatibility.",
+    "category": "initialization",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "amcl",
+      "initialization",
+      "pose"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "odom_topic",
+    "type": "string",
+    "default": "odom",
+    "range": null,
+    "unit": "",
+    "description": "Odometry topic subscribed to by the controller server for velocity feedback.",
+    "impact": "Must match the odometry publisher. Changing requires node restart.",
+    "category": "connectivity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "controller",
+      "odom",
+      "topic"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.acc_lim_x",
+    "type": "double",
+    "default": 2.5,
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
+    "unit": "m/s\u00b2",
+    "description": "DWB: maximum linear acceleration in x.",
+    "impact": "Higher values allow faster speed-ups. Must not exceed the robot's physical motor limits.",
+    "category": "dynamics",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "acceleration"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.acc_lim_y",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "m/s\u00b2",
+    "description": "DWB: maximum lateral acceleration (non-zero for holonomic robots only).",
+    "impact": "Set to 0 for differential-drive robots. Non-zero on a diff-drive will cause unreachable trajectories.",
+    "category": "dynamics",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "acceleration",
+      "holonomic"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.acc_lim_theta",
+    "type": "double",
+    "default": 3.2,
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
+    "unit": "rad/s\u00b2",
+    "description": "DWB: maximum angular acceleration.",
+    "impact": "Higher values allow quicker turns. Tune to the robot's wheel torque limits.",
+    "category": "dynamics",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "acceleration",
+      "angular"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.decel_lim_x",
+    "type": "double",
+    "default": -2.5,
+    "range": {
+      "min": -20.0,
+      "max": 0.0
+    },
+    "unit": "m/s\u00b2",
+    "description": "DWB: maximum linear deceleration in x (negative value).",
+    "impact": "More negative = harder braking. Set to match physical braking capability. Too aggressive may tip cargo.",
+    "category": "dynamics",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "deceleration"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.decel_lim_y",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": -10.0,
+      "max": 0.0
+    },
+    "unit": "m/s\u00b2",
+    "description": "DWB: maximum lateral deceleration (holonomic only; 0.0 for differential-drive).",
+    "impact": "Set to 0 for differential-drive robots.",
+    "category": "dynamics",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "deceleration",
+      "holonomic"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.decel_lim_theta",
+    "type": "double",
+    "default": -3.2,
+    "range": {
+      "min": -20.0,
+      "max": 0.0
+    },
+    "unit": "rad/s\u00b2",
+    "description": "DWB: maximum angular deceleration (negative value).",
+    "impact": "Controls how quickly the robot can stop rotating. Match to motor specs.",
+    "category": "dynamics",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "deceleration",
+      "angular"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.max_vel_x",
+    "type": "double",
+    "default": 0.26,
+    "range": {
+      "min": 0.0,
+      "max": 3.0
+    },
+    "unit": "m/s",
+    "description": "DWB: maximum forward linear velocity.",
+    "impact": "Key speed limit. TurtleBot3 max is ~0.22 m/s. Exceeding the robot's hardware limit causes wheel slip.",
+    "category": "velocity",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "velocity",
+      "speed"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.min_vel_x",
+    "type": "double",
+    "default": -0.26,
+    "range": {
+      "min": -3.0,
+      "max": 0.0
+    },
+    "unit": "m/s",
+    "description": "DWB: minimum linear velocity in x. Negative allows reversing.",
+    "impact": "Set to 0 to prevent reversing on non-reversing robots. Negative enables backward motion.",
+    "category": "velocity",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "velocity"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.max_vel_y",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 3.0
+    },
+    "unit": "m/s",
+    "description": "DWB: maximum lateral velocity (holonomic only; 0.0 for differential-drive).",
+    "impact": "Set to 0 for differential-drive robots. Non-zero for omnidirectional platforms.",
+    "category": "velocity",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "velocity",
+      "holonomic"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.min_vel_y",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": -3.0,
+      "max": 0.0
+    },
+    "unit": "m/s",
+    "description": "DWB: minimum lateral velocity (holonomic only; 0.0 for differential-drive).",
+    "impact": "Set to 0 for differential-drive robots.",
+    "category": "velocity",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "velocity",
+      "holonomic"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.max_vel_theta",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
+    "unit": "rad/s",
+    "description": "DWB: maximum angular velocity.",
+    "impact": "Limits how fast the robot can spin. TurtleBot3 max is ~2.84 rad/s. Higher improves turning agility but may cause localization drift.",
+    "category": "velocity",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "velocity",
+      "angular"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.min_speed_xy",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "m/s",
+    "description": "DWB: minimum translational speed to be sampled. Trajectories slower than this are not considered.",
+    "impact": "Non-zero prevents very slow creeping motion. Useful on robots that stall at very low speeds.",
+    "category": "velocity",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "velocity"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.max_speed_xy",
+    "type": "double",
+    "default": -1.0,
+    "range": {
+      "min": -1.0,
+      "max": 5.0
+    },
+    "unit": "m/s",
+    "description": "DWB: maximum combined XY speed limit. -1.0 disables the combined limit (x and y are limited independently).",
+    "impact": "Useful for holonomic robots to limit diagonal speed. -1.0 is standard for differential-drive.",
+    "category": "velocity",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "velocity"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.min_speed_theta",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "unit": "rad/s",
+    "description": "DWB: minimum angular speed to be sampled. Trajectories rotating slower than this are not considered.",
+    "impact": "Non-zero prevents sampling very slow rotations. Increase on robots with angular deadbands.",
+    "category": "velocity",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "velocity",
+      "angular"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.vx_samples",
+    "type": "int",
+    "default": 20,
+    "range": {
+      "min": 1,
+      "max": 100
+    },
+    "unit": "",
+    "description": "DWB: number of forward velocity samples in the trajectory search space.",
+    "impact": "More samples give better trajectory selection but increase computation. 20 is a good default for most robots.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "samples",
+      "performance"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.vy_samples",
+    "type": "int",
+    "default": 5,
+    "range": {
+      "min": 1,
+      "max": 50
+    },
+    "unit": "",
+    "description": "DWB: number of lateral velocity samples (only relevant for holonomic robots).",
+    "impact": "Set to 1 for differential-drive (only 0.0 y-velocity is valid). Increase for holonomic robots.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "samples",
+      "performance"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.vtheta_samples",
+    "type": "int",
+    "default": 20,
+    "range": {
+      "min": 1,
+      "max": 100
+    },
+    "unit": "",
+    "description": "DWB: number of angular velocity samples in the trajectory search space.",
+    "impact": "More samples improve rotation quality. Increase if the robot makes jerky turns.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "samples",
+      "performance"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.sim_time",
+    "type": "double",
+    "default": 1.7,
+    "range": {
+      "min": 0.5,
+      "max": 5.0
+    },
+    "unit": "s",
+    "description": "DWB: how far into the future each sampled trajectory is simulated.",
+    "impact": "Longer simulation catches obstacles further ahead but increases CPU. Short sim_time causes late braking.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "simulation",
+      "performance"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.angular_granularity",
+    "type": "double",
+    "default": 0.025,
+    "range": {
+      "min": 0.001,
+      "max": 0.5
+    },
+    "unit": "rad",
+    "description": "DWB: angular resolution for trajectory simulation steps.",
+    "impact": "Smaller values produce smoother simulated trajectories but increase computation. Default is ~1.4\u00b0.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "resolution"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.critics",
+    "type": "string_array",
+    "default": [
+      "RotateToGoal",
+      "Oscillation",
+      "BaseObstacle",
+      "GoalAlign",
+      "PathAlign",
+      "PathDist",
+      "GoalDist"
+    ],
+    "range": null,
+    "unit": "",
+    "description": "DWB: ordered list of critic plugin names used to score trajectories.",
+    "impact": "Requires node restart. Each critic evaluates trajectories on a different criterion. Removing a critic changes navigation behaviour significantly.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": false,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "plugin"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.prune_plan",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "DWB: remove passed waypoints from the reference path to avoid the robot re-visiting them.",
+    "impact": "Disable only if the robot needs to track every waypoint of a closed-loop path.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "path"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.prune_distance",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "DWB: look-back distance along the path when pruning passed waypoints.",
+    "impact": "Larger values are more forgiving of path deviations before pruning. Too large and the robot backtracks.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "path"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.short_circuit_trajectory_evaluation",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "DWB: stop evaluating a trajectory as soon as any critic marks it invalid.",
+    "impact": "True significantly reduces computation by skipping further scoring once a trajectory fails. Disable only for debugging critic interactions.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "performance"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.publish_cost_grid_pc",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "DWB: publish the trajectory cost grid as a PointCloud2 for visualisation in RViz.",
+    "impact": "Useful for debugging why the controller chooses certain paths. Adds CPU and bandwidth overhead; disable in production.",
+    "category": "debug",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "debug",
+      "visualisation"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.BaseObstacle.scale",
+    "type": "double",
+    "default": 0.02,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "DWB BaseObstacle critic: weight for the obstacle avoidance score.",
+    "impact": "Higher values make the robot more obstacle-averse. Too high dominates all other critics.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "BaseObstacleCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "obstacle"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.BaseObstacle.sum_scores",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "DWB BaseObstacle critic: sum obstacle scores along the trajectory instead of using the worst.",
+    "impact": "False = use worst point (safe). True = average over trajectory (may allow passing close to obstacles briefly).",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "BaseObstacleCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "obstacle"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.GoalAlign.scale",
+    "type": "double",
+    "default": 24.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "DWB GoalAlign critic: weight for aligning the robot's heading with the goal direction.",
+    "impact": "Higher values strongly prefer trajectories facing the goal. Balance with PathAlign for smooth combined approach.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "GoalAlignCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "goal"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.GoalAlign.aggregation_type",
+    "type": "string",
+    "default": "last",
+    "range": {
+      "options": [
+        "last",
+        "sum",
+        "product"
+      ]
+    },
+    "unit": "",
+    "description": "DWB GoalAlign critic: how trajectory pose scores are combined into a single value.",
+    "impact": "last = only the endpoint matters (standard for goal alignment). sum = all poses contribute equally.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "GoalAlignCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "goal"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.GoalAlign.forward_point_distance",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.01,
+      "max": 1.0
+    },
+    "unit": "m",
+    "description": "DWB GoalAlign critic: distance ahead of each trajectory pose used to compute heading.",
+    "impact": "Larger values smooth the heading estimate but reduce sensitivity to sharp turns near the goal.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "GoalAlignCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "goal"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.GoalDist.scale",
+    "type": "double",
+    "default": 24.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "DWB GoalDist critic: weight for preferring trajectories that reduce distance to goal.",
+    "impact": "Higher values strongly drive toward the goal. Balance with PathDist to avoid cutting corners.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "GoalDistCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "goal"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.GoalDist.aggregation_type",
+    "type": "string",
+    "default": "last",
+    "range": {
+      "options": [
+        "last",
+        "sum",
+        "product"
+      ]
+    },
+    "unit": "",
+    "description": "DWB GoalDist critic: how distance scores are aggregated across the trajectory.",
+    "impact": "last is standard \u2014 only the trajectory endpoint's goal distance matters.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "GoalDistCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "goal"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.PathAlign.scale",
+    "type": "double",
+    "default": 32.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "DWB PathAlign critic: weight for aligning heading with the global path direction.",
+    "impact": "Higher values keep the robot pointing along the path. Reduce if the robot oscillates on straight paths.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "PathAlignCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "path"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.PathAlign.aggregation_type",
+    "type": "string",
+    "default": "last",
+    "range": {
+      "options": [
+        "last",
+        "sum",
+        "product"
+      ]
+    },
+    "unit": "",
+    "description": "DWB PathAlign critic: aggregation method for heading scores across the trajectory.",
+    "impact": "last is standard for path alignment. sum makes the entire trajectory prefer path-aligned headings.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "PathAlignCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "path"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.PathAlign.forward_point_distance",
+    "type": "double",
+    "default": 0.325,
+    "range": {
+      "min": 0.01,
+      "max": 1.0
+    },
+    "unit": "m",
+    "description": "DWB PathAlign critic: lookahead distance for computing heading alignment with the path.",
+    "impact": "Larger values smooth heading estimation. Tune with sim_time and robot speed.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "PathAlignCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "path"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.PathDist.scale",
+    "type": "double",
+    "default": 32.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "DWB PathDist critic: weight for staying close to the global path.",
+    "impact": "The most important tracking critic. Higher values make the robot follow the path more closely at the cost of flexibility around obstacles.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "PathDistCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "path"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.PathDist.aggregation_type",
+    "type": "string",
+    "default": "last",
+    "range": {
+      "options": [
+        "last",
+        "sum",
+        "product"
+      ]
+    },
+    "unit": "",
+    "description": "DWB PathDist critic: aggregation method for path distance scores.",
+    "impact": "last measures endpoint's distance to path. sum penalises the full trajectory for drifting.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "PathDistCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "path"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.Oscillation.scale",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "DWB Oscillation critic: weight for penalising oscillatory motion (repeated direction changes).",
+    "impact": "Increase if the robot rocks back-and-forth. Too high and it avoids all direction changes including legitimate turns.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "OscillationCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "oscillation"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.Oscillation.oscillation_reset_dist",
+    "type": "double",
+    "default": 0.05,
+    "range": {
+      "min": 0.01,
+      "max": 1.0
+    },
+    "unit": "m",
+    "description": "DWB Oscillation critic: distance the robot must travel to reset the oscillation flag.",
+    "impact": "After reversing, the robot must move this far forward before it can reverse again.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "OscillationCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "oscillation"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.Oscillation.oscillation_reset_angle",
+    "type": "double",
+    "default": 0.2,
+    "range": {
+      "min": 0.01,
+      "max": 3.14
+    },
+    "unit": "rad",
+    "description": "DWB Oscillation critic: rotation required to reset the oscillation flag after a direction change.",
+    "impact": "Prevents the robot from immediately reversing its rotation direction.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "OscillationCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "oscillation"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.Oscillation.oscillation_reset_time",
+    "type": "double",
+    "default": -1.0,
+    "range": {
+      "min": -1.0,
+      "max": 30.0
+    },
+    "unit": "s",
+    "description": "DWB Oscillation critic: time-based oscillation reset (seconds). -1.0 disables time-based reset.",
+    "impact": "Non-negative values allow the oscillation flag to clear after the specified time regardless of motion.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "OscillationCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "oscillation"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.Oscillation.x_only_threshold",
+    "type": "double",
+    "default": 0.05,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "m/s",
+    "description": "DWB Oscillation critic: if x velocity is below this and y and theta are above their thresholds, do not mark as oscillating.",
+    "impact": "Allows the robot to rotate in place without triggering oscillation detection.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "OscillationCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "oscillation"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.RotateToGoal.scale",
+    "type": "double",
+    "default": 32.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "DWB RotateToGoal critic: weight for the rotate-to-goal phase scoring.",
+    "impact": "Higher values cause more aggressive in-place rotation when near the goal.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "RotateToGoalCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "goal"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.RotateToGoal.lookahead_time",
+    "type": "double",
+    "default": -1.0,
+    "range": {
+      "min": -1.0,
+      "max": 10.0
+    },
+    "unit": "s",
+    "description": "DWB RotateToGoal critic: time horizon for the goal approach. -1.0 = use sim_time.",
+    "impact": "Longer lookahead causes the robot to begin rotating to goal heading earlier.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "RotateToGoalCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "goal"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.RotateToGoal.slowing_factor",
+    "type": "double",
+    "default": 5.0,
+    "range": {
+      "min": 1.0,
+      "max": 20.0
+    },
+    "unit": "",
+    "description": "DWB RotateToGoal critic: how much the critic slows the robot when it needs to rotate to reach goal heading.",
+    "impact": "Higher values cause stronger braking as the robot approaches the goal yaw. Tune to prevent overshooting the goal heading.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "RotateToGoalCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "critics",
+      "goal"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.xy_goal_tolerance",
+    "ros2_name": "FollowPath.xy_goal_tolerance",
+    "type": "double",
+    "default": 0.25,
+    "range": {
+      "min": 0.01,
+      "max": 1.0
+    },
+    "unit": "m",
+    "description": "DWB: distance threshold from goal pose at which the robot is considered to have reached the XY goal.",
+    "impact": "Smaller values require more precise goal reaching; too small may cause the robot to oscillate near the goal.",
+    "category": "goal",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "goal",
+      "tolerance"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.trans_stopped_velocity",
+    "ros2_name": "FollowPath.trans_stopped_velocity",
+    "type": "double",
+    "default": 0.25,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "m/s",
+    "description": "DWB: translational velocity below which the robot is considered stopped for oscillation detection.",
+    "impact": "Lower values require the robot to come to a near-complete stop before oscillation logic resets; higher values are more lenient.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "velocity",
+      "oscillation",
+      "stopped"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.limit_vel_cmd_in_traj",
+    "ros2_name": "FollowPath.limit_vel_cmd_in_traj",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "DWB: if true, velocity commands are clamped to the trajectory limits during trajectory scoring.",
+    "impact": "Enabling this prevents the commanded velocity from slightly exceeding the scored trajectory velocity.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "velocity",
+      "limit"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "publish_zero_velocity",
+    "ros2_name": "publish_zero_velocity",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Publish a zero-velocity command when the controller server receives a cancel or reaches the goal.",
+    "impact": "Ensures the robot stops cleanly. Disabling is rarely needed but can suppress an extra zero-velocity message.",
+    "category": "behavior",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "velocity",
+      "safety",
+      "stop"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.forward_prune_distance",
+    "ros2_name": "FollowPath.forward_prune_distance",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "DWB: distance ahead of the robot along the global path up to which path points are pruned.",
+    "impact": "Larger values remove more of the already-passed path; too small and the robot re-evaluates already-visited waypoints.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "path",
+      "prune",
+      "distance"
+    ]
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.time_granularity",
+    "ros2_name": "FollowPath.time_granularity",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.1,
+      "max": 2.0
+    },
+    "unit": "s",
+    "description": "DWB: time step used when forward-simulating trajectories for scoring.",
+    "impact": "Smaller values improve trajectory scoring accuracy but increase computation. Larger values are faster but less precise.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "DWBLocalPlanner",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "dwb",
+      "trajectory",
+      "simulation",
+      "time"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "costmap_topic",
+    "type": "string",
+    "default": "local_costmap/costmap_raw",
+    "range": null,
+    "unit": "",
+    "description": "Topic providing the costmap used for collision checking during recovery behaviors.",
+    "impact": "Must point to the local costmap's raw costmap topic. Changing requires node restart.",
+    "category": "connectivity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "behavior_server",
+      "costmap",
+      "topic"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "footprint_topic",
+    "type": "string",
+    "default": "local_costmap/published_footprint",
+    "range": null,
+    "unit": "",
+    "description": "Topic providing the robot footprint for collision checking during recovery behaviors.",
+    "impact": "Must match the local costmap's footprint topic. Changing requires node restart.",
+    "category": "connectivity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "behavior_server",
+      "footprint",
+      "topic"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "transform_tolerance",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "s",
+    "description": "Maximum age of TF transforms accepted by the behavior server.",
+    "impact": "Increase if TF latency warnings appear during recovery behaviors.",
+    "category": "connectivity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "behavior_server",
+      "tf",
+      "latency"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "max_rotational_vel",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.1,
+      "max": 5.0
+    },
+    "unit": "rad/s",
+    "description": "Maximum angular velocity used during spin and other rotational recovery behaviors.",
+    "impact": "Higher values complete rotations faster but may cause localization drift during recovery.",
+    "category": "velocity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "behavior_server",
+      "rotation",
+      "velocity"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "min_rotational_vel",
+    "type": "double",
+    "default": 0.4,
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "unit": "rad/s",
+    "description": "Minimum angular velocity during rotational recovery behaviors.",
+    "impact": "Prevents the robot from rotating too slowly to overcome friction. Increase if the robot stalls mid-spin.",
+    "category": "velocity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "behavior_server",
+      "rotation",
+      "velocity"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "rotational_acc_lim",
+    "type": "double",
+    "default": 3.2,
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
+    "unit": "rad/s\u00b2",
+    "description": "Angular acceleration limit during rotational recovery behaviors.",
+    "impact": "Limits how quickly the robot ramps up rotation speed during recovery. Match to hardware limits.",
+    "category": "dynamics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "behavior_server",
+      "rotation",
+      "acceleration"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "simulate_ahead_time",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.5,
+      "max": 10.0
+    },
+    "unit": "s",
+    "description": "General look-ahead time for collision checking during recovery behaviors.",
+    "impact": "Longer look-ahead is more conservative (aborts sooner). Shorter allows closer maneuvers.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "behavior_server",
+      "collision",
+      "simulation"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "simulation_time_step",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.01,
+      "max": 0.5
+    },
+    "unit": "s",
+    "description": "Time step used when simulating robot motion for collision checking.",
+    "impact": "Smaller steps give more accurate collision detection but increase computation. 0.1s is adequate for most cases.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "behavior_server",
+      "collision",
+      "simulation"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "projection_time",
+    "type": "double",
+    "default": 5.0,
+    "range": {
+      "min": 0.5,
+      "max": 30.0
+    },
+    "unit": "s",
+    "description": "Total projection time for drive_on_heading and backup collision checking.",
+    "impact": "Longer projection detects obstacles further along the recovery path.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "behavior_server",
+      "collision",
+      "projection"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "spin.plugin",
+    "type": "string",
+    "default": "nav2_behaviors::Spin",
+    "range": null,
+    "unit": "",
+    "description": "C++ plugin class for the spin recovery behavior.",
+    "impact": "Requires node restart. Change to use a custom spin implementation.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "Spin",
+    "hot_reload": false,
+    "tags": [
+      "behavior_server",
+      "spin",
+      "plugin"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "backup.plugin",
+    "type": "string",
+    "default": "nav2_behaviors::BackUp",
+    "range": null,
+    "unit": "",
+    "description": "C++ plugin class for the backup recovery behavior.",
+    "impact": "Requires node restart.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "BackUp",
+    "hot_reload": false,
+    "tags": [
+      "behavior_server",
+      "backup",
+      "plugin"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "wait.plugin",
+    "type": "string",
+    "default": "nav2_behaviors::Wait",
+    "range": null,
+    "unit": "",
+    "description": "C++ plugin class for the wait recovery behavior.",
+    "impact": "Requires node restart.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "Wait",
+    "hot_reload": false,
+    "tags": [
+      "behavior_server",
+      "wait",
+      "plugin"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "drive_on_heading.plugin",
+    "type": "string",
+    "default": "nav2_behaviors::DriveOnHeading",
+    "range": null,
+    "unit": "",
+    "description": "C++ plugin class for the drive-on-heading recovery behavior.",
+    "impact": "Requires node restart.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "DriveOnHeading",
+    "hot_reload": false,
+    "tags": [
+      "behavior_server",
+      "drive_on_heading",
+      "plugin"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "assisted_teleop.plugin",
+    "type": "string",
+    "default": "nav2_behaviors::AssistedTeleop",
+    "range": null,
+    "unit": "",
+    "description": "C++ plugin class for the assisted teleop behavior.",
+    "impact": "Requires node restart.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "AssistedTeleop",
+    "hot_reload": false,
+    "tags": [
+      "behavior_server",
+      "assisted_teleop",
+      "plugin"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "backup.acceleration_limit",
+    "type": "double",
+    "default": 2.5,
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
+    "unit": "m/s\u00b2",
+    "description": "Acceleration limit for the backup recovery behavior.",
+    "impact": "Limits how quickly the robot ramps up speed while backing up.",
+    "category": "dynamics",
+    "plugin_specific": true,
+    "plugin": "BackUp",
+    "hot_reload": true,
+    "tags": [
+      "behavior_server",
+      "backup",
+      "acceleration"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "backup.deceleration_limit",
+    "type": "double",
+    "default": -2.5,
+    "range": {
+      "min": -20.0,
+      "max": 0.0
+    },
+    "unit": "m/s\u00b2",
+    "description": "Deceleration limit for the backup recovery behavior (negative value).",
+    "impact": "Controls stopping distance when ending a backup maneuver.",
+    "category": "dynamics",
+    "plugin_specific": true,
+    "plugin": "BackUp",
+    "hot_reload": true,
+    "tags": [
+      "behavior_server",
+      "backup",
+      "deceleration"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "backup.minimum_speed",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 0.5
+    },
+    "unit": "m/s",
+    "description": "Minimum speed during a backup maneuver to prevent stalling.",
+    "impact": "Non-zero prevents the robot from stopping mid-backup on robots with low-speed deadbands.",
+    "category": "velocity",
+    "plugin_specific": true,
+    "plugin": "BackUp",
+    "hot_reload": true,
+    "tags": [
+      "behavior_server",
+      "backup",
+      "velocity"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "drive_on_heading.acceleration_limit",
+    "type": "double",
+    "default": 2.5,
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
+    "unit": "m/s\u00b2",
+    "description": "Acceleration limit for the drive-on-heading behavior.",
+    "impact": "Limits ramp-up speed during forward recovery motion.",
+    "category": "dynamics",
+    "plugin_specific": true,
+    "plugin": "DriveOnHeading",
+    "hot_reload": true,
+    "tags": [
+      "behavior_server",
+      "drive_on_heading",
+      "acceleration"
+    ]
+  },
+  {
+    "node": "behavior_server",
+    "param": "drive_on_heading.deceleration_limit",
+    "type": "double",
+    "default": -2.5,
+    "range": {
+      "min": -20.0,
+      "max": 0.0
+    },
+    "unit": "m/s\u00b2",
+    "description": "Deceleration limit for the drive-on-heading behavior (negative value).",
+    "impact": "Controls stopping distance at the end of a drive-on-heading maneuver.",
+    "category": "dynamics",
+    "plugin_specific": true,
+    "plugin": "DriveOnHeading",
+    "hot_reload": true,
+    "tags": [
+      "behavior_server",
+      "drive_on_heading",
+      "deceleration"
+    ]
+  },
+  {
+    "node": "bt_navigator",
+    "param": "default_nav_to_pose_bt_xml",
+    "type": "string",
+    "default": "",
+    "range": null,
+    "unit": "",
+    "description": "Path to the BehaviorTree XML for the NavigateToPose action. Empty string uses the built-in default tree.",
+    "impact": "Custom BTs enable sophisticated navigation logic. Wrong path causes startup failure.",
+    "category": "behavior",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "bt_navigator",
+      "behavior_tree",
+      "navigate_to_pose"
+    ]
+  },
+  {
+    "node": "bt_navigator",
+    "param": "default_nav_through_poses_bt_xml",
+    "type": "string",
+    "default": "",
+    "range": null,
+    "unit": "",
+    "description": "Path to the BehaviorTree XML for the NavigateThroughPoses action.",
+    "impact": "Custom BTs enable multi-waypoint navigation logic. Empty uses the built-in default.",
+    "category": "behavior",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "bt_navigator",
+      "behavior_tree",
+      "navigate_through_poses"
+    ]
+  },
+  {
+    "node": "bt_navigator",
+    "param": "odom_topic",
+    "type": "string",
+    "default": "odom",
+    "range": null,
+    "unit": "",
+    "description": "Odometry topic used by the BT navigator for velocity-based decisions.",
+    "impact": "Must match the odometry publisher. Changing requires node restart.",
+    "category": "connectivity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "bt_navigator",
+      "odom",
+      "topic"
+    ]
+  },
+  {
+    "node": "bt_navigator",
+    "param": "transform_tolerance",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "s",
+    "description": "Maximum age of TF transforms accepted by the BT navigator.",
+    "impact": "Increase if TF latency warnings appear. Too large causes stale pose estimates.",
+    "category": "connectivity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "bt_navigator",
+      "tf",
+      "latency"
+    ]
+  },
+  {
+    "node": "bt_navigator",
+    "param": "always_reload_bt_xml",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Reload the BehaviorTree XML from disk on every navigation request instead of caching it.",
+    "impact": "Enable during BT development to pick up XML changes without restarting the node. Disable in production.",
+    "category": "behavior",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "bt_navigator",
+      "behavior_tree",
+      "development"
+    ]
+  },
+  {
+    "node": "bt_navigator",
+    "param": "goal_blackboard_id",
+    "type": "string",
+    "default": "goal",
+    "range": null,
+    "unit": "",
+    "description": "Name of the BT blackboard key used to pass the navigation goal pose.",
+    "impact": "Must match the key name used in your custom BT XML files.",
+    "category": "behavior",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "bt_navigator",
+      "behavior_tree",
+      "blackboard"
+    ]
+  },
+  {
+    "node": "bt_navigator",
+    "param": "goals_blackboard_id",
+    "type": "string",
+    "default": "goals",
+    "range": null,
+    "unit": "",
+    "description": "Name of the BT blackboard key used to pass the list of goals for NavigateThroughPoses.",
+    "impact": "Must match the key name in your BT XML. Only relevant for navigate_through_poses action.",
+    "category": "behavior",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "bt_navigator",
+      "behavior_tree",
+      "blackboard"
+    ]
+  },
+  {
+    "node": "bt_navigator",
+    "param": "path_blackboard_id",
+    "type": "string",
+    "default": "path",
+    "range": null,
+    "unit": "",
+    "description": "Name of the BT blackboard key used to share the planned path between BT nodes.",
+    "impact": "Must match the key name used in your BT XML for path sharing.",
+    "category": "behavior",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "bt_navigator",
+      "behavior_tree",
+      "blackboard"
+    ]
+  },
+  {
+    "node": "bt_navigator",
+    "param": "plugin_lib_names",
+    "type": "string_array",
+    "default": [
+      "nav2_compute_path_to_pose_action_bt_node",
+      "nav2_follow_path_action_bt_node",
+      "nav2_back_up_action_bt_node",
+      "nav2_spin_action_bt_node",
+      "nav2_wait_action_bt_node",
+      "nav2_clear_costmap_service_bt_node",
+      "nav2_is_stuck_condition_bt_node",
+      "nav2_goal_reached_condition_bt_node",
+      "nav2_goal_updated_condition_bt_node",
+      "nav2_initial_pose_received_condition_bt_node",
+      "nav2_reinitialize_global_localization_service_bt_node",
+      "nav2_rate_controller_bt_node",
+      "nav2_distance_controller_bt_node",
+      "nav2_speed_controller_bt_node",
+      "nav2_truncate_path_action_bt_node",
+      "nav2_goal_updater_node_bt_node",
+      "nav2_recovery_node_bt_node",
+      "nav2_pipeline_sequence_bt_node",
+      "nav2_round_robin_node_bt_node",
+      "nav2_transform_available_condition_bt_node",
+      "nav2_time_expired_condition_bt_node",
+      "nav2_distance_traveled_condition_bt_node"
+    ],
+    "range": null,
+    "unit": "",
+    "description": "List of BehaviorTree plugin libraries to load. Each library provides BT condition and action nodes.",
+    "impact": "Requires node restart. Removing a library that a BT XML references causes startup failure.",
+    "category": "plugins",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "bt_navigator",
+      "behavior_tree",
+      "plugin",
+      "libraries"
+    ]
+  },
+  {
+    "node": "smoother_server",
+    "param": "costmap_topic",
+    "type": "string",
+    "default": "global_costmap/costmap_raw",
+    "range": null,
+    "unit": "",
+    "description": "Topic providing the costmap used by the smoother for obstacle-aware path smoothing.",
+    "impact": "Must point to a valid costmap raw topic. Changing requires node restart.",
+    "category": "connectivity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "costmap",
+      "topic"
+    ]
+  },
+  {
+    "node": "smoother_server",
+    "param": "footprint_topic",
+    "type": "string",
+    "default": "global_costmap/published_footprint",
+    "range": null,
+    "unit": "",
+    "description": "Topic providing the robot footprint for collision checking during path smoothing.",
+    "impact": "Must match the costmap's footprint topic. Changing requires node restart.",
+    "category": "connectivity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "footprint",
+      "topic"
+    ]
+  },
+  {
+    "node": "smoother_server",
+    "param": "robot_base_frame",
+    "type": "string",
+    "default": "base_link",
+    "range": null,
+    "unit": "",
+    "description": "Robot base frame used by the smoother for pose lookups.",
+    "impact": "Must match URDF base link and other Nav2 nodes. Changing requires node restart.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "frames",
+      "tf"
+    ]
+  },
+  {
+    "node": "smoother_server",
+    "param": "transform_tolerance",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "s",
+    "description": "Maximum age of TF transforms accepted by the smoother server.",
+    "impact": "Increase if TF latency warnings appear during path smoothing.",
+    "category": "connectivity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "smoother",
+      "tf",
+      "latency"
+    ]
+  },
+  {
+    "node": "smoother_server",
+    "param": "simple_smoother.plugin",
+    "type": "string",
+    "default": "nav2_smoother::SimpleSmoother",
+    "range": null,
+    "unit": "",
+    "description": "C++ plugin class for the simple path smoother.",
+    "impact": "Requires node restart. Change to use a custom smoother implementation.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "SimpleSmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "simple_smoother",
+      "plugin"
+    ]
+  },
+  {
+    "node": "waypoint_follower",
+    "param": "wait_at_waypoint.plugin",
+    "type": "string",
+    "default": "nav2_waypoint_follower::WaitAtWaypoint",
+    "range": null,
+    "unit": "",
+    "description": "C++ plugin class for the wait-at-waypoint task executor.",
+    "impact": "Requires node restart. Change to use a custom waypoint task (e.g. take a photo, charge).",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "WaitAtWaypoint",
+    "hot_reload": false,
+    "tags": [
+      "waypoint_follower",
+      "wait",
+      "plugin"
+    ]
+  },
+  {
+    "node": "waypoint_follower",
+    "param": "wait_at_waypoint.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enable or disable the wait-at-waypoint task executor.",
+    "impact": "Disable to skip the pause at each waypoint and proceed immediately.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "WaitAtWaypoint",
+    "hot_reload": true,
+    "tags": [
+      "waypoint_follower",
+      "wait",
+      "behavior"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.plugin",
+    "type": "string",
+    "default": "nav2_costmap_2d::VoxelLayer",
+    "range": null,
+    "unit": "",
+    "description": "C++ plugin class for the 3D voxel obstacle layer.",
+    "impact": "Requires costmap restart. Change to use a custom obstacle layer implementation.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "plugin"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.observation_sources",
+    "type": "string",
+    "default": "scan",
+    "range": null,
+    "unit": "",
+    "description": "Space-separated list of sensor source names used by the voxel layer.",
+    "impact": "Requires costmap restart. Each source name must have a corresponding set of .topic, .data_type, etc. parameters.",
+    "category": "sensor",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "sensor"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.publish_voxel_map",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Publish the 3D voxel grid as a VoxelGrid message for visualisation in RViz.",
+    "impact": "Useful for debugging sensor coverage. Adds bandwidth overhead; disable in production.",
+    "category": "debug",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "visualisation"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.max_obstacle_height",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.1,
+      "max": 5.0
+    },
+    "unit": "m",
+    "description": "Maximum height above the floor at which obstacles are inserted into the voxel layer.",
+    "impact": "Set to slightly above the robot's height to ignore overhead beams. Too low and tall obstacles are missed.",
+    "category": "geometry",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "height"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.min_obstacle_height",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "m",
+    "description": "Minimum height at which obstacles are inserted into the voxel layer.",
+    "impact": "Increase to ignore ground-level returns (e.g., carpet, floor reflections).",
+    "category": "geometry",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "height"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.scan.topic",
+    "type": "string",
+    "default": "scan",
+    "range": null,
+    "unit": "",
+    "description": "Sensor topic subscribed to by the voxel layer 'scan' source.",
+    "impact": "Must match the lidar driver's publish topic. Changing requires costmap restart.",
+    "category": "connectivity",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "sensor",
+      "topic"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.scan.data_type",
+    "type": "string",
+    "default": "LaserScan",
+    "range": {
+      "options": [
+        "LaserScan",
+        "PointCloud2"
+      ]
+    },
+    "unit": "",
+    "description": "Message type for the voxel layer 'scan' sensor source.",
+    "impact": "Use LaserScan for 2D lidars, PointCloud2 for 3D lidars or depth cameras.",
+    "category": "sensor",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "sensor"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.scan.marking",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Allow the voxel layer 'scan' source to mark (insert) obstacles.",
+    "impact": "Disable to use this sensor for clearing only (e.g. a downward-facing sensor that shouldn't add obstacles).",
+    "category": "sensor",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "sensor"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.scan.clearing",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Allow the voxel layer 'scan' source to clear (ray-trace free space) through the costmap.",
+    "impact": "Disable to keep old obstacles even when the sensor line-of-sight passes through them.",
+    "category": "sensor",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "sensor",
+      "raytrace"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.scan.obstacle_max_range",
+    "type": "double",
+    "default": 2.5,
+    "range": {
+      "min": 0.5,
+      "max": 20.0
+    },
+    "unit": "m",
+    "description": "Maximum range at which the voxel layer 'scan' source inserts obstacles.",
+    "impact": "Larger values populate the costmap with more distant obstacles. Too large causes noise from far reflections.",
+    "category": "sensor",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "sensor",
+      "range"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.scan.raytrace_max_range",
+    "type": "double",
+    "default": 3.0,
+    "range": {
+      "min": 0.5,
+      "max": 20.0
+    },
+    "unit": "m",
+    "description": "Maximum range for ray-tracing free space through the voxel layer 'scan' source.",
+    "impact": "Longer ray traces remove stale obstacles faster but trace through more cells per update.",
+    "category": "sensor",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "sensor",
+      "raytrace"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.scan.max_obstacle_height",
+    "ros2_name": "voxel_layer.scan.max_obstacle_height",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "m",
+    "description": "Voxel layer: points above this height are ignored as obstacles.",
+    "impact": "Set to robot or environment ceiling height to avoid false positives from overhead structures.",
+    "category": "obstacle_detection",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": true,
+    "tags": [
+      "costmap",
+      "voxel",
+      "obstacle",
+      "height",
+      "filter"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.scan.min_obstacle_height",
+    "ros2_name": "voxel_layer.scan.min_obstacle_height",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "unit": "m",
+    "description": "Voxel layer: points below this height are ignored as obstacles (e.g. floor reflections).",
+    "impact": "Raise this to suppress ground reflections or low-lying noise; set too high and low obstacles are missed.",
+    "category": "obstacle_detection",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": true,
+    "tags": [
+      "costmap",
+      "voxel",
+      "obstacle",
+      "height",
+      "filter"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.scan.obstacle_min_range",
+    "ros2_name": "voxel_layer.scan.obstacle_min_range",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "unit": "m",
+    "description": "Voxel layer: scan returns closer than this range are ignored as obstacles.",
+    "impact": "Increase to suppress near-body sensor noise. Too high and nearby obstacles are missed.",
+    "category": "obstacle_detection",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": true,
+    "tags": [
+      "costmap",
+      "voxel",
+      "obstacle",
+      "range",
+      "filter"
+    ]
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.scan.raytrace_min_range",
+    "ros2_name": "voxel_layer.scan.raytrace_min_range",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "unit": "m",
+    "description": "Voxel layer: raytrace clearing does not clear cells closer than this range.",
+    "impact": "Prevents the sensor body from clearing voxels immediately around the robot due to near-range returns.",
+    "category": "obstacle_detection",
+    "plugin_specific": true,
+    "plugin": "VoxelLayer",
+    "hot_reload": true,
+    "tags": [
+      "costmap",
+      "voxel",
+      "raytrace",
+      "range",
+      "filter"
+    ]
+  },
+  {
+    "node": "global_costmap",
+    "param": "width",
+    "type": "int",
+    "default": 0,
+    "range": {
+      "min": 0,
+      "max": 10000
+    },
+    "unit": "cells",
+    "description": "Width of the global costmap in cells. 0 = determined by the loaded map.",
+    "impact": "Normally 0 so the costmap exactly matches the map server's map dimensions.",
+    "category": "geometry",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "size",
+      "geometry"
+    ]
+  },
+  {
+    "node": "global_costmap",
+    "param": "height",
+    "type": "int",
+    "default": 0,
+    "range": {
+      "min": 0,
+      "max": 10000
+    },
+    "unit": "cells",
+    "description": "Height of the global costmap in cells. 0 = determined by the loaded map.",
+    "impact": "Normally 0 so the costmap exactly matches the map server's map dimensions.",
+    "category": "geometry",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "size",
+      "geometry"
+    ]
+  },
+  {
+    "node": "global_costmap",
+    "param": "rolling_window",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Keep the global costmap centered on the robot (rolling window). Should be false for global planning.",
+    "impact": "False is standard for the global costmap \u2014 it covers the full map. True is for the local costmap only.",
+    "category": "geometry",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "rolling_window",
+      "geometry"
+    ]
+  },
+  {
+    "node": "global_costmap",
+    "param": "robot_radius",
+    "type": "double",
+    "default": 0.3,
+    "range": {
+      "min": 0.05,
+      "max": 2.0
+    },
+    "unit": "m",
+    "description": "Circular approximation of the robot radius for the global costmap collision checks.",
+    "impact": "Set to the robot's actual radius. Larger values add safety margin but restrict narrow-passage planning.",
+    "category": "geometry",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "robot_radius",
+      "collision",
+      "geometry"
+    ]
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enable the global costmap obstacle layer for dynamic obstacle insertion.",
+    "impact": "Disabling removes dynamic obstacles from global planning. The static layer still provides the base map.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "ObstacleLayer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer"
+    ]
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.observation_sources",
+    "type": "string",
+    "default": "scan",
+    "range": null,
+    "unit": "",
+    "description": "Space-separated sensor source names for the global costmap obstacle layer.",
+    "impact": "Requires costmap restart. Each name maps to a set of .topic, .data_type, .obstacle_max_range parameters.",
+    "category": "sensor",
+    "plugin_specific": true,
+    "plugin": "ObstacleLayer",
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "sensor"
+    ]
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.scan.topic",
+    "type": "string",
+    "default": "scan",
+    "range": null,
+    "unit": "",
+    "description": "Sensor topic subscribed to by the global costmap obstacle layer 'scan' source.",
+    "impact": "Must match the lidar driver's topic. Changing requires costmap restart.",
+    "category": "connectivity",
+    "plugin_specific": true,
+    "plugin": "ObstacleLayer",
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "sensor",
+      "topic"
+    ]
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.scan.data_type",
+    "type": "string",
+    "default": "LaserScan",
+    "range": {
+      "options": [
+        "LaserScan",
+        "PointCloud2"
+      ]
+    },
+    "unit": "",
+    "description": "Message type for the global costmap obstacle layer 'scan' source.",
+    "impact": "Use LaserScan for 2D lidars, PointCloud2 for 3D sensors.",
+    "category": "sensor",
+    "plugin_specific": true,
+    "plugin": "ObstacleLayer",
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "sensor"
+    ]
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.scan.obstacle_max_range",
+    "type": "double",
+    "default": 2.5,
+    "range": {
+      "min": 0.5,
+      "max": 20.0
+    },
+    "unit": "m",
+    "description": "Maximum range for obstacle insertion into the global costmap obstacle layer.",
+    "impact": "Larger values add more distant obstacles to the global plan. Can cause plan avoidance of far transient objects.",
+    "category": "sensor",
+    "plugin_specific": true,
+    "plugin": "ObstacleLayer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "range"
+    ]
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.scan.raytrace_max_range",
+    "type": "double",
+    "default": 3.0,
+    "range": {
+      "min": 0.5,
+      "max": 20.0
+    },
+    "unit": "m",
+    "description": "Maximum range for ray-tracing free space through the global costmap obstacle layer.",
+    "impact": "Longer traces clear more space on the global costmap as the robot moves, removing stale dynamic obstacles.",
+    "category": "sensor",
+    "plugin_specific": true,
+    "plugin": "ObstacleLayer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "raytrace"
+    ]
   }
 ]

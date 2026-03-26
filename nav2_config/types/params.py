@@ -33,6 +33,14 @@ class Nav2ParamDef:
     plugin: str | None
     hot_reload: bool
     tags: list[str] = field(default_factory=list)
+    # Full ROS2 parameter name as reported by the running node (e.g.
+    # "FollowPath.max_vel_x").  Defaults to ``param`` when not set in JSON,
+    # which is correct for all top-level parameters that need no namespace.
+    ros2_name: str = field(default="")
+
+    def __post_init__(self) -> None:
+        if not self.ros2_name:
+            self.ros2_name = self.param
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Nav2ParamDef":
@@ -59,6 +67,7 @@ class Nav2ParamDef:
             plugin=data.get("plugin"),
             hot_reload=data.get("hot_reload", True),
             tags=data.get("tags", []),
+            ros2_name=data.get("ros2_name", data["param"]),
         )
 
 
@@ -75,6 +84,11 @@ class ParamValue:
         """Update the live value and recalculate the modified flag."""
         self.current_value = new_value
         self.is_modified = new_value != self.definition.default
+
+    @property
+    def live_value(self) -> Any:
+        """Alias for current_value — the value as last seen from the running node."""
+        return self.current_value
 
     @property
     def display_value(self) -> str:

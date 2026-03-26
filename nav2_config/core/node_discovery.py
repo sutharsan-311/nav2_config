@@ -37,13 +37,14 @@ def discover_nav2_nodes(node: Node) -> dict[str, bool]:
         dict mapping each :data:`NAV2_NODES` key to ``True`` (running) or
         ``False`` (not found).
     """
-    # TODO: implement this function body (5-8 lines).
-    #
-    # Steps:
-    #   1. Call node.get_node_names_and_namespaces() — returns list[(name, ns)]
-    #   2. Build a set of full paths from those pairs.
-    #      Hint: for (name, ns), the full path is:
-    #        '/' + name       when ns == '/'
-    #        ns + '/' + name  otherwise
-    #   3. Return {path: path in running_paths for path in NAV2_NODES}
-    pass
+    nodes_and_ns = node.get_node_names_and_namespaces()
+
+    running: set[str] = set()
+    for name, ns in nodes_and_ns:
+        if ns == '/':
+            full_path = '/' + name
+        else:
+            full_path = ns + '/' + name
+        running.add(full_path)
+
+    return {nav_node: (nav_node in running) for nav_node in NAV2_NODES}
