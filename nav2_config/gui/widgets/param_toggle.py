@@ -1,57 +1,19 @@
-"""ParamToggle — rectangular boolean toggle switch widget."""
+"""ParamToggle — standard QCheckBox wrapper for boolean parameters.
+
+RViz2 light style: uses Qt's native Fusion checkbox — no custom painting.
+"""
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QPainter
-from PyQt6.QtWidgets import QHBoxLayout, QLabel, QWidget
-
-
-class _ToggleSwitch(QWidget):
-    """Low-level rectangular toggle, painted manually for full style control."""
-
-    toggled = pyqtSignal(bool)
-
-    _W, _H = 36, 16  # Widget dimensions (px).
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self._checked = False
-        self.setFixedSize(self._W, self._H)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-
-    def paintEvent(self, _event) -> None:  # noqa: N802
-        p = QPainter(self)
-        p.setRenderHint(QPainter.RenderHint.Antialiasing, False)  # flat / square
-
-        # Background track
-        bg = QColor('#4caf50' if self._checked else '#3e3e42')
-        p.fillRect(self.rect(), bg)
-
-        # Sliding handle — snaps to right when ON, left when OFF
-        handle_x = self._W - 15 if self._checked else 1
-        p.fillRect(handle_x, 1, 14, self._H - 2, QColor('#ffffff'))
-        p.end()
-
-    def mousePressEvent(self, _event) -> None:  # noqa: N802
-        self._checked = not self._checked
-        self.update()
-        self.toggled.emit(self._checked)
-
-    def set_checked(self, checked: bool) -> None:
-        """Update state without emitting the signal."""
-        self._checked = checked
-        self.update()
-
-    def is_checked(self) -> bool:
-        return self._checked
+from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QWidget
 
 
 class ParamToggle(QWidget):
-    """Boolean parameter widget: rectangular toggle + ENABLED / DISABLED label.
+    """Boolean parameter widget: standard QCheckBox with true/false label.
 
     Signals:
-        value_changed(bool): emitted when the toggle state changes.
+        value_changed(bool): emitted when the checkbox state changes.
     """
 
     value_changed = pyqtSignal(bool)
@@ -63,39 +25,21 @@ class ParamToggle(QWidget):
     def _build_ui(self) -> None:
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(0)
 
-        self._switch = _ToggleSwitch()
-        layout.addWidget(self._switch)
-
-        self._label = QLabel('DISABLED')
-        self._label.setStyleSheet('font-size: 11px; color: #6d6d6d;')
-        layout.addWidget(self._label)
+        self._checkbox = QCheckBox()
+        self._checkbox.stateChanged.connect(
+            lambda state: self.value_changed.emit(bool(state))
+        )
+        layout.addWidget(self._checkbox)
         layout.addStretch()
-
-        self._switch.toggled.connect(self._on_toggled)
-
-    def _on_toggled(self, checked: bool) -> None:
-        self._update_label(checked)
-        self.value_changed.emit(checked)
-
-    def _update_label(self, checked: bool) -> None:
-        if checked:
-            self._label.setText('ENABLED')
-            self._label.setStyleSheet('font-size: 11px; color: #4caf50;')
-        else:
-            self._label.setText('DISABLED')
-            self._label.setStyleSheet('font-size: 11px; color: #6d6d6d;')
-
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
 
     def set_value(self, value: bool) -> None:
         """Update displayed state without emitting value_changed."""
-        self._switch.set_checked(bool(value))
-        self._update_label(bool(value))
+        self._checkbox.blockSignals(True)
+        self._checkbox.setChecked(bool(value))
+        self._checkbox.blockSignals(False)
 
     def get_value(self) -> bool:
-        """Return the current toggle state."""
-        return self._switch.is_checked()
+        """Return the current checkbox state."""
+        return self._checkbox.isChecked()

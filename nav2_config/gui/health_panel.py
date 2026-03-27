@@ -1,9 +1,7 @@
 """HealthPanel — collapsible panel showing Nav2 parameter health check results.
 
-The panel auto-runs health checks after params change (debounced 1 second)
-and shows each finding with a severity icon, title, detail message, and the
-names of affected parameters.  Clicking an affected param badge emits
-:attr:`param_focus_requested` so the ParamPanel can scroll to that row.
+Styled to match RViz2: 28px header, light gray header background, #3399ff
+active indicators, system font.
 """
 
 from __future__ import annotations
@@ -28,11 +26,18 @@ from nav2_config.types.params import ParamValue
 
 logger = logging.getLogger(__name__)
 
+# RViz2 light palette
+_BG_HDR  = '#d0d0d0'
+_BG_PANEL = '#e8e8e8'
+_BORDER  = '#c0c0c0'
+_FG      = '#1a1a1a'
+_FG_DIM  = '#666666'
+
 # Severity → (icon, accent colour)
 _SEVERITY_STYLE: dict[str, tuple[str, str]] = {
-    'error':   ('✕', '#f44336'),
-    'warning': ('⚠', '#f57c00'),
-    'info':    ('ℹ', '#4fc3f7'),
+    'error':   ('✕', '#e53935'),
+    'warning': ('⚠', '#ff9800'),
+    'info':    ('ℹ', '#3399ff'),
 }
 
 
@@ -49,16 +54,15 @@ class _IssueCard(QWidget):
         self._build_ui()
 
     def _build_ui(self) -> None:
-        icon, colour = _SEVERITY_STYLE.get(
-            self._result.severity, ('•', '#d4d4d4')
-        )
+        icon, colour = _SEVERITY_STYLE.get(self._result.severity, ('•', _FG))
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 6, 8, 6)
-        layout.setSpacing(3)
+        layout.setContentsMargins(8, 5, 8, 5)
+        layout.setSpacing(2)
 
         self.setStyleSheet(
-            f'QWidget {{ background: {colour}18; border-left: 3px solid {colour}; }}'
+            f'QWidget {{ background: {colour}14; '
+            f'border-left: 3px solid {colour}; }}'
         )
 
         # ── Title row ─────────────────────────────────────────────────────
@@ -67,12 +71,18 @@ class _IssueCard(QWidget):
         title_row.setSpacing(6)
 
         icon_label = QLabel(icon)
-        icon_label.setStyleSheet(f'color: {colour}; font-weight: bold; font-size: 13px;')
-        icon_label.setFixedWidth(16)
+        icon_label.setStyleSheet(
+            f'color: {colour}; font-weight: bold; font-size: 10pt; '
+            f'background: transparent;'
+        )
+        icon_label.setFixedWidth(14)
         title_row.addWidget(icon_label)
 
         title_label = QLabel(self._result.title)
-        title_label.setStyleSheet('color: #e0e0e0; font-weight: bold; font-size: 12px;')
+        title_label.setStyleSheet(
+            f'color: {_FG}; font-weight: bold; font-size: 10pt; '
+            f'background: transparent;'
+        )
         title_label.setWordWrap(True)
         title_row.addWidget(title_label, stretch=1)
 
@@ -82,25 +92,25 @@ class _IssueCard(QWidget):
         msg_label = QLabel(self._result.message)
         msg_label.setWordWrap(True)
         msg_label.setStyleSheet(
-            'color: #b0b0b0; font-size: 11px; padding-left: 22px;'
+            f'color: {_FG_DIM}; font-size: 9pt; '
+            f'padding-left: 20px; background: transparent;'
         )
         layout.addWidget(msg_label)
 
         # ── Affected param badges ──────────────────────────────────────────
         if self._result.affected_params:
             badge_row = QHBoxLayout()
-            badge_row.setContentsMargins(22, 0, 0, 0)
-            badge_row.setSpacing(4)
+            badge_row.setContentsMargins(20, 0, 0, 0)
+            badge_row.setSpacing(3)
 
             for param_name in self._result.affected_params:
                 badge = QPushButton(param_name)
                 badge.setStyleSheet(
                     f'QPushButton {{'
-                    f'    background: {colour}33; border: 1px solid {colour}66;'
-                    f'    color: {colour}; font-size: 10px;'
-                    f'    padding: 1px 6px; font-family: monospace;'
+                    f'    background: {colour}22; border: 1px solid {colour}66;'
+                    f'    color: {colour}; font-size: 8pt; padding: 1px 5px;'
                     f'}}'
-                    f'QPushButton:hover {{ background: {colour}55; }}'
+                    f'QPushButton:hover {{ background: {colour}44; }}'
                 )
                 badge.setSizePolicy(
                     QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed
@@ -115,23 +125,14 @@ class _IssueCard(QWidget):
 
 
 class HealthPanel(QWidget):
-    """Collapsible panel that displays health check results for the current params.
-
-    Usage::
-
-        panel = HealthPanel()
-        panel.param_focus_requested.connect(param_panel.scroll_to_param)
-        # After params change:
-        panel.schedule_check(all_params)
+    """Collapsible panel showing health check results for the current params.
 
     Signals:
-        param_focus_requested(str): Emitted when the user clicks an affected-
-            param badge.  The payload is the parameter name to scroll to.
+        param_focus_requested(str): emitted when user clicks an affected-param badge.
     """
 
     param_focus_requested = pyqtSignal(str)
 
-    #: Milliseconds to wait after the last param change before running checks.
     DEBOUNCE_MS: int = 1000
 
     def __init__(self, parent: QWidget | None = None) -> None:
@@ -158,66 +159,66 @@ class HealthPanel(QWidget):
 
         layout.addWidget(self._make_header())
 
-        # Scroll area for issue cards
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
         self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self._scroll.setStyleSheet('QScrollArea { border: none; }')
-        self._scroll.setMaximumHeight(260)
+        self._scroll.setMaximumHeight(220)
 
         self._cards_widget = QWidget()
         self._cards_layout = QVBoxLayout(self._cards_widget)
         self._cards_layout.setContentsMargins(4, 4, 4, 4)
-        self._cards_layout.setSpacing(4)
+        self._cards_layout.setSpacing(3)
         self._cards_layout.addStretch()
 
         self._scroll.setWidget(self._cards_widget)
         layout.addWidget(self._scroll)
 
-        # Separator line at the bottom of the panel
         sep = QFrame()
         sep.setFrameShape(QFrame.Shape.HLine)
-        sep.setStyleSheet('color: #3e3e42;')
+        sep.setStyleSheet(f'color: {_BORDER}; background: {_BORDER};')
+        sep.setFixedHeight(1)
         layout.addWidget(sep)
 
         self._refresh_empty_state()
 
     def _make_header(self) -> QWidget:
         bar = QWidget()
-        bar.setFixedHeight(26)
+        bar.setFixedHeight(28)
         bar.setStyleSheet(
-            'background: #252526; border-bottom: 1px solid #3e3e42; '
-            'border-top: 1px solid #3e3e42;'
+            f'QWidget {{ background: {_BG_HDR}; '
+            f'border-bottom: 1px solid {_BORDER}; '
+            f'border-top: 1px solid {_BORDER}; }}'
         )
 
         layout = QHBoxLayout(bar)
-        layout.setContentsMargins(8, 0, 8, 0)
+        layout.setContentsMargins(6, 0, 6, 0)
         layout.setSpacing(4)
 
-        self._toggle_btn = QPushButton('▼')
+        self._toggle_btn = QPushButton('▾')
         self._toggle_btn.setFixedSize(18, 18)
         self._toggle_btn.setStyleSheet(
-            'QPushButton { background: none; border: none; '
-            'color: #6d6d6d; font-size: 10px; }'
-            'QPushButton:hover { color: #d4d4d4; }'
+            f'QPushButton {{ background: none; border: none; '
+            f'color: {_FG_DIM}; font-size: 10px; }}'
+            f'QPushButton:hover {{ color: {_FG}; }}'
         )
         self._toggle_btn.clicked.connect(self._toggle_expanded)
         layout.addWidget(self._toggle_btn)
 
-        self._status_label = QLabel('HEALTH CHECK')
+        self._status_label = QLabel('Health Check')
         self._status_label.setStyleSheet(
-            'color: #d4d4d4; font-size: 11px; font-weight: bold; letter-spacing: 1px;'
+            f'color: {_FG}; font-size: 10pt; font-weight: bold; '
+            f'background: transparent;'
         )
         layout.addWidget(self._status_label)
 
         layout.addStretch()
 
         run_btn = QPushButton('Run Now')
-        run_btn.setFixedHeight(18)
+        run_btn.setFixedHeight(20)
         run_btn.setStyleSheet(
-            'QPushButton { background: #2d2d2d; border: 1px solid #3e3e42; '
-            'color: #9d9d9d; font-size: 10px; padding: 0 6px; }'
-            'QPushButton:hover { background: #3e3e42; color: #d4d4d4; }'
+            f'QPushButton {{ border: 1px solid {_BORDER}; '
+            f'font-size: 9pt; padding: 0 8px; }}'
         )
         run_btn.clicked.connect(self._run_checks)
         layout.addWidget(run_btn)
@@ -231,17 +232,14 @@ class HealthPanel(QWidget):
     def _toggle_expanded(self) -> None:
         self._expanded = not self._expanded
         self._scroll.setVisible(self._expanded)
-        self._toggle_btn.setText('▼' if self._expanded else '▶')
+        self._toggle_btn.setText('▾' if self._expanded else '▸')
 
     def _run_checks(self) -> None:
-        """Run health checks synchronously and refresh the display."""
         self._results = run_health_checks(self._params)
         self._refresh_display()
         logger.debug('HealthPanel: %d issues found', len(self._results))
 
     def _refresh_display(self) -> None:
-        """Rebuild the issue card list from ``self._results``."""
-        # Remove all existing cards (keep the stretch at the end)
         while self._cards_layout.count() > 1:
             item = self._cards_layout.takeAt(0)
             if item.widget():
@@ -257,14 +255,11 @@ class HealthPanel(QWidget):
         for result in self._results:
             card = _IssueCard(result)
             card.param_focus_requested.connect(self.param_focus_requested)
-            self._cards_layout.insertWidget(
-                self._cards_layout.count() - 1, card
-            )
+            self._cards_layout.insertWidget(self._cards_layout.count() - 1, card)
 
         self._update_header_status(errors, warnings)
 
     def _refresh_empty_state(self) -> None:
-        """Show a 'clean' placeholder when there are no issues."""
         while self._cards_layout.count() > 1:
             item = self._cards_layout.takeAt(0)
             if item.widget():
@@ -274,30 +269,34 @@ class HealthPanel(QWidget):
             placeholder = QLabel('Select a node to run health checks.')
         else:
             placeholder = QLabel('✓  No issues found.')
-            placeholder.setStyleSheet('color: #4caf50; font-size: 11px; padding: 8px;')
 
         placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        placeholder.setStyleSheet('color: #5d5d5d; font-size: 11px; padding: 8px;')
+        placeholder.setStyleSheet(f'color: {_FG_DIM}; font-size: 9pt; padding: 8px;')
         self._cards_layout.insertWidget(0, placeholder)
         self._update_header_status(0, 0)
 
     def _update_header_status(self, errors: int, warnings: int) -> None:
-        """Refresh the header label to reflect current issue counts."""
         if errors > 0:
-            colour = '#f44336'
-            text = f'HEALTH CHECK  ·  ✕ {errors} error{"s" if errors > 1 else ""}'
+            colour = '#e53935'
+            text = (
+                f'Health Check  ·  ✕ {errors} error{"s" if errors > 1 else ""}'
+            )
             if warnings:
                 text += f'  ⚠ {warnings}'
         elif warnings > 0:
-            colour = '#f57c00'
-            text = f'HEALTH CHECK  ·  ⚠ {warnings} warning{"s" if warnings > 1 else ""}'
+            colour = '#ff9800'
+            text = (
+                f'Health Check  ·  ⚠ {warnings} '
+                f'warning{"s" if warnings > 1 else ""}'
+            )
         else:
             colour = '#4caf50'
-            text = 'HEALTH CHECK  ·  ✓ Clean'
+            text = 'Health Check  ·  ✓ Clean'
 
         self._status_label.setText(text)
         self._status_label.setStyleSheet(
-            f'color: {colour}; font-size: 11px; font-weight: bold; letter-spacing: 1px;'
+            f'color: {colour}; font-size: 10pt; font-weight: bold; '
+            f'background: transparent;'
         )
 
     # ------------------------------------------------------------------
@@ -305,24 +304,12 @@ class HealthPanel(QWidget):
     # ------------------------------------------------------------------
 
     def schedule_check(self, params: list[ParamValue]) -> None:
-        """Accumulate params and schedule a debounced health check run.
-
-        Calling this repeatedly within :attr:`DEBOUNCE_MS` milliseconds will
-        only trigger one check — after the final call's debounce expires.
-
-        Args:
-            params: Flat list of :class:`~nav2_config.types.params.ParamValue`
-                objects (may span multiple nodes).
-        """
+        """Accumulate params and schedule a debounced health check run."""
         self._params = params
-        self._debounce_timer.start()  # Restarts the timer if already running.
+        self._debounce_timer.start()
 
     def run_checks_now(self, params: list[ParamValue]) -> None:
-        """Run health checks immediately (bypass debounce).
-
-        Args:
-            params: Flat list of ParamValue objects.
-        """
+        """Run health checks immediately (bypass debounce)."""
         self._debounce_timer.stop()
         self._params = params
         self._run_checks()

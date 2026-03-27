@@ -1,4 +1,8 @@
-"""ParamSlider — synced QSlider + spinbox with unit label."""
+"""ParamSlider — synced QSlider + spinbox with unit label.
+
+RViz2 light style: light groove (#e0e0e0), gray handle (#888888), blue
+filled track (#3399ff). Spinbox uses system font at 9pt.
+"""
 
 from __future__ import annotations
 
@@ -12,22 +16,25 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+_GROOVE  = '#d8d8d8'
+_HANDLE  = '#888888'
+_CHUNK   = '#3399ff'
+_BORDER  = '#c0c0c0'
+_FG_DIM  = '#666666'
+_FG      = '#1a1a1a'
+_INPUT   = '#ffffff'
+
 
 class ParamSlider(QWidget):
     """Horizontal slider paired with a spinbox, kept in sync.
 
-    For ``double`` params the slider is quantised into 100 steps over
-    ``[min, max]``; for ``int`` params each slider tick is one integer unit.
-    A unit label is shown on the right when provided.
-
     Signals:
-        value_changed(float): emitted when the value changes (from either
-            the slider or the spinbox).
+        value_changed(float): emitted when value changes.
     """
 
     value_changed = pyqtSignal(float)
 
-    _STEPS = 100  # Number of discrete positions for double sliders.
+    _STEPS = 100
 
     def __init__(
         self,
@@ -41,12 +48,8 @@ class ParamSlider(QWidget):
         self._min = float(min_val)
         self._max = float(max_val)
         self._is_int = is_int
-        self._updating = False  # Re-entrancy guard for bidirectional sync.
+        self._updating = False
         self._build_ui(unit)
-
-    # ------------------------------------------------------------------
-    # UI construction
-    # ------------------------------------------------------------------
 
     def _build_ui(self, unit: str) -> None:
         layout = QHBoxLayout(self)
@@ -59,13 +62,22 @@ class ParamSlider(QWidget):
             self._slider.setMaximum(max(0, int(self._max - self._min)))
         else:
             self._slider.setMaximum(self._STEPS)
-        self._slider.setFixedWidth(110)
+        self._slider.setFixedWidth(100)
         self._slider.setStyleSheet(
-            'QSlider::groove:horizontal { background: #3e3e42; height: 3px; }'
-            'QSlider::handle:horizontal { background: #4fc3f7; width: 10px; '
-            '                            height: 10px; margin: -4px 0; }'
-            'QSlider::handle:horizontal:hover { background: #f57c00; }'
-            'QSlider::sub-page:horizontal { background: #f57c00; }'
+            f'QSlider::groove:horizontal {{'
+            f'    background: {_GROOVE}; height: 4px; '
+            f'    border: 1px solid {_BORDER}; border-radius: 0; '
+            f'}}'
+            f'QSlider::handle:horizontal {{'
+            f'    background: {_HANDLE}; width: 10px; height: 10px; '
+            f'    margin: -4px 0; border-radius: 1px; '
+            f'}}'
+            f'QSlider::handle:horizontal:hover {{'
+            f'    background: {_FG}; '
+            f'}}'
+            f'QSlider::sub-page:horizontal {{'
+            f'    background: {_CHUNK}; height: 4px; '
+            f'}}'
         )
         layout.addWidget(self._slider)
 
@@ -77,25 +89,27 @@ class ParamSlider(QWidget):
             self._spinbox = QDoubleSpinBox()
             self._spinbox.setMinimum(self._min)
             self._spinbox.setMaximum(self._max)
-            step = (self._max - self._min) / self._STEPS if self._max != self._min else 0.01
+            step = (
+                (self._max - self._min) / self._STEPS
+                if self._max != self._min
+                else 0.01
+            )
             self._spinbox.setSingleStep(step)
             self._spinbox.setDecimals(4)
 
-        self._spinbox.setFixedWidth(82)
+        self._spinbox.setFixedWidth(78)
         layout.addWidget(self._spinbox)
 
         if unit:
             unit_label = QLabel(unit)
-            unit_label.setStyleSheet('color: #6d6d6d; font-size: 11px;')
-            unit_label.setFixedWidth(36)
+            unit_label.setStyleSheet(
+                f'color: {_FG_DIM}; font-size: 9pt; background: transparent;'
+            )
+            unit_label.setFixedWidth(32)
             layout.addWidget(unit_label)
 
         self._slider.valueChanged.connect(self._on_slider_changed)
         self._spinbox.valueChanged.connect(self._on_spinbox_changed)
-
-    # ------------------------------------------------------------------
-    # Private: value ↔ slider-position conversion
-    # ------------------------------------------------------------------
 
     def _pos_to_value(self, pos: int) -> float:
         if self._is_int:
@@ -110,10 +124,6 @@ class ParamSlider(QWidget):
         if self._max == self._min:
             return 0
         return round((value - self._min) / (self._max - self._min) * self._STEPS)
-
-    # ------------------------------------------------------------------
-    # Private: change handlers
-    # ------------------------------------------------------------------
 
     def _on_slider_changed(self, pos: int) -> None:
         if self._updating:
@@ -131,10 +141,6 @@ class ParamSlider(QWidget):
         self._slider.setValue(self._value_to_pos(float(value)))
         self._updating = False
         self.value_changed.emit(float(value))
-
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
 
     def set_value(self, value: float) -> None:
         """Set the displayed value without emitting value_changed."""

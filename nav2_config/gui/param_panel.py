@@ -1,9 +1,13 @@
-"""ParamPanel — center panel: scrollable, searchable parameter editor."""
+"""ParamPanel — center panel: scrollable, searchable parameter editor.
+
+Styled to match RViz2's Properties panel: two-column tree layout with
+light gray headers, collapsible category sections.
+"""
 
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
@@ -20,7 +24,21 @@ from PyQt6.QtWidgets import (
 from nav2_config.types.params import ParamValue
 from nav2_config.gui.widgets.param_row import ParamRow
 
+if TYPE_CHECKING:
+    from nav2_config.core.topic_discovery import TopicDiscovery
+    from nav2_config.core.frame_discovery import FrameDiscovery
+
 logger = logging.getLogger(__name__)
+
+# ── RViz2 light colour constants ─────────────────────────────────────────────
+_BG_PANEL = '#e8e8e8'
+_BG_HDR   = '#d0d0d0'
+_BG_CAT   = '#e0e0e0'   # Category section header background
+_BORDER   = '#c0c0c0'
+_BLUE     = '#3399ff'
+_FG       = '#1a1a1a'
+_FG_DIM   = '#666666'
+_AMBER    = '#ff9800'
 
 # ── Nodes whose plugin selector bar is shown ────────────────────────────────
 _CONTROLLER_PLUGINS = ['RPP', 'MPPI', 'DWB']
@@ -28,7 +46,11 @@ _PLANNER_PLUGINS = ['NavFn', 'SmacPlanner2D', 'SmacPlannerHybrid', 'ThetaStar']
 
 
 class _CategorySection(QWidget):
-    """Collapsible section grouping ParamRow widgets under a category header."""
+    """Collapsible section grouping ParamRow widgets under a category header.
+
+    Header looks like RViz2's group rows: slightly darker background,
+    expand arrow, category name, row count in dim text.
+    """
 
     def __init__(self, category: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -42,18 +64,36 @@ class _CategorySection(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        self._header = QPushButton()
+        # Header is a clickable container with two labels side by side
+        self._header = QWidget()
+        self._header.setFixedHeight(24)
         self._header.setStyleSheet(
-            'QPushButton { '
-            '    text-align: left; padding: 4px 8px; '
-            '    background: #252526; border: none; '
-            '    border-bottom: 1px solid #3e3e42; '
-            '    color: #f57c00; font-size: 11px; font-weight: bold; '
-            '    letter-spacing: 1px; '
-            '}'
-            'QPushButton:hover { background: #2a2d2e; }'
+            f'QWidget {{ '
+            f'    background: {_BG_CAT}; '
+            f'    border-bottom: 1px solid {_BORDER}; '
+            f'    border-top: 1px solid {_BORDER}; '
+            f'}}'
         )
-        self._header.clicked.connect(self._toggle)
+        self._header.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._header.mousePressEvent = lambda _e: self._toggle()
+
+        hdr_layout = QHBoxLayout(self._header)
+        hdr_layout.setContentsMargins(8, 0, 8, 0)
+        hdr_layout.setSpacing(4)
+
+        self._name_label = QLabel()
+        self._name_label.setStyleSheet(
+            f'color: {_FG}; font-size: 10pt; font-weight: bold; background: transparent;'
+        )
+        hdr_layout.addWidget(self._name_label)
+
+        self._count_lbl = QLabel()
+        self._count_lbl.setStyleSheet(
+            f'color: {_FG_DIM}; font-size: 10pt; font-weight: normal; background: transparent;'
+        )
+        hdr_layout.addWidget(self._count_lbl)
+        hdr_layout.addStretch()
+
         layout.addWidget(self._header)
 
         self._content = QWidget()
@@ -65,8 +105,9 @@ class _CategorySection(QWidget):
         self._refresh_header()
 
     def _refresh_header(self) -> None:
-        icon = '▼' if self._expanded else '▶'
-        self._header.setText(f'{icon}  {self._category.upper()}  ({len(self._rows)})')
+        arrow = '▾' if self._expanded else '▸'
+        self._name_label.setText(f'{arrow}  {self._category.replace("_", " ").title()}')
+        self._count_lbl.setText(f'({len(self._rows)})')
 
     def _toggle(self) -> None:
         self._expanded = not self._expanded
@@ -78,7 +119,9 @@ class _CategorySection(QWidget):
     # ------------------------------------------------------------------
 
     def add_row(self, row: ParamRow) -> None:
-        """Append a ParamRow to this section."""
+        """Append a ParamRow to this section with alternating background."""
+        idx = len(self._rows)
+        row.set_row_index(idx)
         self._rows.append(row)
         self._content_layout.addWidget(row)
         self._refresh_header()
@@ -103,6 +146,11 @@ class _CategorySection(QWidget):
                 defn = row._param_value.definition
                 row.setVisible((not defn.plugin_specific) or defn.plugin == plugin)
 
+    def set_descriptions_visible(self, visible: bool) -> None:
+        """Toggle description text visibility on all rows in this section."""
+        for row in self._rows:
+            row.set_description_visible(visible)
+
     @property
     def rows(self) -> list[ParamRow]:
         return self._rows
@@ -111,22 +159,28 @@ class _CategorySection(QWidget):
 class ParamPanel(QWidget):
     """Center panel: scrollable, searchable parameter editor with category grouping.
 
-    Displays the parameters of one Nav2 node at a time.  The node is selected
-    externally via ``set_node_name`` + ``load_params``.
-
-    For ``controller_server`` and ``planner_server`` a plugin selector bar is
-    shown at the top of the panel.
+    Displays the parameters of one Nav2 node at a time.
 
     Signals:
         param_change_requested(str, str, Any):
-            ``(node_name, param_name, new_value)`` — emitted when the user
-            changes a parameter value.  The caller should forward this to
-            :meth:`Nav2ConfigNode.request_set_param`.
+            ``(node_name, param_name, new_value)`` — emitted on every GUI
+            value change, used to keep the YAML preview current.  Does NOT
+            trigger a ROS2 set_parameters call.
+        param_set_requested(str, str, Any):
+            ``(node_name, param_name, value)`` — emitted when the user
+            explicitly clicks a row's Set button or the "Set All" button.
+            The main window routes this to the ROS2 node.
     """
 
     param_change_requested = pyqtSignal(str, str, object)
+    param_set_requested    = pyqtSignal(str, str, object)
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        topic_discovery: 'TopicDiscovery | None' = None,
+        frame_discovery: 'FrameDiscovery | None' = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
         self._node_name: str = ''
         self._param_values: list[ParamValue] = []
@@ -134,6 +188,9 @@ class ParamPanel(QWidget):
         self._all_rows: list[ParamRow] = []
         self._selected_plugin: str | None = None
         self._plugin_buttons: dict[str, QPushButton] = {}
+        self._show_descriptions: bool = True
+        self._topic_discovery = topic_discovery
+        self._frame_discovery = frame_discovery
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -147,7 +204,6 @@ class ParamPanel(QWidget):
 
         layout.addWidget(self._make_title_bar())
         layout.addWidget(self._make_plugin_bar())
-        layout.addWidget(self._make_search_bar())
 
         # Scroll area for the parameter rows
         self._scroll_area = QScrollArea()
@@ -164,95 +220,126 @@ class ParamPanel(QWidget):
         layout.addWidget(self._scroll_area, stretch=1)
 
     def _make_title_bar(self) -> QWidget:
+        """Header bar: title left, Set All + search + Desc toggle right."""
         bar = QWidget()
-        bar.setFixedHeight(26)
-        bar.setStyleSheet('background: #252526; border-bottom: 1px solid #3e3e42;')
+        bar.setFixedHeight(28)
+        bar.setStyleSheet(
+            f'QWidget {{ background: {_BG_HDR}; border-bottom: 1px solid {_BORDER}; }}'
+        )
 
         layout = QHBoxLayout(bar)
-        layout.setContentsMargins(8, 0, 8, 0)
+        layout.setContentsMargins(8, 0, 4, 0)
         layout.setSpacing(4)
 
-        self._title_label = QLabel('PARAMETERS')
-        self._title_label.setProperty('role', 'heading')
+        self._title_label = QLabel('Parameters')
+        self._title_label.setStyleSheet(
+            f'color: {_FG}; font-size: 10pt; font-weight: bold; background: transparent;'
+        )
         self._title_label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         layout.addWidget(self._title_label)
 
-        layout.addStretch()
-
         self._count_label = QLabel('')
-        self._count_label.setProperty('role', 'dim')
+        self._count_label.setStyleSheet(
+            f'color: {_FG_DIM}; font-size: 9pt; background: transparent;'
+        )
         self._count_label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         layout.addWidget(self._count_label)
 
-        return bar
+        layout.addStretch()
 
-    def _make_plugin_bar(self) -> QWidget:
-        self._plugin_bar = QWidget()
-        self._plugin_bar.setFixedHeight(32)
-        self._plugin_bar.setStyleSheet(
-            'background: #1e1e1e; border-bottom: 1px solid #3e3e42;'
+        # "Set All (N)" button — enabled only when ≥1 row is ready to set
+        self._set_all_btn = QPushButton('Set All')
+        self._set_all_btn.setEnabled(False)
+        self._set_all_btn.setFixedHeight(20)
+        self._set_all_btn.setToolTip('Set all modified parameters at once')
+        self._set_all_btn.setStyleSheet(
+            f'QPushButton {{ background: #e0e0e0; border: 1px solid {_BORDER}; '
+            f'color: #999999; font-size: 9pt; padding: 0 6px; }}'
+            f'QPushButton:enabled {{ background: #2a82da; border-color: #1a6abf; '
+            f'color: #ffffff; font-weight: bold; }}'
+            f'QPushButton:enabled:hover {{ background: #1e70c8; }}'
         )
-        self._plugin_bar.setVisible(False)
+        self._set_all_btn.clicked.connect(self._set_all_modified)
+        layout.addWidget(self._set_all_btn)
 
-        self._plugin_bar_layout = QHBoxLayout(self._plugin_bar)
-        self._plugin_bar_layout.setContentsMargins(8, 4, 8, 4)
-        self._plugin_bar_layout.setSpacing(2)
-
-        lbl = QLabel('Plugin:')
-        lbl.setStyleSheet('color: #6d6d6d; font-size: 11px;')
-        self._plugin_bar_layout.addWidget(lbl)
-        self._plugin_bar_layout.addStretch()
-
-        return self._plugin_bar
-
-    def _make_search_bar(self) -> QWidget:
-        bar = QWidget()
-        bar.setFixedHeight(32)
-        bar.setStyleSheet('background: #1e1e1e; border-bottom: 1px solid #3e3e42;')
-
-        layout = QHBoxLayout(bar)
-        layout.setContentsMargins(8, 4, 8, 4)
-
+        # Inline search field in the header
         self._search = QLineEdit()
-        self._search.setPlaceholderText('Search parameters…  (Ctrl+K)')
+        self._search.setPlaceholderText('Search…')
+        self._search.setFixedWidth(160)
+        self._search.setFixedHeight(20)
+        self._search.setStyleSheet(
+            f'QLineEdit {{ background: {_BG_PANEL}; border: 1px solid {_BORDER}; '
+            f'color: {_FG}; font-size: 9pt; padding: 0 4px; }}'
+            f'QLineEdit:focus {{ border-color: {_BLUE}; }}'
+        )
         self._search.textChanged.connect(self._on_search_changed)
         layout.addWidget(self._search)
 
         shortcut = QShortcut(QKeySequence('Ctrl+K'), self)
         shortcut.activated.connect(self._search.setFocus)
-
         escape = QShortcut(QKeySequence('Escape'), self)
         escape.activated.connect(self._clear_search)
 
+        # "Desc" toggle button
+        self._desc_btn = QPushButton('Desc')
+        self._desc_btn.setCheckable(True)
+        self._desc_btn.setChecked(True)
+        self._desc_btn.setFixedHeight(20)
+        self._desc_btn.setToolTip('Toggle parameter descriptions')
+        self._desc_btn.setStyleSheet(
+            f'QPushButton {{ background: #555555; border: 1px solid {_BORDER}; '
+            f'color: {_FG}; font-size: 9pt; padding: 0 6px; }}'
+            f'QPushButton:checked {{ background: {_BLUE}; border-color: #1a6abf; '
+            f'color: #ffffff; }}'
+            f'QPushButton:hover:!checked {{ background: #666666; }}'
+        )
+        self._desc_btn.toggled.connect(self._on_toggle_descriptions)
+        layout.addWidget(self._desc_btn)
+
         return bar
+
+    def _make_plugin_bar(self) -> QWidget:
+        self._plugin_bar = QWidget()
+        self._plugin_bar.setFixedHeight(28)
+        self._plugin_bar.setStyleSheet(
+            f'background: {_BG_HDR}; border-bottom: 1px solid {_BORDER};'
+        )
+        self._plugin_bar.setVisible(False)
+
+        self._plugin_bar_layout = QHBoxLayout(self._plugin_bar)
+        self._plugin_bar_layout.setContentsMargins(8, 3, 8, 3)
+        self._plugin_bar_layout.setSpacing(3)
+
+        lbl = QLabel('Plugin:')
+        lbl.setStyleSheet(f'color: {_FG_DIM}; font-size: 9pt;')
+        self._plugin_bar_layout.addWidget(lbl)
+        self._plugin_bar_layout.addStretch()
+
+        return self._plugin_bar
 
     # ------------------------------------------------------------------
     # Private: plugin bar setup
     # ------------------------------------------------------------------
 
     def _setup_plugin_bar(self, plugins: list[str]) -> None:
-        # Remove old plugin buttons from the layout (keep label + stretch).
         for btn in self._plugin_buttons.values():
             self._plugin_bar_layout.removeWidget(btn)
             btn.deleteLater()
         self._plugin_buttons.clear()
         self._selected_plugin = None
 
-        # Remove trailing stretch so we can re-add buttons before it.
         stretch = self._plugin_bar_layout.takeAt(self._plugin_bar_layout.count() - 1)
 
         for plugin in plugins:
             btn = QPushButton(plugin)
             btn.setCheckable(True)
+            btn.setFixedHeight(20)
             btn.setStyleSheet(
-                'QPushButton { '
-                '    background: #2d2d2d; border: 1px solid #3e3e42; '
-                '    color: #d4d4d4; padding: 2px 8px; font-size: 11px; '
-                '}'
-                'QPushButton:checked { '
-                '    background: #f57c00; color: #ffffff; border-color: #e65100; '
-                '}'
-                'QPushButton:hover:!checked { background: #3e3e42; }'
+                f'QPushButton {{ background: #555555; border: 1px solid {_BORDER}; '
+                f'color: {_FG}; padding: 0 8px; font-size: 9pt; }}'
+                f'QPushButton:checked {{ background: {_BLUE}; color: #ffffff; '
+                f'border-color: #1a6abf; }}'
+                f'QPushButton:hover:!checked {{ background: #666666; }}'
             )
             btn.clicked.connect(
                 lambda checked, p=plugin: self._on_plugin_selected(p, checked)
@@ -260,13 +347,18 @@ class ParamPanel(QWidget):
             self._plugin_buttons[plugin] = btn
             self._plugin_bar_layout.addWidget(btn)
 
-        # Re-add stretch at end.
         self._plugin_bar_layout.addStretch()
         self._plugin_bar.setVisible(True)
 
     # ------------------------------------------------------------------
-    # Private: filtering
+    # Private: filtering and description toggle
     # ------------------------------------------------------------------
+
+    def _on_toggle_descriptions(self, checked: bool) -> None:
+        """Show or hide description lines on all param rows."""
+        self._show_descriptions = checked
+        for section in self._sections.values():
+            section.set_descriptions_visible(checked)
 
     def _on_plugin_selected(self, plugin: str, checked: bool) -> None:
         if checked:
@@ -280,12 +372,10 @@ class ParamPanel(QWidget):
         for section in self._sections.values():
             section.apply_plugin_filter(self._selected_plugin)
 
-        # Re-apply any active search on top of plugin filter.
         if self._search.text():
             self._on_search_changed(self._search.text())
 
     def _clear_search(self) -> None:
-        """Clear the search field and restore all parameter rows."""
         if self._search.text():
             self._search.clear()
 
@@ -296,16 +386,28 @@ class ParamPanel(QWidget):
 
         if query:
             total_all = len(self._all_rows)
-            self._count_label.setText(f'Showing {total_visible} of {total_all}')
+            self._count_label.setText(f'{total_visible}/{total_all}')
         else:
             self._refresh_count_label()
 
     def _refresh_count_label(self) -> None:
         modified = sum(1 for pv in self._param_values if pv.is_modified)
         n = len(self._param_values)
-        self._count_label.setText(
-            f'{n} params  •  modified: {modified}' if n else ''
-        )
+        if n:
+            mod_part = f'  ·  {modified} modified' if modified else ''
+            self._count_label.setText(f'{n} params{mod_part}')
+        else:
+            self._count_label.setText('')
+
+    def _update_set_all_btn(self) -> None:
+        """Refresh the Set All button label and enabled state."""
+        count = sum(1 for row in self._all_rows if row.is_ready_to_set())
+        if count > 0:
+            self._set_all_btn.setText(f'Set All ({count})')
+            self._set_all_btn.setEnabled(True)
+        else:
+            self._set_all_btn.setText('Set All')
+            self._set_all_btn.setEnabled(False)
 
     # ------------------------------------------------------------------
     # Private: row rebuild
@@ -321,6 +423,17 @@ class ParamPanel(QWidget):
         self._all_rows = []
 
     # ------------------------------------------------------------------
+    # Private: "Set All" handler
+    # ------------------------------------------------------------------
+
+    def _set_all_modified(self) -> None:
+        """Trigger set on every row that is currently in READY or FAILED state."""
+        for row in self._all_rows:
+            if row.is_ready_to_set():
+                row.trigger_set()
+        self._update_set_all_btn()
+
+    # ------------------------------------------------------------------
     # Public slots
     # ------------------------------------------------------------------
 
@@ -328,26 +441,20 @@ class ParamPanel(QWidget):
         """Update the panel title to reflect the selected node."""
         self._node_name = node_name
         bare = node_name.lstrip('/')
-        self._title_label.setText(f'PARAMETERS — {bare.upper()}')
+        display = bare.replace('_', ' ').title()
+        self._title_label.setText(f'Parameters  —  {display}')
 
     def load_params(self, params: list[ParamValue]) -> None:
-        """Rebuild the parameter rows for the given list of ParamValue objects.
-
-        Grouped by ``ParamValue.definition.category``, sorted alphabetically
-        within each category.
-
-        Args:
-            params: Parameters to display (typically from one Nav2 node).
-        """
+        """Rebuild the parameter rows for the given list of ParamValue objects."""
         self._clear_rows()
         self._param_values = params
         self._search.clear()
 
         if not params:
             self._count_label.setText('No parameters')
+            self._update_set_all_btn()
             return
 
-        # Show / hide plugin selector bar.
         bare_node = self._node_name.lstrip('/')
         if bare_node == 'controller_server':
             self._setup_plugin_bar(_CONTROLLER_PLUGINS)
@@ -360,19 +467,23 @@ class ParamPanel(QWidget):
             self._plugin_bar.setVisible(False)
             self._selected_plugin = None
 
-        # Group params by category, preserving within-category schema order.
         categories: dict[str, list[ParamValue]] = {}
         for pv in params:
             categories.setdefault(pv.definition.category, []).append(pv)
 
-        # Remove trailing stretch before adding sections.
         self._scroll_layout.takeAt(self._scroll_layout.count() - 1)
 
         for category in sorted(categories):
             section = _CategorySection(category)
             for pv in sorted(categories[category], key=lambda p: p.definition.param):
-                row = ParamRow(pv)
+                row = ParamRow(
+                    pv,
+                    show_description=self._show_descriptions,
+                    topic_discovery=self._topic_discovery,
+                    frame_discovery=self._frame_discovery,
+                )
                 row.param_changed.connect(self._on_param_changed)
+                row.param_set_requested.connect(self._on_row_set_requested)
                 section.add_row(row)
                 self._all_rows.append(row)
             self._sections[category] = section
@@ -380,49 +491,31 @@ class ParamPanel(QWidget):
 
         self._scroll_layout.addStretch()
         self._refresh_count_label()
-        logger.debug('ParamPanel: loaded %d params in %d categories', len(params), len(categories))
+        self._update_set_all_btn()
+        logger.debug(
+            'ParamPanel: loaded %d params in %d categories',
+            len(params), len(categories),
+        )
 
-    def update_param_result(self, param_name: str, success: bool) -> None:
-        """Apply visual feedback after a set_parameters call completes.
-
-        Args:
-            param_name: Name of the parameter that was set.
-            success: Whether the ROS2 node accepted the change.
-        """
+    def update_set_result(self, param_name: str, success: bool) -> None:
+        """Route a ROS2 set_parameters result to the matching row's Set button."""
         for row in self._all_rows:
             if row._param_value.definition.param == param_name:
-                color = '#4caf50' if success else '#f44336'
-                row.setStyleSheet(f'QWidget {{ background: {color}22; }}')
-                # Clear the flash after a short delay via a one-shot timer.
-                from PyQt6.QtCore import QTimer
-                QTimer.singleShot(800, lambda r=row: r.setStyleSheet(''))
+                row.receive_set_result(success)
                 break
-
-    # ------------------------------------------------------------------
-    # Private: param change handler
-    # ------------------------------------------------------------------
+        self._update_set_all_btn()
 
     def highlight_external_change(self, param_name: str) -> None:
-        """Flash a param row with ROS2 blue to indicate an externally-set change.
-
-        Args:
-            param_name: Name of the parameter that changed externally.
-        """
+        """Flash a param row with RViz2 blue to indicate an externally-set change."""
         from PyQt6.QtCore import QTimer
         for row in self._all_rows:
             if row._param_value.definition.param == param_name:
-                row.setStyleSheet('QWidget { background: #4fc3f722; }')  # ROS2 blue
-                QTimer.singleShot(1500, lambda r=row: r.setStyleSheet(''))
+                row.setStyleSheet('QWidget { background: #3399ff33; }')
+                QTimer.singleShot(1500, lambda r=row: r.restore_row_bg())
                 break
 
     def scroll_to_param(self, param_name: str) -> None:
-        """Scroll the parameter list to the row matching *param_name*.
-
-        Also expands the containing category section if it was collapsed.
-
-        Args:
-            param_name: The parameter name to navigate to.
-        """
+        """Scroll the parameter list to the row matching *param_name*."""
         for section in self._sections.values():
             for row in section.rows:
                 if row._param_value.definition.param == param_name:
@@ -431,6 +524,26 @@ class ParamPanel(QWidget):
                     self._scroll_area.ensureWidgetVisible(row)
                     return
 
+    def refresh_dropdowns(self) -> None:
+        """Refresh all topic and frame selector dropdowns in the current view."""
+        for row in self._all_rows:
+            row.refresh_discovery_widget()
+
+    def pending_param_names(self) -> set[str]:
+        """Return the set of param names that have pending (unsent) changes."""
+        return {
+            row._param_value.definition.param
+            for row in self._all_rows
+            if row._param_value.is_pending
+        }
+
     def _on_param_changed(self, param_name: str, value: Any) -> None:
+        """Called when any row's displayed value changes (before Set is clicked)."""
         self.param_change_requested.emit(self._node_name, param_name, value)
         self._refresh_count_label()
+        self._update_set_all_btn()
+
+    def _on_row_set_requested(self, param_name: str, value: object) -> None:
+        """Called when a row's Set button is clicked; forwards to the main window."""
+        self.param_set_requested.emit(self._node_name, param_name, value)
+        self._update_set_all_btn()

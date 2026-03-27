@@ -14,6 +14,8 @@ from PyQt6.QtCore import QObject, pyqtSignal
 from nav2_config.core.node_discovery import NAV2_NODES, discover_nav2_nodes
 from nav2_config.core.param_client import Nav2ParamClient
 from nav2_config.core.param_watcher import ParamWatcher
+from nav2_config.core.topic_discovery import TopicDiscovery
+from nav2_config.core.frame_discovery import FrameDiscovery
 from nav2_config.types.params import Nav2ParamDef, ParamValue
 
 logger = logging.getLogger(__name__)
@@ -42,6 +44,10 @@ class SignalBridge(QObject):
     # Carries (node_name, list[tuple[param_name, new_value]]).
     params_externally_changed = pyqtSignal(str, list)
 
+    # Emitted every TOPIC_FRAME_INTERVAL seconds so the GUI can refresh
+    # topic and TF frame dropdowns.
+    discovery_refreshed = pyqtSignal()
+
 
 class Nav2ConfigNode(Node):
     """ROS2 node that connects to a running Nav2 stack.
@@ -59,6 +65,8 @@ class Nav2ConfigNode(Node):
     DISCOVERY_INTERVAL: float = 3.0
     #: Seconds between parameter polls for external-change detection.
     POLL_INTERVAL: float = 2.0
+    #: Seconds between topic/frame discovery refreshes for GUI dropdowns.
+    TOPIC_FRAME_INTERVAL: float = 5.0
 
     def __init__(self, schema: list[Nav2ParamDef] | None = None) -> None:
         super().__init__('nav2_config_node')
@@ -84,6 +92,12 @@ class Nav2ConfigNode(Node):
         #: Watches the selected node for external parameter changes.
         self._watcher = ParamWatcher()
 
+        #: Topic discovery helper — wraps get_topic_names_and_types().
+        self.topic_discovery = TopicDiscovery(self)
+
+        #: TF frame discovery helper — wraps tf2_ros Buffer.
+        self.frame_discovery = FrameDiscovery(self)
+
         # None sentinel means "first tick — always emit".
         self._prev_discovered: set[str] | None = None
 
@@ -92,6 +106,8 @@ class Nav2ConfigNode(Node):
         self.create_timer(self.DISCOVERY_INTERVAL, self._on_timer_tick,
                           callback_group=self._cb_group)
         self.create_timer(self.POLL_INTERVAL, self._on_poll_tick,
+                          callback_group=self._cb_group)
+        self.create_timer(self.TOPIC_FRAME_INTERVAL, self._on_topic_frame_tick,
                           callback_group=self._cb_group)
 
         self.get_logger().info('Nav2 Config GUI started')
@@ -166,6 +182,10 @@ class Nav2ConfigNode(Node):
         """
         self._on_discovery_tick()
         self._drain_request_queue()
+
+    def _on_topic_frame_tick(self) -> None:
+        """5-second timer callback: signal the GUI to refresh topic/frame dropdowns."""
+        self.signals.discovery_refreshed.emit()
 
     def _on_poll_tick(self) -> None:
         """2-second timer callback: drain request queue, then re-fetch watched node params."""

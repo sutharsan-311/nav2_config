@@ -1,4 +1,8 @@
-"""ParamInput — monospace text / number input for free-form parameters."""
+"""ParamInput — system-font text / number input for free-form parameters.
+
+RViz2 style: dark input background (#2d2d2d), system sans-serif font (not
+monospace — monospace is reserved for the YAML panel only).
+"""
 
 from __future__ import annotations
 
@@ -7,10 +11,9 @@ from PyQt6.QtWidgets import QLineEdit, QWidget
 
 
 class ParamInput(QLineEdit):
-    """Dark-themed monospace QLineEdit for string and unconstrained params.
+    """Dark-themed QLineEdit for string and unconstrained numeric params.
 
-    Emits ``value_changed`` on ``editingFinished`` (Enter / focus-out) rather
-    than on every keystroke, so that ROS2 service calls are not spammed.
+    Emits ``value_changed`` on ``editingFinished`` (Enter / focus-out).
 
     Signals:
         value_changed(str): emitted when the user commits a new value.
@@ -20,14 +23,7 @@ class ParamInput(QLineEdit):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setStyleSheet(
-            'font-family: "Consolas", "JetBrains Mono", "Courier New", monospace;'
-        )
         self.editingFinished.connect(lambda: self.value_changed.emit(self.text()))
-
-    # ------------------------------------------------------------------
-    # Public API
-    # ------------------------------------------------------------------
 
     def set_value(self, value) -> None:
         """Set the displayed text."""

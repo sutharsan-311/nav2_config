@@ -58,22 +58,29 @@ def export_yaml(
     params: list[ParamValue],
     ros_version: str = "humble",
     plugin_filter: str | None = None,
+    pending_params: set[str] | None = None,
 ) -> str:
     """Generate a nav2_params.yaml string from live parameter values.
 
     Parameters are grouped by node name under ``ros__parameters``.
     A comment line is inserted above each parameter whose ``current_value``
     differs from the schema default, explaining its purpose and tuning impact.
+    Parameters in *pending_params* get an inline ``# (pending)`` marker so the
+    YAML panel can highlight them in blue.
 
     Args:
         params: Live parameter values to export.
         ros_version: ROS2 distro name written into the file header.
         plugin_filter: When set, only params with ``plugin_specific=False`` or
             whose ``plugin`` field equals this value are included.
+        pending_params: Set of param names whose values have been edited in the
+            GUI but not yet sent to the ROS2 node.
 
     Returns:
         A YAML string suitable for use as ``nav2_params.yaml``.
     """
+    pending: set[str] = pending_params or set()
+
     # Apply plugin filter.
     visible: list[ParamValue] = []
     for pv in params:
@@ -113,7 +120,10 @@ def export_yaml(
                 if len(comment) > 100:
                     comment = comment[:97] + '...'
                 lines.append(f"    # {comment}")
-            lines.append(f"    {defn.param}: {_format_value(pv.current_value)}")
+            value_line = f"    {defn.param}: {_format_value(pv.current_value)}"
+            if defn.param in pending:
+                value_line += "  # (pending)"
+            lines.append(value_line)
 
         lines.append("")  # Blank line between nodes.
 

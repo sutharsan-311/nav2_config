@@ -73,22 +73,52 @@ class Nav2ParamDef:
 
 @dataclass
 class ParamValue:
-    """A live parameter value paired with its schema definition."""
+    """A live parameter value paired with its schema definition.
+
+    Two value fields are tracked:
+    - ``current_value``: the pending/displayed value (updated on every GUI change).
+    - ``confirmed_value``: the value last confirmed as live on the ROS2 node
+      (updated only when a parameter set succeeds or fresh params are fetched).
+
+    ``is_pending`` is True when the user has made a change that has not yet been
+    sent to the ROS2 node (current_value ≠ confirmed_value).
+    """
 
     definition: Nav2ParamDef
-    current_value: Any          # Live value fetched from the running ROS2 node
+    current_value: Any          # Pending/displayed value; updated on every GUI change
     is_modified: bool = False   # True if current_value differs from definition.default
     is_live: bool = False       # True if current_value was fetched from a running node
+    confirmed_value: Any = None # Last value confirmed live on the ROS2 node
+
+    def __post_init__(self) -> None:
+        if self.confirmed_value is None:
+            self.confirmed_value = self.current_value
 
     def update(self, new_value: Any) -> None:
-        """Update the live value and recalculate the modified flag."""
+        """Update the pending/displayed value and recalculate the modified flag.
+
+        Does NOT update confirmed_value — call :meth:`confirm` for that.
+        """
         self.current_value = new_value
         self.is_modified = new_value != self.definition.default
 
+    def confirm(self, confirmed: Any) -> None:
+        """Record that *confirmed* was successfully set on the ROS2 node.
+
+        Updates confirmed_value.  current_value is left unchanged (the user
+        may have typed a new value during the pending period).
+        """
+        self.confirmed_value = confirmed
+
+    @property
+    def is_pending(self) -> bool:
+        """True if current_value differs from the confirmed live value."""
+        return self.current_value != self.confirmed_value
+
     @property
     def live_value(self) -> Any:
-        """Alias for current_value — the value as last seen from the running node."""
-        return self.current_value
+        """The value last confirmed live on the ROS2 node."""
+        return self.confirmed_value
 
     @property
     def display_value(self) -> str:
