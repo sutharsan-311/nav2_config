@@ -81,16 +81,13 @@ logger = logging.getLogger(__name__)
 
 
 class _RestartNotificationBar(QWidget):
-    """Amber banner shown when a non-hot-reload param is changed.
+    """Amber banner shown when a non-hot-reload param is saved to config.
 
-    Offers "Restart Now" and "Later" actions.
+    Offers "Save & Restart" and "Save Only" actions.
     """
-
-    restart_requested = pyqtSignal_type = None  # filled below
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._node_name = ''
         self._build_ui()
         self.setVisible(False)
 
@@ -111,64 +108,49 @@ class _RestartNotificationBar(QWidget):
         layout.addWidget(self._message)
         layout.addStretch()
 
-        self._restart_btn = QPushButton('Restart Now')
-        self._restart_btn.setFixedHeight(22)
-        self._restart_btn.setStyleSheet(
+        self._save_restart_btn = QPushButton('Save & Restart')
+        self._save_restart_btn.setFixedHeight(22)
+        self._save_restart_btn.setStyleSheet(
             'QPushButton { background: #f57c00; border: 1px solid #e65100; '
             'color: white; font-size: 9pt; padding: 0 10px; }'
             'QPushButton:hover { background: #e65100; }'
         )
-        layout.addWidget(self._restart_btn)
+        layout.addWidget(self._save_restart_btn)
 
-        later_btn = QPushButton('Later')
-        later_btn.setFixedHeight(22)
-        later_btn.setStyleSheet(
+        self._save_only_btn = QPushButton('Save Only')
+        self._save_only_btn.setFixedHeight(22)
+        self._save_only_btn.setStyleSheet(
             'QPushButton { background: transparent; border: 1px solid #bbb; '
             'color: #555; font-size: 9pt; padding: 0 8px; }'
             'QPushButton:hover { background: #ffe0b2; }'
         )
-        later_btn.clicked.connect(self.setVisible)
-        later_btn.clicked.connect(lambda: self.setVisible(False))
-        layout.addWidget(later_btn)
-
-        # Store the Restart Now button so the caller can connect its signal
-        self._restart_btn.clicked.connect(lambda: self.setVisible(False))
+        layout.addWidget(self._save_only_btn)
 
     def show_for(
         self,
-        node_name: str,
         param_name: str,
-        on_restart: 'Callable[[], None]',
-        stack_restart: bool = False,
+        on_save_restart: 'Callable[[], None]',
+        on_save_only: 'Callable[[], None]',
     ) -> None:
-        """Display the bar for a specific param change.
+        """Display the bar for a non-hot-reload param saved to config.
 
         Args:
-            node_name: Full ROS2 node path.
-            param_name: The parameter that changed.
-            on_restart: Called when the user clicks the restart button.
-            stack_restart: When ``True``, the button says "Restart Nav2 Stack"
-                and the message references the full stack (for use when
-                lifecycle_manager is running).
+            param_name: The parameter that was saved to the config file.
+            on_save_restart: Called when the user clicks "Save & Restart".
+            on_save_only: Called when the user clicks "Save Only".
         """
-        self._node_name = node_name
-        bare = node_name.lstrip('/')
-        if stack_restart:
-            self._message.setText(
-                f'{param_name} changed. This requires restarting the Nav2 stack to take effect.'
-            )
-        else:
-            self._message.setText(
-                f'{param_name} requires a node restart to take effect.'
-            )
-        # Disconnect any previous restart handler and connect the new one.
-        try:
-            self._restart_btn.clicked.disconnect()
-        except RuntimeError:
-            pass
-        self._restart_btn.clicked.connect(lambda: self.setVisible(False))
-        self._restart_btn.clicked.connect(on_restart)
-        self._restart_btn.setText('Restart Nav2 Stack' if stack_restart else f'Restart {bare} Now')
+        self._message.setText(
+            f'{param_name} updated in config. Restart Nav2 to apply.'
+        )
+        for btn, cb in (
+            (self._save_restart_btn, on_save_restart),
+            (self._save_only_btn, on_save_only),
+        ):
+            try:
+                btn.clicked.disconnect()
+            except (RuntimeError, TypeError):
+                pass
+            btn.clicked.connect(lambda _checked=False, c=cb: (self.setVisible(False), c()))
         self.setVisible(True)
 
 
@@ -566,6 +548,9 @@ class MainWindow(QMainWindow):
             self._on_lifecycle_manager_status
         )
         self._yaml_panel.save_requested.connect(self._on_save)
+        self._node.signals.load_map_result.connect(self._on_load_map_result)
+        self._node.signals.post_action_result.connect(self._on_post_action_result)
+        self._node.signals.restart_suggested.connect(self._on_restart_suggested)
 
     # ------------------------------------------------------------------
     # Private slots
@@ -673,11 +658,13 @@ class MainWindow(QMainWindow):
         type_hint = ''
         hot_reload = True
         ros2_name = param_name
+        post_set_action: str | None = None
         for row in self._param_panel._all_rows:
             if row._param_value.definition.param == param_name:
                 type_hint = row._param_value.definition.type
                 hot_reload = row._param_value.definition.hot_reload
                 ros2_name = row._param_value.definition.ros2_name
+                post_set_action = row._param_value.definition.post_set_action
                 break
 
         # Always update the config file in-memory when one is loaded
@@ -686,19 +673,54 @@ class MainWindow(QMainWindow):
             self._mark_dirty()
 
         if hot_reload:
-            # Immediate live effect via ROS2 service
+            # Immediate live effect via ROS2 service.
+            # Any follow-up action (clear_costmaps, load_map, nomotion_update)
+            # is handled automatically by _after_param_set in the ROS2 thread.
+            if post_set_action == 'load_map':
+                self.set_status('Loading map...', timeout_ms=0)
             self._node.request_set_param(node_name, param_name, value, type_hint)
         else:
-            # Config-file-only: value will apply after next Nav2 restart
+            # Non-hot-reload: auto-save config to disk; restart Nav2 to apply.
+            if self._config_file:
+                try:
+                    self._config_file.save()
+                except Exception as exc:
+                    logger.warning('Auto-save failed after non-hot-reload param set: %s', exc)
+                else:
+                    self._dirty = False
+                    self._update_title()
+                    self._yaml_panel.set_save_button_dirty(False)
+                    self._yaml_panel.set_file_content(
+                        self._config_file.to_yaml_string(), dirty=False
+                    )
+                    self._node.get_logger().info(
+                        f"Config saved: {param_name} = {value}"
+                    )
             self._param_panel.mark_param_file_saved(param_name)
             self._node_panel.set_node_restart_pending(node_name, True)
+            self.set_status(f'Config saved: {param_name}. Restart Nav2 to apply.')
+
+            def _on_save_restart() -> None:
+                self.set_status('Restarting Nav2 via lifecycle_manager...', timeout_ms=0)
+                dialog = _RestartAllProgressDialog(1, parent=self)
+                self._node.signals.lifecycle_progress.connect(dialog.on_progress)
+                self._node.signals.lifecycle_change_result.connect(dialog.on_result)
+                self._node.signals.lifecycle_change_result.connect(
+                    lambda _np, ok, _msg, n=node_name: (
+                        self._node_panel.set_node_restart_pending(n, False) if ok else None
+                    )
+                )
+                self._node.request_nav2_stack_restart()
+                dialog.show()
+
+            def _on_save_only() -> None:
+                self.set_status('Config saved. Restart Nav2 when ready.')
+
             self._notification_bar.show_for(
-                node_name,
                 param_name,
-                on_restart=lambda checked=False, n=node_name: self._do_restart_node(n),
-                stack_restart=self._lifecycle_manager_present,
+                on_save_restart=_on_save_restart,
+                on_save_only=_on_save_only,
             )
-            self.set_status(f'Saved {param_name} to config -- restart Nav2 to apply')
 
     def _on_param_set_result(
         self, node_name: str, param_name: str, success: bool
@@ -720,28 +742,15 @@ class MainWindow(QMainWindow):
 
         if success:
             val: object = '?'
-            needs_restart = False
             for pv in self._current_params:
                 if pv.definition.param == param_name:
                     val = pv.live_value  # confirmed_value after update_set_result
-                    needs_restart = not pv.definition.hot_reload
                     break
             self._status_last_set.setText(f'\u2713 {param_name} \u2192 {val}')
             self._status_last_set.setStyleSheet(
                 f'color: {_GREEN}; padding: 0 8px; font-size: 9pt;'
             )
             logger.debug('Set %s/%s = %r', node_name, param_name, val)
-
-            # Non-hot-reload notification: only when no config file is loaded
-            # (with a config file, _on_param_set_requested already handled this)
-            if needs_restart and not self._config_file:
-                self._node_panel.set_node_restart_pending(node_name, True)
-                self._notification_bar.show_for(
-                    node_name,
-                    param_name,
-                    on_restart=lambda checked=False, n=node_name: self._do_restart_node(n),
-                    stack_restart=self._lifecycle_manager_present,
-                )
         else:
             self._status_last_set.setText(f'\u2717 {param_name} -- failed')
             self._status_last_set.setStyleSheet(
@@ -751,6 +760,84 @@ class MainWindow(QMainWindow):
                 f'Failed to set {node_name.lstrip("/")}/{param_name}'
             )
         self._last_set_timer.start(5000)
+
+    def _on_load_map_result(self, success: bool, message: str) -> None:
+        if success:
+            self.set_status('Map loaded successfully')
+            self._status_last_set.setText('\u2713 map reloaded')
+            self._status_last_set.setStyleSheet(
+                f'color: {_GREEN}; padding: 0 8px; font-size: 9pt;'
+            )
+            self._last_set_timer.start(5000)
+        else:
+            self.set_status(f'Map load failed: {message}')
+            self._status_last_set.setText('\u2717 map load failed')
+            self._status_last_set.setStyleSheet(
+                f'color: {_RED}; padding: 0 8px; font-size: 9pt;'
+            )
+            self._last_set_timer.start(8000)
+
+    def _on_post_action_result(
+        self, param_name: str, action: str, success: bool, detail: str
+    ) -> None:
+        """Update the status bar after a post-set service action completes."""
+        # Find the current (confirmed) value for the param to show in the bar.
+        val: object = ''
+        for pv in self._current_params:
+            if pv.definition.param == param_name:
+                val = pv.live_value
+                break
+
+        if action == 'clear_costmaps':
+            if success:
+                self._status_last_set.setText(
+                    f'\u2713 {param_name} \u2192 {val} \u2014 costmaps cleared'
+                )
+                self._status_last_set.setStyleSheet(
+                    f'color: {_GREEN}; padding: 0 8px; font-size: 9pt;'
+                )
+                self.set_status(f'Set {param_name} = {val} — costmaps cleared')
+            else:
+                self._status_last_set.setText(f'\u2717 costmap clear failed')
+                self._status_last_set.setStyleSheet(
+                    f'color: {_RED}; padding: 0 8px; font-size: 9pt;'
+                )
+                self.set_status(f'Set {param_name} — costmap clear failed')
+        elif action == 'nomotion_update':
+            if success:
+                self._status_last_set.setText(
+                    f'\u2713 {param_name} \u2192 {val} \u2014 AMCL updated'
+                )
+                self._status_last_set.setStyleSheet(
+                    f'color: {_GREEN}; padding: 0 8px; font-size: 9pt;'
+                )
+                self.set_status(f'Set {param_name} = {val} — AMCL nomotion update triggered')
+            else:
+                self._status_last_set.setText(f'\u2717 AMCL update failed')
+                self._status_last_set.setStyleSheet(
+                    f'color: {_RED}; padding: 0 8px; font-size: 9pt;'
+                )
+                self.set_status(f'Set {param_name} — AMCL nomotion update failed')
+        self._last_set_timer.start(6000)
+
+    def _on_restart_suggested(self, node_name: str, param_name: str) -> None:
+        """Show the restart notification bar when a restart_stack param is set live."""
+        def _on_save_restart() -> None:
+            self.set_status('Restarting Nav2 via lifecycle_manager...', timeout_ms=0)
+            dialog = _RestartAllProgressDialog(1, parent=self)
+            self._node.signals.lifecycle_progress.connect(dialog.on_progress)
+            self._node.signals.lifecycle_change_result.connect(dialog.on_result)
+            self._node.request_nav2_stack_restart()
+            dialog.show()
+
+        def _on_save_only() -> None:
+            self.set_status('Plugin changed. Restart Nav2 when ready.')
+
+        self._notification_bar.show_for(
+            param_name,
+            on_save_restart=_on_save_restart,
+            on_save_only=_on_save_only,
+        )
 
     # ------------------------------------------------------------------
     # Config file management
@@ -1074,8 +1161,14 @@ class MainWindow(QMainWindow):
 
         def _on_result(np: str, success: bool, msg: str) -> None:
             if np == node_path:
-                self._node.signals.lifecycle_progress.disconnect(_on_progress)
-                self._node.signals.lifecycle_change_result.disconnect(_on_result)
+                try:
+                    self._node.signals.lifecycle_progress.disconnect(_on_progress)
+                except (RuntimeError, TypeError):
+                    pass
+                try:
+                    self._node.signals.lifecycle_change_result.disconnect(_on_result)
+                except (RuntimeError, TypeError):
+                    pass
                 if success:
                     self._node_panel.set_node_restart_pending(node_path, False)
 

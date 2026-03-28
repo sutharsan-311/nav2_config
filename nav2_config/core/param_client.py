@@ -237,7 +237,13 @@ class Nav2ParamClient:
         logger.debug("get_params(%s): fetched %d/%d", node_name, len(result), len(param_names))
         return result
 
-    def set_param(self, node_name: str, param_name: str, value: Any, type_hint: str = "") -> bool:
+    def set_param(
+        self,
+        node_name: str,
+        param_name: str,
+        value: Any,
+        type_hint: str = "",
+    ) -> tuple[bool, str]:
         """Write a single parameter value to a running Nav2 node.
 
         Calls ``/{node_name}/set_parameters`` with a single-element list.
@@ -251,7 +257,8 @@ class Nav2ParamClient:
                 when empty.
 
         Returns:
-            ``True`` if the node accepted the change, ``False`` otherwise.
+            ``(True, "")`` if the node accepted the change,
+            ``(False, reason)`` otherwise.
         """
         client = self._get_client(node_name, SetParameters)
 
@@ -264,11 +271,12 @@ class Nav2ParamClient:
 
         response = self._call(client, req)
         if response is None:
-            return False
+            return False, "service call failed"
 
         if not response.results:
-            logger.warning("set_param(%s, %s): empty results list", node_name, param_name)
-            return False
+            reason = "empty results list"
+            logger.warning("set_param(%s, %s): %s", node_name, param_name, reason)
+            return False, reason
 
         result = response.results[0]
         if not result.successful:
@@ -276,7 +284,7 @@ class Nav2ParamClient:
                 "set_param(%s, %s) rejected: %s",
                 node_name, param_name, result.reason,
             )
-        return result.successful
+        return result.successful, result.reason if not result.successful else ""
 
     def get_all_nav2_params(
         self,

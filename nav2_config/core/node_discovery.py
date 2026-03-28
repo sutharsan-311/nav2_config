@@ -1,5 +1,7 @@
 """Nav2 node discovery: checks which Nav2 nodes are currently running."""
 
+from __future__ import annotations
+
 from rclpy.node import Node
 
 
@@ -20,7 +22,10 @@ NAV2_NODES: dict[str, str] = {
 }
 
 
-def discover_nav2_nodes(node: Node) -> dict[str, bool]:
+def discover_nav2_nodes(
+    node: Node,
+    nodes_and_ns: list[tuple[str, str]] | None = None,
+) -> dict[str, bool]:
     """Discover which Nav2 nodes are currently running.
 
     Calls ``node.get_node_names_and_namespaces()`` to enumerate all running
@@ -32,12 +37,16 @@ def discover_nav2_nodes(node: Node) -> dict[str, bool]:
 
     Args:
         node: The rclpy Node used to call the ROS2 graph API.
+        nodes_and_ns: Pre-fetched result of ``node.get_node_names_and_namespaces()``.
+            If *None*, the call is made internally.  Pass a cached result to
+            avoid a redundant ROS2 graph query on the same tick.
 
     Returns:
         dict mapping each :data:`NAV2_NODES` key to ``True`` (running) or
         ``False`` (not found).
     """
-    nodes_and_ns = node.get_node_names_and_namespaces()
+    if nodes_and_ns is None:
+        nodes_and_ns = node.get_node_names_and_namespaces()
 
     running: set[str] = set()
     for name, ns in nodes_and_ns:
@@ -57,17 +66,23 @@ LIFECYCLE_MANAGERS: dict[str, str] = {
 }
 
 
-def discover_lifecycle_managers(node: Node) -> dict[str, bool]:
+def discover_lifecycle_managers(
+    node: Node,
+    nodes_and_ns: list[tuple[str, str]] | None = None,
+) -> dict[str, bool]:
     """Check which Nav2 lifecycle managers are currently running.
 
     Args:
         node: The rclpy Node used to call the ROS2 graph API.
+        nodes_and_ns: Pre-fetched result of ``node.get_node_names_and_namespaces()``.
+            If *None*, the call is made internally.
 
     Returns:
         dict mapping each :data:`LIFECYCLE_MANAGERS` key to ``True`` (running)
         or ``False`` (not found).
     """
-    nodes_and_ns = node.get_node_names_and_namespaces()
+    if nodes_and_ns is None:
+        nodes_and_ns = node.get_node_names_and_namespaces()
     running: set[str] = set()
     for name, ns in nodes_and_ns:
         full_path = '/' + name if ns == '/' else ns + '/' + name

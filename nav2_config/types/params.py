@@ -37,6 +37,13 @@ class Nav2ParamDef:
     # "FollowPath.max_vel_x").  Defaults to ``param`` when not set in JSON,
     # which is correct for all top-level parameters that need no namespace.
     ros2_name: str = field(default="")
+    # Service to call after a successful param set.
+    # None: takes effect immediately; no follow-up needed.
+    # "clear_costmaps": call clear_entirely on both costmaps.
+    # "load_map": call /map_server/load_map with the new value.
+    # "nomotion_update": call /request_nomotion_update on AMCL.
+    # "restart_stack": requires Nav2 restart; show notification instead.
+    post_set_action: str | None = None
 
     def __post_init__(self) -> None:
         if not self.ros2_name:
@@ -68,6 +75,7 @@ class Nav2ParamDef:
             hot_reload=data.get("hot_reload", True),
             tags=data.get("tags", []),
             ros2_name=data.get("ros2_name", data["param"]),
+            post_set_action=data.get("post_set_action"),
         )
 
 

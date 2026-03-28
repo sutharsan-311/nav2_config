@@ -19,7 +19,8 @@
       "controller",
       "frequency",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -41,7 +42,8 @@
       "controller",
       "velocity",
       "stuck"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -64,7 +66,8 @@
       "velocity",
       "stuck",
       "holonomic"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -86,7 +89,8 @@
       "controller",
       "velocity",
       "stuck"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -108,7 +112,8 @@
       "controller",
       "failure",
       "recovery"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -127,7 +132,8 @@
       "controller",
       "plugin",
       "progress"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "controller_server",
@@ -148,7 +154,8 @@
       "controller",
       "plugin",
       "goal"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "controller_server",
@@ -168,7 +175,8 @@
     "tags": [
       "controller",
       "plugin"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "controller_server",
@@ -193,7 +201,8 @@
       "controller",
       "plugin",
       "followpath"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "controller_server",
@@ -216,7 +225,8 @@
       "rpp",
       "velocity",
       "speed"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -238,7 +248,8 @@
       "controller",
       "rpp",
       "lookahead"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -260,7 +271,8 @@
       "controller",
       "rpp",
       "lookahead"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -282,7 +294,8 @@
       "controller",
       "rpp",
       "lookahead"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -305,7 +318,8 @@
       "rpp",
       "lookahead",
       "adaptive"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -325,7 +339,8 @@
       "rpp",
       "lookahead",
       "adaptive"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -348,7 +363,8 @@
       "rpp",
       "goal",
       "velocity"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -371,7 +387,8 @@
       "rpp",
       "goal",
       "velocity"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -391,7 +408,8 @@
       "rpp",
       "regulation",
       "curvature"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -412,7 +430,8 @@
       "regulation",
       "cost",
       "obstacles"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -435,7 +454,8 @@
       "rpp",
       "regulation",
       "curvature"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -458,7 +478,8 @@
       "rpp",
       "regulation",
       "velocity"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -481,7 +502,8 @@
       "rpp",
       "acceleration",
       "angular"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -500,7 +522,8 @@
       "controller",
       "rpp",
       "rotation"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -523,7 +546,8 @@
       "rpp",
       "rotation",
       "heading"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -546,7 +570,8 @@
       "rpp",
       "rotation",
       "velocity"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -565,7 +590,8 @@
       "controller",
       "rpp",
       "reversing"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "planner_server",
@@ -585,7 +611,8 @@
     "tags": [
       "planner",
       "plugin"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "planner_server",
@@ -607,7 +634,8 @@
       "planner",
       "frequency",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "planner_server",
@@ -634,7 +662,8 @@
       "planner",
       "plugin",
       "gridbased"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "planner_server",
@@ -656,7 +685,8 @@
       "planner",
       "navfn",
       "tolerance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "planner_server",
@@ -676,7 +706,8 @@
       "navfn",
       "astar",
       "algorithm"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "planner_server",
@@ -696,7 +727,8 @@
       "navfn",
       "unknown",
       "exploration"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "planner_server",
@@ -719,7 +751,8 @@
       "smac",
       "iterations",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "planner_server",
@@ -743,7 +776,8 @@
       "hybrid",
       "turning_radius",
       "kinematics"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "planner_server",
@@ -767,7 +801,8 @@
       "hybrid",
       "heading",
       "resolution"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "planner_server",
@@ -786,7 +821,8 @@
       "planner",
       "smac",
       "smoothing"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -808,7 +844,8 @@
       "amcl",
       "particles",
       "localization"
-    ]
+    ],
+    "post_set_action": "nomotion_update"
   },
   {
     "node": "amcl",
@@ -830,7 +867,8 @@
       "amcl",
       "particles",
       "localization"
-    ]
+    ],
+    "post_set_action": "nomotion_update"
   },
   {
     "node": "amcl",
@@ -855,7 +893,8 @@
       "amcl",
       "laser",
       "sensor_model"
-    ]
+    ],
+    "post_set_action": "nomotion_update"
   },
   {
     "node": "amcl",
@@ -877,7 +916,8 @@
       "amcl",
       "laser",
       "range"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -899,7 +939,8 @@
       "amcl",
       "laser",
       "range"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -922,7 +963,8 @@
       "laser",
       "beams",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -944,7 +986,8 @@
       "amcl",
       "laser",
       "weights"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -966,7 +1009,8 @@
       "amcl",
       "laser",
       "weights"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -988,7 +1032,8 @@
       "amcl",
       "laser",
       "weights"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -1012,7 +1057,8 @@
       "amcl",
       "odom",
       "motion_model"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -1034,7 +1080,8 @@
       "amcl",
       "odom",
       "noise"
-    ]
+    ],
+    "post_set_action": "nomotion_update"
   },
   {
     "node": "amcl",
@@ -1056,7 +1103,8 @@
       "amcl",
       "odom",
       "noise"
-    ]
+    ],
+    "post_set_action": "nomotion_update"
   },
   {
     "node": "amcl",
@@ -1078,7 +1126,8 @@
       "amcl",
       "odom",
       "noise"
-    ]
+    ],
+    "post_set_action": "nomotion_update"
   },
   {
     "node": "amcl",
@@ -1100,7 +1149,8 @@
       "amcl",
       "odom",
       "noise"
-    ]
+    ],
+    "post_set_action": "nomotion_update"
   },
   {
     "node": "amcl",
@@ -1122,7 +1172,8 @@
       "amcl",
       "update",
       "trigger"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -1144,7 +1195,8 @@
       "amcl",
       "update",
       "trigger"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -1165,7 +1217,8 @@
     "tags": [
       "amcl",
       "resampling"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -1187,7 +1240,8 @@
       "amcl",
       "recovery",
       "global_localization"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -1209,7 +1263,8 @@
       "amcl",
       "recovery",
       "global_localization"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -1228,7 +1283,8 @@
       "amcl",
       "frames",
       "tf"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -1247,7 +1303,8 @@
       "amcl",
       "frames",
       "tf"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -1266,7 +1323,8 @@
       "amcl",
       "frames",
       "tf"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -1285,7 +1343,8 @@
       "amcl",
       "tf",
       "broadcast"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "bt_navigator",
@@ -1307,7 +1366,8 @@
       "bt_navigator",
       "behavior_tree",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "bt_navigator",
@@ -1328,7 +1388,8 @@
     "tags": [
       "bt_navigator",
       "timeout"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "bt_navigator",
@@ -1350,7 +1411,8 @@
       "bt_navigator",
       "timeout",
       "service"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "bt_navigator",
@@ -1369,7 +1431,8 @@
       "bt_navigator",
       "frames",
       "tf"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "bt_navigator",
@@ -1388,7 +1451,8 @@
       "bt_navigator",
       "frames",
       "tf"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "bt_navigator",
@@ -1407,7 +1471,8 @@
       "bt_navigator",
       "groot",
       "debug"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "local_costmap",
@@ -1430,7 +1495,8 @@
       "costmap",
       "frequency",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "local_costmap",
@@ -1453,7 +1519,8 @@
       "costmap",
       "frequency",
       "visualization"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "local_costmap",
@@ -1472,7 +1539,8 @@
       "local_costmap",
       "frames",
       "tf"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "local_costmap",
@@ -1491,7 +1559,8 @@
       "local_costmap",
       "frames",
       "tf"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "local_costmap",
@@ -1510,7 +1579,8 @@
       "local_costmap",
       "rolling_window",
       "geometry"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "local_costmap",
@@ -1532,7 +1602,8 @@
       "local_costmap",
       "size",
       "geometry"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -1554,7 +1625,8 @@
       "local_costmap",
       "size",
       "geometry"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -1576,7 +1648,8 @@
       "local_costmap",
       "resolution",
       "geometry"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -1596,7 +1669,8 @@
       "footprint",
       "collision",
       "geometry"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -1619,7 +1693,8 @@
       "robot_radius",
       "collision",
       "geometry"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -1641,7 +1716,8 @@
       "local_costmap",
       "plugins",
       "layers"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "local_costmap",
@@ -1663,7 +1739,8 @@
       "local_costmap",
       "inflation",
       "safety"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -1686,7 +1763,8 @@
       "inflation",
       "safety",
       "cost"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -1704,7 +1782,8 @@
     "tags": [
       "local_costmap",
       "obstacle_layer"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -1726,7 +1805,8 @@
       "local_costmap",
       "obstacle_layer",
       "range"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -1748,7 +1828,8 @@
       "local_costmap",
       "obstacle_layer",
       "range"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -1770,7 +1851,8 @@
       "local_costmap",
       "obstacle_layer",
       "raytrace"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -1788,7 +1870,8 @@
     "tags": [
       "local_costmap",
       "voxel_layer"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -1810,7 +1893,8 @@
       "local_costmap",
       "voxel_layer",
       "3d"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "local_costmap",
@@ -1833,7 +1917,8 @@
       "voxel_layer",
       "3d",
       "resolution"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "global_costmap",
@@ -1856,7 +1941,8 @@
       "costmap",
       "frequency",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "global_costmap",
@@ -1879,7 +1965,8 @@
       "costmap",
       "frequency",
       "visualization"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "global_costmap",
@@ -1898,7 +1985,8 @@
       "global_costmap",
       "frames",
       "tf"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "global_costmap",
@@ -1917,7 +2005,8 @@
       "global_costmap",
       "frames",
       "tf"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "global_costmap",
@@ -1939,7 +2028,8 @@
       "global_costmap",
       "resolution",
       "geometry"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "global_costmap",
@@ -1962,7 +2052,8 @@
       "global_costmap",
       "plugins",
       "layers"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "global_costmap",
@@ -1980,7 +2071,8 @@
     "tags": [
       "global_costmap",
       "static_layer"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "global_costmap",
@@ -1999,7 +2091,8 @@
       "global_costmap",
       "static_layer",
       "qos"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "global_costmap",
@@ -2021,7 +2114,8 @@
       "global_costmap",
       "inflation",
       "safety"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "global_costmap",
@@ -2044,7 +2138,8 @@
       "inflation",
       "safety",
       "cost"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "smoother_server",
@@ -2064,7 +2159,8 @@
     "tags": [
       "smoother",
       "plugin"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "smoother_server",
@@ -2086,7 +2182,8 @@
       "smoother",
       "simple_smoother",
       "tolerance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "smoother_server",
@@ -2109,7 +2206,8 @@
       "simple_smoother",
       "iterations",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "smoother_server",
@@ -2131,7 +2229,8 @@
       "smoother",
       "simple_smoother",
       "weights"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "smoother_server",
@@ -2153,7 +2252,8 @@
       "smoother",
       "simple_smoother",
       "weights"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -2177,7 +2277,8 @@
       "behavior_server",
       "recovery",
       "plugin"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "behavior_server",
@@ -2200,7 +2301,8 @@
       "spin",
       "simulation",
       "safety"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -2223,7 +2325,8 @@
       "backup",
       "simulation",
       "safety"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -2242,7 +2345,8 @@
       "behavior_server",
       "frames",
       "tf"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -2261,7 +2365,8 @@
       "behavior_server",
       "frames",
       "tf"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "velocity_smoother",
@@ -2283,7 +2388,8 @@
       "velocity_smoother",
       "frequency",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "velocity_smoother",
@@ -2301,7 +2407,8 @@
     "tags": [
       "velocity_smoother",
       "scaling"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "velocity_smoother",
@@ -2325,7 +2432,8 @@
       "velocity_smoother",
       "feedback",
       "odometry"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "velocity_smoother",
@@ -2344,7 +2452,8 @@
       "velocity_smoother",
       "velocity",
       "limits"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "velocity_smoother",
@@ -2363,7 +2472,8 @@
       "velocity_smoother",
       "velocity",
       "limits"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "velocity_smoother",
@@ -2382,7 +2492,8 @@
       "velocity_smoother",
       "acceleration",
       "limits"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "velocity_smoother",
@@ -2401,7 +2512,8 @@
       "velocity_smoother",
       "deceleration",
       "limits"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "velocity_smoother",
@@ -2420,7 +2532,8 @@
       "velocity_smoother",
       "deadband",
       "velocity"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "velocity_smoother",
@@ -2442,7 +2555,8 @@
       "velocity_smoother",
       "timeout",
       "safety"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "waypoint_follower",
@@ -2464,7 +2578,8 @@
       "waypoint_follower",
       "frequency",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "waypoint_follower",
@@ -2483,7 +2598,8 @@
       "waypoint_follower",
       "failure",
       "behavior"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "waypoint_follower",
@@ -2502,7 +2618,8 @@
       "waypoint_follower",
       "plugin",
       "task"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "waypoint_follower",
@@ -2524,7 +2641,8 @@
       "waypoint_follower",
       "wait",
       "dwell"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "map_server",
@@ -2534,16 +2652,17 @@
     "range": null,
     "unit": "",
     "description": "Path to the map YAML file describing the occupancy grid.",
-    "impact": "Core configuration. Changing requires node restart. Incorrect path causes AMCL failure.",
+    "impact": "Changing this path reloads the map immediately via the load_map service \u2014 no restart needed.",
     "category": "core",
     "plugin_specific": false,
     "plugin": null,
-    "hot_reload": false,
+    "hot_reload": true,
     "tags": [
       "map_server",
       "map",
       "file"
-    ]
+    ],
+    "post_set_action": "load_map"
   },
   {
     "node": "map_server",
@@ -2562,7 +2681,8 @@
       "map_server",
       "topic",
       "map"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "map_server",
@@ -2581,7 +2701,8 @@
       "map_server",
       "frames",
       "tf"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -2603,7 +2724,8 @@
       "controller",
       "rpp",
       "path_tracking"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -2623,7 +2745,8 @@
       "rpp",
       "goal",
       "curvature"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -2642,7 +2765,8 @@
       "amcl",
       "initialization",
       "pose"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -2661,7 +2785,8 @@
       "amcl",
       "initialization",
       "pose"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -2680,7 +2805,8 @@
       "amcl",
       "initialization",
       "pose"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -2703,7 +2829,8 @@
       "initialization",
       "pose",
       "heading"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "planner_server",
@@ -2723,7 +2850,8 @@
       "navfn",
       "goal",
       "orientation"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "bt_navigator",
@@ -2745,7 +2873,8 @@
       "bt_navigator",
       "plugin",
       "navigator"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "bt_navigator",
@@ -2764,7 +2893,8 @@
       "bt_navigator",
       "behavior_tree",
       "navigate_to_pose"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "controller_server",
@@ -2784,7 +2914,8 @@
       "rpp",
       "collision",
       "safety"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -2807,7 +2938,8 @@
       "rpp",
       "collision",
       "safety"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "smoother_server",
@@ -2826,7 +2958,8 @@
       "smoother",
       "simple_smoother",
       "refinement"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -2845,7 +2978,8 @@
       "behavior_server",
       "frames",
       "tf"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -2867,7 +3001,8 @@
       "behavior_server",
       "frequency",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "velocity_smoother",
@@ -2886,7 +3021,8 @@
       "velocity_smoother",
       "odom",
       "topic"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "velocity_smoother",
@@ -2908,7 +3044,8 @@
       "velocity_smoother",
       "odom",
       "smoothing"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "local_costmap",
@@ -2927,7 +3064,8 @@
       "local_costmap",
       "publish",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "global_costmap",
@@ -2946,7 +3084,8 @@
       "global_costmap",
       "publish",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -2969,7 +3108,8 @@
       "rpp",
       "tf",
       "latency"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "local_costmap",
@@ -2991,7 +3131,8 @@
       "local_costmap",
       "tf",
       "latency"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "global_costmap",
@@ -3013,7 +3154,8 @@
       "global_costmap",
       "tf",
       "latency"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3035,7 +3177,8 @@
       "amcl",
       "tf",
       "latency"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3054,7 +3197,8 @@
       "controller",
       "goal_checker",
       "state"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3077,7 +3221,8 @@
       "goal_checker",
       "tolerance",
       "goal"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3100,7 +3245,8 @@
       "goal_checker",
       "tolerance",
       "heading"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3122,7 +3268,8 @@
       "controller",
       "progress_checker",
       "stuck"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3145,7 +3292,8 @@
       "progress_checker",
       "stuck",
       "time"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3168,7 +3316,8 @@
       "kld",
       "particles",
       "sampling"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3191,7 +3340,8 @@
       "kld",
       "particles",
       "sampling"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "local_costmap",
@@ -3213,7 +3363,8 @@
       "local_costmap",
       "obstacle_layer",
       "combination"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "global_costmap",
@@ -3235,7 +3386,8 @@
       "global_costmap",
       "obstacle_layer",
       "combination"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "amcl",
@@ -3258,7 +3410,8 @@
       "odom",
       "noise",
       "omni"
-    ]
+    ],
+    "post_set_action": "nomotion_update"
   },
   {
     "node": "amcl",
@@ -3277,7 +3430,8 @@
       "amcl",
       "initialization",
       "pose"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3296,7 +3450,8 @@
       "amcl",
       "laser",
       "beam_skip"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3318,7 +3473,8 @@
       "amcl",
       "laser",
       "beam_skip"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3340,7 +3496,8 @@
       "amcl",
       "laser",
       "beam_skip"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3362,7 +3519,8 @@
       "amcl",
       "laser",
       "beam_skip"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3380,7 +3538,8 @@
     "tags": [
       "amcl",
       "map"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3402,7 +3561,8 @@
       "amcl",
       "laser",
       "beam_model"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3424,7 +3584,8 @@
       "amcl",
       "laser",
       "likelihood_field"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3443,7 +3604,8 @@
       "amcl",
       "map",
       "topic"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3465,7 +3627,8 @@
       "amcl",
       "pose",
       "persistence"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3484,7 +3647,8 @@
       "amcl",
       "laser",
       "topic"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3507,7 +3671,8 @@
       "laser",
       "weights",
       "beam_model"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3530,7 +3695,8 @@
       "laser",
       "weights",
       "beam_model"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "amcl",
@@ -3549,7 +3715,8 @@
       "amcl",
       "initialization",
       "pose"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3568,7 +3735,8 @@
       "controller",
       "odom",
       "topic"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3590,7 +3758,8 @@
       "controller",
       "dwb",
       "acceleration"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3613,7 +3782,8 @@
       "dwb",
       "acceleration",
       "holonomic"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3636,7 +3806,8 @@
       "dwb",
       "acceleration",
       "angular"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3658,7 +3829,8 @@
       "controller",
       "dwb",
       "deceleration"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3681,7 +3853,8 @@
       "dwb",
       "deceleration",
       "holonomic"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3704,7 +3877,8 @@
       "dwb",
       "deceleration",
       "angular"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3727,7 +3901,8 @@
       "dwb",
       "velocity",
       "speed"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3749,7 +3924,8 @@
       "controller",
       "dwb",
       "velocity"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3772,7 +3948,8 @@
       "dwb",
       "velocity",
       "holonomic"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3795,7 +3972,8 @@
       "dwb",
       "velocity",
       "holonomic"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3818,7 +3996,8 @@
       "dwb",
       "velocity",
       "angular"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3840,7 +4019,8 @@
       "controller",
       "dwb",
       "velocity"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3862,7 +4042,8 @@
       "controller",
       "dwb",
       "velocity"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3885,7 +4066,8 @@
       "dwb",
       "velocity",
       "angular"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3908,7 +4090,8 @@
       "dwb",
       "samples",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3931,7 +4114,8 @@
       "dwb",
       "samples",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3954,7 +4138,8 @@
       "dwb",
       "samples",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3977,7 +4162,8 @@
       "dwb",
       "simulation",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -3999,7 +4185,8 @@
       "controller",
       "dwb",
       "resolution"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4027,7 +4214,8 @@
       "dwb",
       "critics",
       "plugin"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "controller_server",
@@ -4046,7 +4234,8 @@
       "controller",
       "dwb",
       "path"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4068,7 +4257,8 @@
       "controller",
       "dwb",
       "path"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4087,7 +4277,8 @@
       "controller",
       "dwb",
       "performance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4107,7 +4298,8 @@
       "dwb",
       "debug",
       "visualisation"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4130,7 +4322,8 @@
       "dwb",
       "critics",
       "obstacle"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4150,7 +4343,8 @@
       "dwb",
       "critics",
       "obstacle"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4173,7 +4367,8 @@
       "dwb",
       "critics",
       "goal"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4199,7 +4394,8 @@
       "dwb",
       "critics",
       "goal"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4222,7 +4418,8 @@
       "dwb",
       "critics",
       "goal"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4245,7 +4442,8 @@
       "dwb",
       "critics",
       "goal"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4271,7 +4469,8 @@
       "dwb",
       "critics",
       "goal"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4294,7 +4493,8 @@
       "dwb",
       "critics",
       "path"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4320,7 +4520,8 @@
       "dwb",
       "critics",
       "path"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4343,7 +4544,8 @@
       "dwb",
       "critics",
       "path"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4366,7 +4568,8 @@
       "dwb",
       "critics",
       "path"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4392,7 +4595,8 @@
       "dwb",
       "critics",
       "path"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4415,7 +4619,8 @@
       "dwb",
       "critics",
       "oscillation"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4438,7 +4643,8 @@
       "dwb",
       "critics",
       "oscillation"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4461,7 +4667,8 @@
       "dwb",
       "critics",
       "oscillation"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4484,7 +4691,8 @@
       "dwb",
       "critics",
       "oscillation"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4507,7 +4715,8 @@
       "dwb",
       "critics",
       "oscillation"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4530,7 +4739,8 @@
       "dwb",
       "critics",
       "goal"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4553,7 +4763,8 @@
       "dwb",
       "critics",
       "goal"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4576,7 +4787,8 @@
       "dwb",
       "critics",
       "goal"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4600,7 +4812,8 @@
       "dwb",
       "goal",
       "tolerance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4625,7 +4838,8 @@
       "velocity",
       "oscillation",
       "stopped"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4646,7 +4860,8 @@
       "dwb",
       "velocity",
       "limit"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4667,7 +4882,8 @@
       "velocity",
       "safety",
       "stop"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4692,7 +4908,8 @@
       "path",
       "prune",
       "distance"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "controller_server",
@@ -4717,7 +4934,8 @@
       "trajectory",
       "simulation",
       "time"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -4736,7 +4954,8 @@
       "behavior_server",
       "costmap",
       "topic"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -4755,7 +4974,8 @@
       "behavior_server",
       "footprint",
       "topic"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -4777,7 +4997,8 @@
       "behavior_server",
       "tf",
       "latency"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -4799,7 +5020,8 @@
       "behavior_server",
       "rotation",
       "velocity"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -4821,7 +5043,8 @@
       "behavior_server",
       "rotation",
       "velocity"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -4843,7 +5066,8 @@
       "behavior_server",
       "rotation",
       "acceleration"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -4865,7 +5089,8 @@
       "behavior_server",
       "collision",
       "simulation"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -4887,7 +5112,8 @@
       "behavior_server",
       "collision",
       "simulation"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -4909,7 +5135,8 @@
       "behavior_server",
       "collision",
       "projection"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -4928,7 +5155,8 @@
       "behavior_server",
       "spin",
       "plugin"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "behavior_server",
@@ -4947,7 +5175,8 @@
       "behavior_server",
       "backup",
       "plugin"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "behavior_server",
@@ -4966,7 +5195,8 @@
       "behavior_server",
       "wait",
       "plugin"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "behavior_server",
@@ -4985,7 +5215,8 @@
       "behavior_server",
       "drive_on_heading",
       "plugin"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "behavior_server",
@@ -5004,7 +5235,8 @@
       "behavior_server",
       "assisted_teleop",
       "plugin"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "behavior_server",
@@ -5026,7 +5258,8 @@
       "behavior_server",
       "backup",
       "acceleration"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -5048,7 +5281,8 @@
       "behavior_server",
       "backup",
       "deceleration"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -5070,7 +5304,8 @@
       "behavior_server",
       "backup",
       "velocity"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -5092,7 +5327,8 @@
       "behavior_server",
       "drive_on_heading",
       "acceleration"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "behavior_server",
@@ -5114,7 +5350,8 @@
       "behavior_server",
       "drive_on_heading",
       "deceleration"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "bt_navigator",
@@ -5133,7 +5370,8 @@
       "bt_navigator",
       "behavior_tree",
       "navigate_to_pose"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "bt_navigator",
@@ -5152,7 +5390,8 @@
       "bt_navigator",
       "behavior_tree",
       "navigate_through_poses"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "bt_navigator",
@@ -5171,7 +5410,8 @@
       "bt_navigator",
       "odom",
       "topic"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "bt_navigator",
@@ -5193,7 +5433,8 @@
       "bt_navigator",
       "tf",
       "latency"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "bt_navigator",
@@ -5212,7 +5453,8 @@
       "bt_navigator",
       "behavior_tree",
       "development"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "bt_navigator",
@@ -5231,7 +5473,8 @@
       "bt_navigator",
       "behavior_tree",
       "blackboard"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "bt_navigator",
@@ -5250,7 +5493,8 @@
       "bt_navigator",
       "behavior_tree",
       "blackboard"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "bt_navigator",
@@ -5269,7 +5513,8 @@
       "bt_navigator",
       "behavior_tree",
       "blackboard"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "bt_navigator",
@@ -5312,7 +5557,8 @@
       "behavior_tree",
       "plugin",
       "libraries"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "smoother_server",
@@ -5331,7 +5577,8 @@
       "smoother",
       "costmap",
       "topic"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "smoother_server",
@@ -5350,7 +5597,8 @@
       "smoother",
       "footprint",
       "topic"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "smoother_server",
@@ -5369,7 +5617,8 @@
       "smoother",
       "frames",
       "tf"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "smoother_server",
@@ -5391,7 +5640,8 @@
       "smoother",
       "tf",
       "latency"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "smoother_server",
@@ -5410,7 +5660,8 @@
       "smoother",
       "simple_smoother",
       "plugin"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "waypoint_follower",
@@ -5429,7 +5680,8 @@
       "waypoint_follower",
       "wait",
       "plugin"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "waypoint_follower",
@@ -5448,7 +5700,8 @@
       "waypoint_follower",
       "wait",
       "behavior"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "local_costmap",
@@ -5467,7 +5720,8 @@
       "local_costmap",
       "voxel_layer",
       "plugin"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "local_costmap",
@@ -5486,7 +5740,8 @@
       "local_costmap",
       "voxel_layer",
       "sensor"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "local_costmap",
@@ -5505,7 +5760,8 @@
       "local_costmap",
       "voxel_layer",
       "visualisation"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -5527,7 +5783,8 @@
       "local_costmap",
       "voxel_layer",
       "height"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -5549,7 +5806,8 @@
       "local_costmap",
       "voxel_layer",
       "height"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -5569,7 +5827,8 @@
       "voxel_layer",
       "sensor",
       "topic"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "local_costmap",
@@ -5593,7 +5852,8 @@
       "local_costmap",
       "voxel_layer",
       "sensor"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "local_costmap",
@@ -5612,7 +5872,8 @@
       "local_costmap",
       "voxel_layer",
       "sensor"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -5632,7 +5893,8 @@
       "voxel_layer",
       "sensor",
       "raytrace"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -5655,7 +5917,8 @@
       "voxel_layer",
       "sensor",
       "range"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -5678,7 +5941,8 @@
       "voxel_layer",
       "sensor",
       "raytrace"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -5703,7 +5967,8 @@
       "obstacle",
       "height",
       "filter"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -5728,7 +5993,8 @@
       "obstacle",
       "height",
       "filter"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -5753,7 +6019,8 @@
       "obstacle",
       "range",
       "filter"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "local_costmap",
@@ -5778,7 +6045,8 @@
       "raytrace",
       "range",
       "filter"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "global_costmap",
@@ -5800,7 +6068,8 @@
       "global_costmap",
       "size",
       "geometry"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "global_costmap",
@@ -5822,7 +6091,8 @@
       "global_costmap",
       "size",
       "geometry"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "global_costmap",
@@ -5841,7 +6111,8 @@
       "global_costmap",
       "rolling_window",
       "geometry"
-    ]
+    ],
+    "post_set_action": null
   },
   {
     "node": "global_costmap",
@@ -5864,7 +6135,8 @@
       "robot_radius",
       "collision",
       "geometry"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "global_costmap",
@@ -5882,7 +6154,8 @@
     "tags": [
       "global_costmap",
       "obstacle_layer"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "global_costmap",
@@ -5901,7 +6174,8 @@
       "global_costmap",
       "obstacle_layer",
       "sensor"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "global_costmap",
@@ -5921,7 +6195,8 @@
       "obstacle_layer",
       "sensor",
       "topic"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "global_costmap",
@@ -5945,7 +6220,8 @@
       "global_costmap",
       "obstacle_layer",
       "sensor"
-    ]
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "global_costmap",
@@ -5967,7 +6243,8 @@
       "global_costmap",
       "obstacle_layer",
       "range"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   },
   {
     "node": "global_costmap",
@@ -5989,6 +6266,7 @@
       "global_costmap",
       "obstacle_layer",
       "raytrace"
-    ]
+    ],
+    "post_set_action": "clear_costmaps"
   }
 ]

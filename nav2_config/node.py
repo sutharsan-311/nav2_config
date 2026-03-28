@@ -20,6 +20,7 @@ from nav2_config.core.node_discovery import (
 )
 from nav2_config.core.param_client import Nav2ParamClient
 from nav2_config.core.param_watcher import ParamWatcher
+from nav2_config.core.service_caller import Nav2ServiceCaller
 from nav2_config.core.topic_discovery import TopicDiscovery
 from nav2_config.core.frame_discovery import FrameDiscovery
 from nav2_config.types.params import Nav2ParamDef, ParamValue
@@ -69,6 +70,18 @@ class SignalBridge(QObject):
     # Carries (is_present, manager_node_path).  manager_node_path is '' when not present.
     lifecycle_manager_status = pyqtSignal(bool, str)
 
+    # Emitted after a /map_server/load_map service call completes.
+    # Carries (success, message).
+    load_map_result = pyqtSignal(bool, str)
+
+    # Emitted after a post-set service action completes (clear_costmaps, nomotion_update).
+    # Carries (param_name, action, success, detail_message).
+    post_action_result = pyqtSignal(str, str, bool, str)
+
+    # Emitted when a restart_stack param is successfully set.
+    # Carries (node_name, param_name).
+    restart_suggested = pyqtSignal(str, str)
+
 
 class Nav2ConfigNode(Node):
     """ROS2 node that connects to a running Nav2 stack.
@@ -105,6 +118,9 @@ class Nav2ConfigNode(Node):
 
         #: Parameter service client.
         self._param_client = Nav2ParamClient(self, self._cb_group)
+
+        #: Service caller for post-param-set follow-up actions.
+        self._service_caller = Nav2ServiceCaller(self, self._cb_group)
 
         #: Lifecycle service client (direct per-node transitions).
         self._lifecycle_client = LifecycleClient(self, self._cb_group)
@@ -244,6 +260,16 @@ class Nav2ConfigNode(Node):
         """
         self._request_queue.put(('lifecycle_shutdown', node_name))
 
+    def request_load_map(self, map_url: str) -> None:
+        """Ask the ROS2 thread to call /map_server/load_map with *map_url*.
+
+        Non-blocking.  Result is emitted via ``signals.load_map_result``.
+
+        Args:
+            map_url: Absolute path to the map YAML file to load.
+        """
+        self._request_queue.put(('load_map', map_url))
+
     def request_nav2_stack_restart(self) -> None:
         """Ask the ROS2 thread to restart all Nav2 nodes via lifecycle_manager.
 
@@ -295,20 +321,14 @@ class Nav2ConfigNode(Node):
     # ------------------------------------------------------------------
 
     def _on_discovery_tick(self) -> None:
-        """Periodic callback: discover Nav2 nodes, emit signal on change, poll lifecycle."""
-        status = discover_nav2_nodes(self)
-        if status is None:
-            # discover_nav2_nodes not yet implemented — skip.
-            return
+        """Periodic callback: discover Nav2 nodes, emit signal every tick, poll lifecycle."""
+        nodes_and_ns = self.get_node_names_and_namespaces()
+        status = discover_nav2_nodes(self, nodes_and_ns)
 
         discovered = {path for path, found in status.items() if found}
 
-        if self._prev_discovered is None:
-            # First tick: always emit so the GUI shows initial state.
-            self._prev_discovered = discovered
-            self.signals.nodes_discovered.emit(status)
-        elif discovered != self._prev_discovered:
-            # Log appeared / lost nodes.
+        # Log appeared / lost nodes relative to previous tick.
+        if self._prev_discovered is not None:
             for path in discovered - self._prev_discovered:
                 self.get_logger().info(
                     f"Nav2 node appeared: {path} ({NAV2_NODES.get(path, path)})"
@@ -317,11 +337,13 @@ class Nav2ConfigNode(Node):
                 self.get_logger().info(
                     f"Nav2 node lost: {path} ({NAV2_NODES.get(path, path)})"
                 )
-            self._prev_discovered = discovered
-            self.signals.nodes_discovered.emit(status)
+        self._prev_discovered = discovered
 
-        # Detect which lifecycle_manager (if any) is running.
-        self._update_lifecycle_manager_status()
+        # Always emit — the GUI must always receive fresh discovery data.
+        self.signals.nodes_discovered.emit(status)
+
+        # Detect which lifecycle_manager (if any) is running (reuse cached graph data).
+        self._update_lifecycle_manager_status(nodes_and_ns)
 
         # Poll lifecycle state for all discovered nodes and emit if changed.
         self._poll_lifecycle_states(discovered)
@@ -381,6 +403,9 @@ class Nav2ConfigNode(Node):
         elif op == 'lifecycle_shutdown':
             _, node_name = item
             self._do_lifecycle_shutdown(node_name)
+        elif op == 'load_map':
+            _, map_url = item
+            self._do_load_map(map_url)
         else:
             logger.warning('Unknown request op: %r', op)
 
@@ -408,13 +433,106 @@ class Nav2ConfigNode(Node):
         """Set a single parameter and emit the result signal.
 
         Called on the ROS2 thread.  Emits ``signals.param_set_result``.
+        On success, runs any post-set service action defined in the schema.
         """
-        success = self._param_client.set_param(node_name, param_name, value, type_hint)
+        self.get_logger().info(f"Setting {node_name}/{param_name} → {value}")
+        success, reason = self._param_client.set_param(node_name, param_name, value, type_hint)
         self.signals.param_set_result.emit(node_name, param_name, success)
         if success:
-            self.get_logger().info(f"Set {node_name}/{param_name} = {value!r}")
+            self.get_logger().info(f"✓ Set {node_name}/{param_name} = {value}")
+            schema_entry = self._find_schema_entry(node_name, param_name)
+            self._after_param_set(node_name, param_name, value, schema_entry)
         else:
-            self.get_logger().warning(f"Failed to set {node_name}/{param_name}")
+            self.get_logger().error(f"✗ Failed to set {node_name}/{param_name} = {value}: {reason}")
+
+    def _find_schema_entry(self, node_name: str, param_name: str) -> Nav2ParamDef | None:
+        """Return the schema entry for *param_name* on *node_name*, or None.
+
+        Matches on both ``param`` and ``ros2_name`` fields.
+        """
+        # Use the last path segment so "/local_costmap/local_costmap" → "local_costmap"
+        bare_node = node_name.rstrip('/').rsplit('/', 1)[-1]
+        for entry in self._schema:
+            if entry.node == bare_node and (
+                entry.param == param_name or entry.ros2_name == param_name
+            ):
+                return entry
+        return None
+
+    def _after_param_set(
+        self,
+        node_name: str,
+        param_name: str,
+        value: Any,
+        schema_entry: Nav2ParamDef | None,
+    ) -> None:
+        """Run any follow-up service action defined by the schema entry.
+
+        Called on the ROS2 thread immediately after a successful param set.
+        Emits ``signals.post_action_result`` or ``signals.restart_suggested``
+        as appropriate.
+
+        Args:
+            node_name: Full ROS2 node path.
+            param_name: Parameter name that was just set.
+            value: The new value that was set.
+            schema_entry: Schema definition for this parameter (may be None).
+        """
+        action = schema_entry.post_set_action if schema_entry else None
+
+        if action == 'clear_costmaps':
+            success = self._service_caller.clear_costmaps()
+            if success:
+                self.get_logger().info(
+                    f"Costmaps cleared after setting {param_name}"
+                )
+                self.signals.post_action_result.emit(
+                    param_name, 'clear_costmaps', True, 'costmaps cleared'
+                )
+            else:
+                self.get_logger().warning(
+                    f"Failed to clear costmaps after setting {param_name}"
+                )
+                self.signals.post_action_result.emit(
+                    param_name, 'clear_costmaps', False, 'costmap clear failed'
+                )
+
+        elif action == 'load_map':
+            map_url = str(value)
+            success, code = self._service_caller.load_map(map_url)
+            if success:
+                self.get_logger().info(f"Map reloaded: {map_url}")
+                self.signals.load_map_result.emit(True, f'Map loaded: {map_url}')
+            else:
+                _code_msgs = {
+                    1: 'map file not found',
+                    2: 'invalid map',
+                    3: 'load_map service unavailable',
+                }
+                detail = _code_msgs.get(code, f'result code {code}')
+                self.get_logger().error(f"Failed to load map: {map_url} ({detail})")
+                self.signals.load_map_result.emit(False, f'Failed to load map: {detail}')
+
+        elif action == 'nomotion_update':
+            success = self._service_caller.nomotion_update()
+            if success:
+                self.get_logger().info(
+                    f"AMCL nomotion update triggered after setting {param_name}"
+                )
+                self.signals.post_action_result.emit(
+                    param_name, 'nomotion_update', True, 'AMCL updated'
+                )
+            else:
+                self.get_logger().warning(
+                    f"Failed to trigger AMCL nomotion update after setting {param_name}"
+                )
+                self.signals.post_action_result.emit(
+                    param_name, 'nomotion_update', False, 'AMCL update failed'
+                )
+
+        elif action == 'restart_stack':
+            # Don't auto-restart — show notification to user.
+            self.signals.restart_suggested.emit(node_name, param_name)
 
     # ------------------------------------------------------------------
     # Lifecycle request handlers (ROS2 thread only)
@@ -471,9 +589,12 @@ class Nav2ConfigNode(Node):
         self._lifecycle_states[node_name] = state
         self.signals.lifecycle_states_updated.emit({node_name: state})
 
-    def _update_lifecycle_manager_status(self) -> None:
+    def _update_lifecycle_manager_status(
+        self,
+        nodes_and_ns: list[tuple[str, str]] | None = None,
+    ) -> None:
         """Detect whether a lifecycle_manager is running; emit signal on change."""
-        mgr_status = discover_lifecycle_managers(self)
+        mgr_status = discover_lifecycle_managers(self, nodes_and_ns)
         # Use the first running manager found (navigation takes priority).
         active = next((p for p in LIFECYCLE_MANAGERS if mgr_status.get(p)), None)
         if active != self._lifecycle_manager_node:
@@ -555,3 +676,56 @@ class Nav2ConfigNode(Node):
         self._lifecycle_states.update(new_states)
         if new_states:
             self.signals.lifecycle_states_updated.emit(new_states)
+
+    def _do_load_map(self, map_url: str) -> None:
+        """Call /map_server/load_map to reload the map without restarting Nav2.
+
+        Called on the ROS2 thread.  Emits ``signals.load_map_result``.
+
+        Args:
+            map_url: Absolute path to the map YAML file to load.
+        """
+        from nav2_msgs.srv import LoadMap
+
+        if not hasattr(self, '_load_map_client'):
+            self._load_map_client = self.create_client(
+                LoadMap, '/map_server/load_map', callback_group=self._cb_group
+            )
+
+        if not self._load_map_client.wait_for_service(timeout_sec=2.0):
+            msg = 'load_map service not available on /map_server'
+            self.get_logger().warning(msg)
+            self.signals.load_map_result.emit(False, msg)
+            return
+
+        import threading
+        req = LoadMap.Request()
+        req.map_url = map_url
+        future = self._load_map_client.call_async(req)
+
+        done_event = threading.Event()
+        result_holder: list[Any] = [None]
+
+        def _on_done(fut: Any) -> None:
+            result_holder[0] = fut.result()
+            done_event.set()
+
+        future.add_done_callback(_on_done)
+
+        if not done_event.wait(timeout=10.0):
+            msg = 'load_map service call timed out'
+            self.get_logger().warning(msg)
+            self.signals.load_map_result.emit(False, msg)
+            return
+
+        response = result_holder[0]
+        # LoadMap response: result field is a uint8 (0 = success)
+        success = (response is not None and response.result == 0)
+        if success:
+            msg = f'Map loaded: {map_url}'
+            self.get_logger().info(msg)
+        else:
+            result_code = response.result if response is not None else -1
+            msg = f'load_map failed (result={result_code})'
+            self.get_logger().warning(msg)
+        self.signals.load_map_result.emit(success, msg)
