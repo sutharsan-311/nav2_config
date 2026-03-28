@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-nav2_config is a ROS2 desktop application (Python + PyQt6) that connects to a running Nav2 stack and lets developers visually tune navigation parameters in real-time — without killing and relaunching nodes. Think of it as "rqt_reconfigure but built specifically for Nav2" with parameter descriptions, health checks, presets, and YAML export.
+nav2_config is a ROS2 desktop application (Python + PyQt6) that connects to a running Nav2 stack and lets developers visually tune navigation parameters in real-time — without killing and relaunching nodes. Think of it as "rqt_reconfigure but built specifically for Nav2" with parameter descriptions, health checks, and YAML export.
 
 **This is a ROS2 package, not a web app.** It installs via `colcon build` or eventually `sudo apt install ros-humble-nav2-config`. It runs as `ros2 run nav2_config gui`.
 
@@ -54,7 +54,6 @@ nav2_config/
 │   │   ├── param_panel.py         # Center panel: parameter editor with descriptions
 │   │   ├── yaml_panel.py          # Right panel: live YAML preview
 │   │   ├── health_panel.py        # Health check results panel (in center, collapsible)
-│   │   ├── preset_dialog.py       # Preset selection dialog
 │   │   ├── import_export.py       # Import/export YAML dialogs
 │   │   ├── theme.py               # Dark theme QSS stylesheet (ROS tool aesthetic)
 │   │   └── widgets/
@@ -75,17 +74,10 @@ nav2_config/
 │   │   ├── yaml_exporter.py       # Export current params to nav2_params.yaml
 │   │   ├── yaml_importer.py       # Import params from YAML file
 │   │   ├── health_check.py        # Cross-parameter validation rules
-│   │   └── presets.py             # Load/apply environment presets
 │   ├── schema/
 │   │   ├── __init__.py
 │   │   ├── nav2_params.json       # 167+ parameter database (descriptions, ranges, defaults)
-│   │   ├── plugins.json           # Plugin registry (planners, controllers, costmap layers)
-│   │   └── presets/
-│   │       ├── hospital_corridor.yaml
-│   │       ├── open_warehouse.yaml
-│   │       ├── outdoor_campus.yaml
-│   │       ├── simulation_turtlebot3.yaml
-│   │       └── tight_retail.yaml
+│   │   └── plugins.json           # Plugin registry (planners, controllers, costmap layers)
 │   └── types/
 │       ├── __init__.py
 │       └── params.py              # Python dataclasses for param schema, config, etc.
@@ -206,11 +198,10 @@ The approach:
 - Real-time param writing (change slider → ros2 param set fires)
 - Live value polling (detect external param changes)
 
-### Phase 3: YAML + Presets (Session 7-8)
+### Phase 3: YAML (Session 7-8)
 - YAML preview panel (live generation)
 - Export to YAML file
 - Import from YAML file
-- Environment presets (apply preset → set all params at once)
 
 ### Phase 4: Health Check + Polish (Session 9-10)
 - Health check engine (port rules from web version)

@@ -13,8 +13,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
         # Install schema files
         (os.path.join('share', package_name, 'schema'), glob('nav2_config/schema/*.json')),
-        (os.path.join('share', package_name, 'schema', 'presets'), glob('nav2_config/schema/presets/*.yaml')),
-        # Install desktop entry for Linux app launchers
+# Install desktop entry for Linux app launchers
         (os.path.join('share', 'applications'), ['resource/nav2_config.desktop']),
     ],
     install_requires=[

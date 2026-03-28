@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import QApplication
 from nav2_config.node import Nav2ConfigNode
 from nav2_config.gui.main_window import MainWindow, _load_settings
 from nav2_config.gui.theme import apply_theme
+from nav2_config.gui.icons import app_icon
 from nav2_config.types.params import load_schema
 
 logging.basicConfig(
@@ -67,6 +68,7 @@ def main() -> None:
     # 3. Create Qt application
     app = QApplication(sys.argv)
     apply_theme(app)
+    app.setWindowIcon(app_icon())
 
     # 4. Show Load Config dialog
     from nav2_config.gui.load_dialog import LoadConfigDialog

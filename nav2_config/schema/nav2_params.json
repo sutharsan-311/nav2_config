@@ -6268,5 +6268,1655 @@
       "raytrace"
     ],
     "post_set_action": "clear_costmaps"
+  },
+  {
+    "node": "behavior_server",
+    "param": "cmd_vel_teleop",
+    "type": "string",
+    "default": "cmd_vel_teleop",
+    "description": "Topic name for incoming teleop velocity commands used by AssistedTeleop behavior.",
+    "impact": "Must match the topic published by your teleop node (e.g. joy_node or keyboard_teleop).",
+    "category": "topics",
+    "plugin_specific": true,
+    "plugin": "assisted_teleop",
+    "hot_reload": false,
+    "tags": [
+      "behavior_server",
+      "teleop",
+      "topic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "behavior_server",
+    "param": "drive_on_heading.minimum_speed",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "m/s",
+    "description": "Minimum linear speed the DriveOnHeading behavior will command, even when slowing to stop.",
+    "impact": "Setting above 0 prevents the robot from crawling at very low speeds on approach.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "drive_on_heading",
+    "hot_reload": true,
+    "tags": [
+      "behavior_server",
+      "drive_on_heading",
+      "speed"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.BaseObstacle.class",
+    "type": "string",
+    "default": "BaseObstacle",
+    "description": "Plugin class name for the BaseObstacle DWB critic. Identifies the C++ class the plugin system loads.",
+    "impact": "Changing this to an unregistered class will prevent the controller from starting.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": false,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "critic",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.GoalAlign.class",
+    "type": "string",
+    "default": "GoalAlign",
+    "description": "Plugin class name for the GoalAlign DWB critic.",
+    "impact": "Changing this to an unregistered class will prevent the controller from starting.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": false,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "critic",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.GoalDist.class",
+    "type": "string",
+    "default": "GoalDist",
+    "description": "Plugin class name for the GoalDist DWB critic.",
+    "impact": "Changing this to an unregistered class will prevent the controller from starting.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": false,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "critic",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.Oscillation.class",
+    "type": "string",
+    "default": "Oscillation",
+    "description": "Plugin class name for the Oscillation DWB critic.",
+    "impact": "Changing this to an unregistered class will prevent the controller from starting.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": false,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "critic",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.PathAlign.class",
+    "type": "string",
+    "default": "PathAlign",
+    "description": "Plugin class name for the PathAlign DWB critic.",
+    "impact": "Changing this to an unregistered class will prevent the controller from starting.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": false,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "critic",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.PathDist.class",
+    "type": "string",
+    "default": "PathDist",
+    "description": "Plugin class name for the PathDist DWB critic.",
+    "impact": "Changing this to an unregistered class will prevent the controller from starting.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": false,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "critic",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.RotateToGoal.class",
+    "type": "string",
+    "default": "RotateToGoal",
+    "description": "Plugin class name for the RotateToGoal DWB critic.",
+    "impact": "Changing this to an unregistered class will prevent the controller from starting.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": false,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "critic",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.debug_trajectory_details",
+    "type": "bool",
+    "default": true,
+    "description": "Publish detailed per-trajectory debug info (critic scores per trajectory).",
+    "impact": "Disable to reduce publish overhead; useful in high-frequency production deployments.",
+    "category": "debug",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": true,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "debug"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.default_critic_namespaces",
+    "type": "string_array",
+    "default": [],
+    "description": "List of C++ namespaces to search when resolving critic plugin class names.",
+    "impact": "Add your plugin's namespace if using custom critics not in the default dwb_critics namespace.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": false,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "critic",
+      "namespace"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.discretize_by_time",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "If true, discretize trajectory by equal time steps; if false, by equal distance steps.",
+    "impact": "Time-based discretization can produce smoother trajectories at varying speeds.",
+    "category": "trajectory",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": true,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "trajectory"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.include_last_point",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Whether to include the final point of a simulated trajectory in critic scoring.",
+    "impact": "Including the last point penalizes trajectories that overshoot the goal.",
+    "category": "trajectory",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": true,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "trajectory"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.linear_granularity",
+    "type": "double",
+    "default": 0.05,
+    "range": {
+      "min": 0.01,
+      "max": 0.5
+    },
+    "unit": "m",
+    "description": "Step size along the trajectory used for obstacle checking (linear interpolation).",
+    "impact": "Smaller values give finer collision checking but increase CPU load.",
+    "category": "trajectory",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": true,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "trajectory",
+      "collision"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.marker_lifetime",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "s",
+    "description": "Lifetime of RViz visualization markers published by DWB (trajectory candidates, scores).",
+    "impact": "Lower values clear markers faster; 0 means markers persist until overwritten.",
+    "category": "debug",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": true,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "visualization"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.publish_evaluation",
+    "type": "bool",
+    "default": true,
+    "description": "Publish the DWBLocalPlannerEvaluation message containing all trajectory scores.",
+    "impact": "Disable to reduce topic bandwidth when not debugging the planner.",
+    "category": "debug",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": true,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "debug",
+      "publish"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.publish_global_plan",
+    "type": "bool",
+    "default": true,
+    "description": "Re-publish the global plan received from the planner server.",
+    "impact": "Disable to reduce bandwidth; the plan is already published by planner_server.",
+    "category": "debug",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": true,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "publish"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.publish_local_plan",
+    "type": "bool",
+    "default": true,
+    "description": "Publish the selected (best) local trajectory as a path for RViz visualization.",
+    "impact": "Disable to reduce bandwidth when not visualizing local planning.",
+    "category": "debug",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": true,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "publish",
+      "visualization"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.publish_trajectories",
+    "type": "bool",
+    "default": true,
+    "description": "Publish all sampled trajectory candidates as a MarkerArray for RViz debugging.",
+    "impact": "Disable in production to eliminate significant publish overhead.",
+    "category": "debug",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": true,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "debug",
+      "visualization"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.publish_transformed_plan",
+    "type": "bool",
+    "default": true,
+    "description": "Publish the global plan transformed into the local costmap frame.",
+    "impact": "Useful for debugging misaligned global/local frames; disable when not needed.",
+    "category": "debug",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": true,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "publish"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.shorten_transformed_plan",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Trim the transformed global plan to only include points within the local costmap bounds.",
+    "impact": "Keep enabled to avoid sending the controller unnecessary far-future waypoints.",
+    "category": "trajectory",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": true,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "trajectory"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.trajectory_generator_name",
+    "type": "string",
+    "default": "dwb_plugins::StandardTrajectoryGenerator",
+    "description": "Fully-qualified C++ class name of the trajectory generator plugin used by DWB.",
+    "impact": "Change to dwb_plugins::LimitedAccelGenerator to enforce kinodynamic constraints on sampled trajectories.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "dwb",
+    "hot_reload": false,
+    "tags": [
+      "controller_server",
+      "dwb",
+      "trajectory",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "general_goal_checker.plugin",
+    "type": "string",
+    "default": "nav2_controller::SimpleGoalChecker",
+    "description": "Plugin class for the general goal checker. Determines when the robot has reached its goal.",
+    "impact": "Replace with a custom checker to implement custom goal-reached logic.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "general_goal_checker",
+    "hot_reload": false,
+    "tags": [
+      "controller_server",
+      "goal_checker",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "progress_checker.plugin",
+    "type": "string",
+    "default": "nav2_controller::SimpleProgressChecker",
+    "description": "Plugin class for the progress checker. Monitors whether the robot is making navigation progress.",
+    "impact": "Replace with a custom checker for alternative stuck-detection strategies.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "progress_checker",
+    "hot_reload": false,
+    "tags": [
+      "controller_server",
+      "progress_checker",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "speed_limit_topic",
+    "type": "string",
+    "default": "speed_limit",
+    "description": "Topic name on which the controller listens for SpeedLimit messages to dynamically cap velocity.",
+    "impact": "Publish a nav2_msgs/SpeedLimit message to this topic to reduce max speed (e.g. near humans).",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "controller_server",
+      "speed",
+      "topic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "filters",
+    "type": "string_array",
+    "default": [],
+    "description": "List of costmap filter plugin names to load (e.g. keepout zones, speed limit zones).",
+    "impact": "Add filter plugin names here to activate costmap filtering behaviors.",
+    "category": "plugins",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "filters",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "footprint",
+    "type": "string",
+    "default": "[]",
+    "description": "Robot footprint polygon as a list of [x,y] points (meters). Overrides robot_radius if set.",
+    "impact": "A polygon footprint gives more accurate collision checking for non-circular robots.",
+    "category": "robot",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "footprint",
+      "collision"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "footprint_padding",
+    "type": "double",
+    "default": 0.01,
+    "range": {
+      "min": 0.0,
+      "max": 0.5
+    },
+    "unit": "m",
+    "description": "Extra padding added around the robot footprint for costmap inflation calculations.",
+    "impact": "Larger padding gives more conservative obstacle avoidance; smaller allows tighter passages.",
+    "category": "robot",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "footprint",
+      "padding"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "inflation_layer.enabled",
+    "type": "bool",
+    "default": true,
+    "description": "Enable or disable the inflation layer in the global costmap.",
+    "impact": "Disabling removes cost gradient around obstacles \u2014 the robot may plan paths too close to walls.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "inflation_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "inflation",
+      "layer"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "inflation_layer.inflate_around_unknown",
+    "type": "bool",
+    "default": false,
+    "description": "Whether to inflate costs around unknown (unexplored) cells in the global costmap.",
+    "impact": "Enable to treat unexplored areas conservatively; disable to allow planning into unknown space.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "inflation_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "inflation",
+      "unknown"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "inflation_layer.inflate_unknown",
+    "type": "bool",
+    "default": false,
+    "description": "If true, unknown cells are treated as obstacles for inflation purposes.",
+    "impact": "Inflating unknown cells prevents paths through unmapped areas at the cost of reduced exploration.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "inflation_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "inflation",
+      "unknown"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "inflation_layer.plugin",
+    "type": "string",
+    "default": "nav2_costmap_2d::InflationLayer",
+    "description": "C++ plugin class for the inflation layer.",
+    "impact": "Changing to a different class replaces the inflation algorithm entirely.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "inflation_layer",
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "inflation",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "lethal_cost_threshold",
+    "type": "integer",
+    "default": 100,
+    "range": {
+      "min": 0,
+      "max": 255
+    },
+    "description": "Costmap cost value at or above which a cell is considered an impassable obstacle.",
+    "impact": "Lower values make the planner treat more cells as lethal; raising it allows paths through high-cost areas.",
+    "category": "costmap",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "cost",
+      "obstacle"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "map_topic",
+    "type": "string",
+    "default": "/map",
+    "description": "Topic name for the static map used by the global costmap.",
+    "impact": "Change if your map server publishes on a non-default topic or you use a namespaced map.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "map",
+      "topic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "observation_sources",
+    "type": "string",
+    "default": "",
+    "description": "Space-separated list of sensor observation source names for the obstacle layer.",
+    "impact": "Each name must have a matching set of observation_source parameters defined.",
+    "category": "sensors",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "sensors",
+      "obstacle"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.footprint_clearing_enabled",
+    "type": "bool",
+    "default": true,
+    "description": "Clear obstacle layer cells within the robot footprint as the robot moves.",
+    "impact": "Disable if ghost obstacles persist at the robot's current position.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "obstacle_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "clearing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.max_obstacle_height",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Maximum height of sensor readings to consider as obstacles in the obstacle layer.",
+    "impact": "Lower this to ignore tall ceilings or overhead structures in 3D sensor data.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "obstacle_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "height"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.min_obstacle_height",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": -2.0,
+      "max": 2.0
+    },
+    "unit": "m",
+    "description": "Minimum height of sensor readings to consider as obstacles.",
+    "impact": "Raise to ignore floor-level noise from 3D sensors.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "obstacle_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "height"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.plugin",
+    "type": "string",
+    "default": "nav2_costmap_2d::ObstacleLayer",
+    "description": "C++ plugin class for the obstacle layer.",
+    "impact": "Swap for VoxelLayer or a custom plugin to change obstacle representation.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "obstacle_layer",
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.scan.clearing",
+    "type": "bool",
+    "default": true,
+    "description": "Whether this sensor source is used to clear free-space in the obstacle layer.",
+    "impact": "Disable to stop free-space clearing from this sensor (useful for marking-only sensors).",
+    "category": "sensors",
+    "plugin_specific": true,
+    "plugin": "obstacle_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "scan",
+      "clearing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.scan.expected_update_rate",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "Hz",
+    "description": "Expected publish rate of the sensor. Used to detect stale data. 0 disables staleness checking.",
+    "impact": "Set to your sensor's actual rate to get warnings when the sensor stops publishing.",
+    "category": "sensors",
+    "plugin_specific": true,
+    "plugin": "obstacle_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "scan"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.scan.inf_is_valid",
+    "type": "bool",
+    "default": false,
+    "description": "Treat infinite range returns from the laser as a valid max-range reading rather than invalid.",
+    "impact": "Enable for lidars that return inf for out-of-range measurements (e.g. some RPLidars).",
+    "category": "sensors",
+    "plugin_specific": true,
+    "plugin": "obstacle_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "scan",
+      "lidar"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.scan.marking",
+    "type": "bool",
+    "default": true,
+    "description": "Whether this sensor source marks obstacles in the costmap.",
+    "impact": "Disable to use this sensor only for clearing without marking new obstacles.",
+    "category": "sensors",
+    "plugin_specific": true,
+    "plugin": "obstacle_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "scan",
+      "marking"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.scan.max_obstacle_height",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Maximum obstacle height for this specific sensor source.",
+    "impact": "Per-source override of obstacle_layer.max_obstacle_height for heterogeneous sensor setups.",
+    "category": "sensors",
+    "plugin_specific": true,
+    "plugin": "obstacle_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "scan"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.scan.min_obstacle_height",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": -2.0,
+      "max": 2.0
+    },
+    "unit": "m",
+    "description": "Minimum obstacle height for this specific sensor source.",
+    "impact": "Per-source override; raise to ignore floor returns from tilted 3D sensors.",
+    "category": "sensors",
+    "plugin_specific": true,
+    "plugin": "obstacle_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "scan"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.scan.observation_persistence",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 60.0
+    },
+    "unit": "s",
+    "description": "How long obstacle observations from this sensor persist in the costmap. 0 = keep until new data arrives.",
+    "impact": "Increase for slow sensors so obstacles don't disappear between scans.",
+    "category": "sensors",
+    "plugin_specific": true,
+    "plugin": "obstacle_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "scan"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.scan.obstacle_min_range",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Minimum sensor range at which readings are used to mark obstacles.",
+    "impact": "Raise to ignore very close returns that may be the robot's own body.",
+    "category": "sensors",
+    "plugin_specific": true,
+    "plugin": "obstacle_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "scan",
+      "range"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.scan.raytrace_min_range",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Minimum range for raytrace (free-space clearing) operations.",
+    "impact": "Raise to prevent clearing cells very close to the sensor origin.",
+    "category": "sensors",
+    "plugin_specific": true,
+    "plugin": "obstacle_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "scan",
+      "raytrace"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "obstacle_layer.scan.sensor_frame",
+    "type": "string",
+    "default": "",
+    "description": "TF frame of the sensor. If empty, the frame_id from the incoming message is used.",
+    "impact": "Set explicitly if the message header frame_id is wrong or remapped.",
+    "category": "sensors",
+    "plugin_specific": true,
+    "plugin": "obstacle_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "obstacle_layer",
+      "scan",
+      "tf"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "origin_x",
+    "type": "double",
+    "default": 0.0,
+    "unit": "m",
+    "description": "X-coordinate of the costmap's bottom-left corner in the global frame.",
+    "impact": "For rolling window costmaps this is updated automatically; set for fixed-size costmaps.",
+    "category": "map",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "origin",
+      "map"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "origin_y",
+    "type": "double",
+    "default": 0.0,
+    "unit": "m",
+    "description": "Y-coordinate of the costmap's bottom-left corner in the global frame.",
+    "impact": "For rolling window costmaps this is updated automatically; set for fixed-size costmaps.",
+    "category": "map",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "origin",
+      "map"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "static_layer.footprint_clearing_enabled",
+    "type": "bool",
+    "default": false,
+    "description": "Clear static map cells inside the robot footprint as the robot moves.",
+    "impact": "Enable only if the static map has errors at the robot's starting position.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "static_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "static_layer",
+      "clearing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "static_layer.map_topic",
+    "type": "string",
+    "default": "",
+    "description": "Override topic for the static layer's map subscription (overrides global map_topic if set).",
+    "impact": "Use to subscribe to a different map topic than the one used by the costmap master.",
+    "category": "topics",
+    "plugin_specific": true,
+    "plugin": "static_layer",
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "static_layer",
+      "topic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "static_layer.plugin",
+    "type": "string",
+    "default": "nav2_costmap_2d::StaticLayer",
+    "description": "C++ plugin class for the static layer.",
+    "impact": "Swap for a custom static layer plugin to change how the occupancy grid is processed.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "static_layer",
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "static_layer",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "static_layer.subscribe_to_updates",
+    "type": "bool",
+    "default": false,
+    "description": "Subscribe to incremental map update messages in addition to full map messages.",
+    "impact": "Enable to receive partial OccupancyGrid updates; disable for static, non-changing maps.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "static_layer",
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "static_layer",
+      "map"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "static_layer.transform_tolerance",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "s",
+    "description": "Per-layer TF transform tolerance for the static layer (overrides global transform_tolerance if > 0).",
+    "impact": "Set when the static layer needs a different TF staleness tolerance than other layers.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "static_layer",
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "static_layer",
+      "tf"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "track_unknown_space",
+    "type": "bool",
+    "default": true,
+    "description": "Maintain a separate representation for unknown space rather than treating it as free.",
+    "impact": "True gives planner awareness of unexplored areas. False treats all non-obstacle cells as free.",
+    "category": "costmap",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "unknown",
+      "costmap"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "trinary_costmap",
+    "type": "bool",
+    "default": true,
+    "description": "Use a three-value (free/unknown/occupied) costmap representation from the static layer.",
+    "impact": "Disable to allow continuous cost values from the static map rather than snapping to free/occupied.",
+    "category": "costmap",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "costmap",
+      "static_layer"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "unknown_cost_value",
+    "type": "integer",
+    "default": 255,
+    "range": {
+      "min": 0,
+      "max": 255
+    },
+    "description": "Cost value used to represent unknown cells in the costmap (255 = standard ROS unknown).",
+    "impact": "Changing this affects how planners interpret unexplored space.",
+    "category": "costmap",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "costmap",
+      "unknown"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "use_maximum",
+    "type": "bool",
+    "default": false,
+    "description": "When combining costmap layers, use the maximum cost value instead of the default combination method.",
+    "impact": "Enabling uses the highest cost from all layers; default combines them additively.",
+    "category": "costmap",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "global_costmap",
+      "costmap",
+      "layers"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "filters",
+    "type": "string_array",
+    "default": [],
+    "description": "List of costmap filter plugin names to load for the local costmap (e.g. speed limit zones).",
+    "impact": "Add filter plugin names here to activate local costmap filtering.",
+    "category": "plugins",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "filters",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "footprint_padding",
+    "type": "double",
+    "default": 0.01,
+    "range": {
+      "min": 0.0,
+      "max": 0.5
+    },
+    "unit": "m",
+    "description": "Extra padding added around the robot footprint in the local costmap.",
+    "impact": "Larger values give more conservative local obstacle avoidance.",
+    "category": "robot",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "footprint",
+      "padding"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "inflation_layer.enabled",
+    "type": "bool",
+    "default": true,
+    "description": "Enable or disable the inflation layer in the local costmap.",
+    "impact": "Disabling removes cost gradient \u2014 the controller may plan trajectories too close to obstacles.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "inflation_layer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "inflation",
+      "layer"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "inflation_layer.inflate_around_unknown",
+    "type": "bool",
+    "default": false,
+    "description": "Inflate costs around unknown cells in the local costmap.",
+    "impact": "Enable to treat unexplored cells conservatively in local planning.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "inflation_layer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "inflation",
+      "unknown"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "inflation_layer.inflate_unknown",
+    "type": "bool",
+    "default": false,
+    "description": "Treat unknown cells as obstacles for inflation in the local costmap.",
+    "impact": "Inflating unknown cells prevents the controller from commanding the robot into unmapped areas.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "inflation_layer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "inflation",
+      "unknown"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "inflation_layer.plugin",
+    "type": "string",
+    "default": "nav2_costmap_2d::InflationLayer",
+    "description": "C++ plugin class for the local costmap inflation layer.",
+    "impact": "Changing replaces the inflation algorithm for local planning.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "inflation_layer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "inflation",
+      "plugin"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "lethal_cost_threshold",
+    "type": "integer",
+    "default": 100,
+    "range": {
+      "min": 0,
+      "max": 255
+    },
+    "description": "Cost value at or above which a local costmap cell is considered an impassable obstacle.",
+    "impact": "Lower values make the controller more conservative; higher allows navigation near obstacles.",
+    "category": "costmap",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "cost",
+      "obstacle"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "map_topic",
+    "type": "string",
+    "default": "/map",
+    "description": "Topic for a static map layer within the local costmap (if a static layer is configured).",
+    "impact": "Typically unused in rolling-window local costmaps without a static layer.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "map",
+      "topic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "observation_sources",
+    "type": "string",
+    "default": "",
+    "description": "Space-separated list of sensor observation source names for the local costmap obstacle layer.",
+    "impact": "Each name must have matching observation_source parameters.",
+    "category": "sensors",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "sensors",
+      "obstacle"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "origin_x",
+    "type": "double",
+    "default": 0.0,
+    "unit": "m",
+    "description": "X origin of the local costmap. For rolling window maps, updated automatically as robot moves.",
+    "impact": "Generally not set manually for rolling-window costmaps.",
+    "category": "map",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "origin",
+      "map"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "origin_y",
+    "type": "double",
+    "default": 0.0,
+    "unit": "m",
+    "description": "Y origin of the local costmap. For rolling window maps, updated automatically as robot moves.",
+    "impact": "Generally not set manually for rolling-window costmaps.",
+    "category": "map",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "origin",
+      "map"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "track_unknown_space",
+    "type": "bool",
+    "default": false,
+    "description": "Maintain a separate representation for unknown space in the local costmap.",
+    "impact": "Typically false for local costmap (rolling window) \u2014 all unseen cells treated as free.",
+    "category": "costmap",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "unknown",
+      "costmap"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "trinary_costmap",
+    "type": "bool",
+    "default": true,
+    "description": "Use three-value (free/unknown/occupied) representation from the static layer in local costmap.",
+    "impact": "Typically true even for local costmaps with a static layer component.",
+    "category": "costmap",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "costmap"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "unknown_cost_value",
+    "type": "integer",
+    "default": 255,
+    "range": {
+      "min": 0,
+      "max": 255
+    },
+    "description": "Cost value representing unknown cells in the local costmap.",
+    "impact": "Matches the standard ROS unknown occupancy cost (255).",
+    "category": "costmap",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "costmap",
+      "unknown"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "use_maximum",
+    "type": "bool",
+    "default": false,
+    "description": "Combine local costmap layers using maximum cost rather than the default method.",
+    "impact": "Enable to use the highest cost from all layers at each cell.",
+    "category": "costmap",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "costmap",
+      "layers"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.combination_method",
+    "type": "integer",
+    "default": 1,
+    "range": {
+      "min": 0,
+      "max": 2
+    },
+    "description": "Method for combining voxel layer costs with other layers. 0=override, 1=max, 2=additive.",
+    "impact": "Controls how voxel obstacles interact with inflation and other layer costs.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "voxel_layer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "combination"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.footprint_clearing_enabled",
+    "type": "bool",
+    "default": true,
+    "description": "Clear voxel layer cells inside the robot footprint as the robot moves.",
+    "impact": "Prevents the robot from seeing itself as an obstacle in the voxel grid.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "voxel_layer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "clearing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.mark_threshold",
+    "type": "integer",
+    "default": 0,
+    "range": {
+      "min": 0,
+      "max": 16
+    },
+    "description": "Minimum number of voxels in a column required to mark a 2D costmap cell as occupied.",
+    "impact": "Increase to ignore single-point noise; decrease to detect lower-profile obstacles.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "voxel_layer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "threshold"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.origin_z",
+    "type": "double",
+    "default": 0.0,
+    "unit": "m",
+    "description": "Z origin of the voxel grid (height above the ground plane where voxels start).",
+    "impact": "Adjust if the voxel grid should exclude ground-level returns.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "voxel_layer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "height"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.scan.expected_update_rate",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "Hz",
+    "description": "Expected publish rate of the voxel layer sensor. 0 disables staleness checking.",
+    "impact": "Set to sensor rate to detect when sensor data stops arriving.",
+    "category": "sensors",
+    "plugin_specific": true,
+    "plugin": "voxel_layer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "scan"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.scan.inf_is_valid",
+    "type": "bool",
+    "default": false,
+    "description": "Treat infinite range readings from the voxel layer sensor as valid max-range measurements.",
+    "impact": "Enable for sensors that return inf instead of 0 for out-of-range readings.",
+    "category": "sensors",
+    "plugin_specific": true,
+    "plugin": "voxel_layer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "scan"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.scan.observation_persistence",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 60.0
+    },
+    "unit": "s",
+    "description": "How long 3D voxel observations persist. 0 = until next observation from this source.",
+    "impact": "Increase for slow 3D sensors to prevent obstacles disappearing between scans.",
+    "category": "sensors",
+    "plugin_specific": true,
+    "plugin": "voxel_layer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "scan"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.scan.sensor_frame",
+    "type": "string",
+    "default": "",
+    "description": "TF frame for the voxel layer sensor. Empty uses the message header frame_id.",
+    "impact": "Override if the published sensor frame does not match the TF tree.",
+    "category": "sensors",
+    "plugin_specific": true,
+    "plugin": "voxel_layer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "scan",
+      "tf"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "voxel_layer.unknown_threshold",
+    "type": "integer",
+    "default": 15,
+    "range": {
+      "min": 0,
+      "max": 16
+    },
+    "description": "Maximum number of unknown voxels in a column for the cell to still be marked as unknown (vs free).",
+    "impact": "Higher values keep more cells unknown; lower values clear unknown cells to free more aggressively.",
+    "category": "layers",
+    "plugin_specific": true,
+    "plugin": "voxel_layer",
+    "hot_reload": true,
+    "tags": [
+      "local_costmap",
+      "voxel_layer",
+      "unknown"
+    ],
+    "post_set_action": null
   }
 ]

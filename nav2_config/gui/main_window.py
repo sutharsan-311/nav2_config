@@ -7,7 +7,7 @@ flat icon buttons, full menu bar, 22px status bar.
 import json
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from nav2_config.core.config_file import ConfigFile
@@ -36,12 +36,14 @@ from PyQt6.QtWidgets import (
 )
 
 from nav2_config.core.node_discovery import NAV2_NODES
-from nav2_config.core.presets import PRESET_META, PRESET_ORDER, apply_preset
-from nav2_config.gui.health_panel import HealthPanel
-from nav2_config.gui.import_export import ExportDialog, ImportDialog
+from nav2_config.gui.icons import (
+    menu_about, menu_descriptions, menu_open,
+    menu_quit, menu_refresh, menu_save, menu_save_as,
+    menu_shortcuts, status_connected, status_disconnected,
+    toolbar_refresh, toolbar_restart,
+)
 from nav2_config.gui.node_panel import NodePanel
 from nav2_config.gui.param_panel import ParamPanel
-from nav2_config.gui.preset_dialog import PresetDialog
 from nav2_config.gui.yaml_panel import YamlPanel
 from nav2_config.node import Nav2ConfigNode
 from nav2_config.types.params import ParamValue
@@ -281,20 +283,20 @@ class MainWindow(QMainWindow):
         # ── File ────────────────────────────────────────────────────────
         self._file_menu: QMenu = bar.addMenu('File')
 
-        load_action = QAction('Load Config...', self)
+        load_action = QAction(menu_open(), 'Load Config...', self)
         load_action.setShortcut(QKeySequence('Ctrl+O'))
         load_action.triggered.connect(self._on_load_config)
         self._file_menu.addAction(load_action)
 
         self._file_menu.addSeparator()
 
-        self._save_action = QAction('Save', self)
+        self._save_action = QAction(menu_save(), 'Save', self)
         self._save_action.setShortcut(QKeySequence('Ctrl+S'))
         self._save_action.setEnabled(False)
         self._save_action.triggered.connect(self._on_save)
         self._file_menu.addAction(self._save_action)
 
-        self._save_as_action = QAction('Save As...', self)
+        self._save_as_action = QAction(menu_save_as(), 'Save As...', self)
         self._save_as_action.setShortcut(QKeySequence('Ctrl+Shift+S'))
         self._save_as_action.setEnabled(False)
         self._save_as_action.triggered.connect(self._on_save_as)
@@ -302,63 +304,21 @@ class MainWindow(QMainWindow):
 
         self._file_menu.addSeparator()
 
-        export_live_action = QAction('Export Current Live Params...', self)
-        export_live_action.setShortcut(QKeySequence('Ctrl+E'))
-        export_live_action.triggered.connect(self._on_export)
-        self._file_menu.addAction(export_live_action)
-
-        import_action = QAction('Import YAML...', self)
-        import_action.setShortcut(QKeySequence('Ctrl+I'))
-        import_action.triggered.connect(self._on_import)
-        self._file_menu.addAction(import_action)
-
-        self._file_menu.addSeparator()
-
         # Recent files placeholder — populated by _update_recent_files_menu()
         self._recent_files_sep = self._file_menu.addSeparator()
         self._recent_actions: list[QAction] = []
 
-        refresh_action = QAction('Refresh Nodes', self)
+        refresh_action = QAction(menu_refresh(), 'Refresh Nodes', self)
         refresh_action.setShortcut(QKeySequence('Ctrl+R'))
         refresh_action.triggered.connect(self._node.force_discover)
         self._file_menu.addAction(refresh_action)
 
         self._file_menu.addSeparator()
 
-        quit_action = QAction('Quit', self)
+        quit_action = QAction(menu_quit(), 'Quit', self)
         quit_action.setShortcut(QKeySequence('Ctrl+Q'))
         quit_action.triggered.connect(self.close)
         self._file_menu.addAction(quit_action)
-
-        # ── Edit ─────────────────────────────────────────────────────────
-        edit_menu: QMenu = bar.addMenu('Edit')
-
-        undo_action = QAction('Undo Param Change', self)
-        undo_action.setShortcut(QKeySequence('Ctrl+Z'))
-        undo_action.setEnabled(False)
-        edit_menu.addAction(undo_action)
-
-        redo_action = QAction('Redo', self)
-        redo_action.setShortcut(QKeySequence('Ctrl+Y'))
-        redo_action.setEnabled(False)
-        edit_menu.addAction(redo_action)
-
-        edit_menu.addSeparator()
-
-        reset_action = QAction('Reset to Defaults', self)
-        reset_action.setEnabled(False)
-        edit_menu.addAction(reset_action)
-
-        # ── Presets ──────────────────────────────────────────────────────
-        presets_menu: QMenu = bar.addMenu('Presets')
-        for key in PRESET_ORDER:
-            meta = PRESET_META.get(key, {})
-            display_name = meta.get('name', key)
-            action = QAction(display_name, self)
-            action.triggered.connect(
-                lambda _checked, k=key: self._open_preset_dialog(k)
-            )
-            presets_menu.addAction(action)
 
         # ── View ─────────────────────────────────────────────────────────
         view_menu: QMenu = bar.addMenu('View')
@@ -380,9 +340,9 @@ class MainWindow(QMainWindow):
 
         view_menu.addSeparator()
 
-        self._toggle_desc_action = QAction('Show Descriptions', self)
+        self._toggle_desc_action = QAction(menu_descriptions(), 'Show Descriptions', self)
         self._toggle_desc_action.setCheckable(True)
-        self._toggle_desc_action.setChecked(True)
+        self._toggle_desc_action.setChecked(False)
         self._toggle_desc_action.setShortcut(QKeySequence('Ctrl+D'))
         self._toggle_desc_action.triggered.connect(self._on_toggle_descriptions)
         view_menu.addAction(self._toggle_desc_action)
@@ -390,13 +350,13 @@ class MainWindow(QMainWindow):
         # ── Help ─────────────────────────────────────────────────────────
         help_menu: QMenu = bar.addMenu('Help')
 
-        shortcuts_action = QAction('Keyboard Shortcuts', self)
+        shortcuts_action = QAction(menu_shortcuts(), 'Keyboard Shortcuts', self)
         shortcuts_action.triggered.connect(self._show_shortcuts)
         help_menu.addAction(shortcuts_action)
 
         help_menu.addSeparator()
 
-        about_action = QAction('About nav2_config', self)
+        about_action = QAction(menu_about(), 'About nav2_config', self)
         about_action.triggered.connect(self._show_about)
         help_menu.addAction(about_action)
 
@@ -407,36 +367,21 @@ class MainWindow(QMainWindow):
         tb.setFloatable(False)
         tb.setObjectName('mainToolBar')
 
-        def _add_action(label: str, tooltip: str) -> QAction:
-            action = QAction(label, self)
+        def _add_action(icon: 'QIcon', label: str, tooltip: str) -> QAction:
+            action = QAction(icon, label, self)
             action.setToolTip(tooltip)
             tb.addAction(action)
             return action
 
-        self._tb_import = _add_action('Import', 'Import YAML parameters  (Ctrl+I)')
-        self._tb_import.triggered.connect(self._on_import)
-
-        self._tb_export = _add_action('Export', 'Export YAML parameters  (Ctrl+S)')
-        self._tb_export.triggered.connect(self._on_export)
-
-        tb.addSeparator()
-
-        self._tb_refresh = _add_action('Refresh', 'Refresh node discovery  (Ctrl+R)')
+        self._tb_refresh = _add_action(
+            toolbar_refresh(), 'Refresh', 'Refresh node discovery  (Ctrl+R)'
+        )
         self._tb_refresh.triggered.connect(self._node.force_discover)
 
         tb.addSeparator()
 
-        self._tb_presets = _add_action('Presets', 'Apply environment preset')
-        self._tb_presets.triggered.connect(lambda: self._open_preset_dialog(None))
-
-        tb.addSeparator()
-
-        self._tb_health = _add_action('Health Check', 'Run health check now')
-        self._tb_health.triggered.connect(self._run_health_now)
-
-        tb.addSeparator()
-
         self._tb_restart_all = _add_action(
+            toolbar_restart(),
             'Restart Nav2 Stack',
             'Restart all Nav2 nodes in lifecycle order',
         )
@@ -454,17 +399,10 @@ class MainWindow(QMainWindow):
             topic_discovery=self._node.topic_discovery,
             frame_discovery=self._node.frame_discovery,
         )
-        self._health_panel = HealthPanel()
         self._yaml_panel = YamlPanel()
 
-        center_splitter = QSplitter(Qt.Orientation.Vertical)
-        center_splitter.setHandleWidth(1)
-        center_splitter.addWidget(self._param_panel)
-        center_splitter.addWidget(self._health_panel)
-        center_splitter.setSizes([10000, 160])
-
         splitter.addWidget(self._node_panel)
-        splitter.addWidget(center_splitter)
+        splitter.addWidget(self._param_panel)
         splitter.addWidget(self._yaml_panel)
         splitter.setSizes([240, 10000, 300])
 
@@ -485,9 +423,18 @@ class MainWindow(QMainWindow):
         status: QStatusBar = self.statusBar()
         status.setFixedHeight(22)
 
+        from PyQt6.QtWidgets import QLabel as _QLabel
+        self._status_dot = _QLabel()
+        self._status_dot.setFixedSize(14, 14)
+        self._status_dot.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._status_dot.setPixmap(
+            status_disconnected().pixmap(10, 10)
+        )
+        status.addWidget(self._status_dot)
+
         self._status_connection = QLabel('Disconnected')
         self._status_connection.setStyleSheet(
-            f'color: {_RED}; padding: 0 8px; font-size: 9pt;'
+            f'color: {_RED}; padding: 0 4px 0 0; font-size: 9pt;'
         )
         status.addWidget(self._status_connection)
 
@@ -520,19 +467,11 @@ class MainWindow(QMainWindow):
         # param_set_requested: user clicked Set — send to ROS2 node
         self._param_panel.param_set_requested.connect(self._on_param_set_requested)
         self._node.signals.param_set_result.connect(self._on_param_set_result)
-        self._health_panel.param_focus_requested.connect(
-            self._param_panel.scroll_to_param
-        )
         self._node.signals.params_externally_changed.connect(
             self._on_params_externally_changed
         )
         self._node.signals.discovery_refreshed.connect(
             self._param_panel.refresh_dropdowns
-        )
-        self._node_panel.import_btn.clicked.connect(self._on_import)
-        self._node_panel.export_btn.clicked.connect(self._on_export)
-        self._node_panel.presets_btn.clicked.connect(
-            lambda: self._open_preset_dialog(None)
         )
         # Lifecycle signals
         self._node.signals.lifecycle_states_updated.connect(
@@ -564,16 +503,18 @@ class MainWindow(QMainWindow):
         if found == 0:
             self._status_connection.setText(f'Disconnected  |  0/{total} nodes')
             self._status_connection.setStyleSheet(
-                f'color: {_RED}; padding: 0 8px; font-size: 9pt;'
+                f'color: {_RED}; padding: 0 4px 0 0; font-size: 9pt;'
             )
+            self._status_dot.setPixmap(status_disconnected().pixmap(10, 10))
         else:
             param_part = f'  |  {total_params} params' if total_params else ''
             self._status_connection.setText(
                 f'Connected  |  {found}/{total} nodes{param_part}'
             )
             self._status_connection.setStyleSheet(
-                f'color: {_GREEN}; padding: 0 8px; font-size: 9pt;'
+                f'color: {_GREEN}; padding: 0 4px 0 0; font-size: 9pt;'
             )
+            self._status_dot.setPixmap(status_connected().pixmap(10, 10))
 
         current = self._param_panel._node_name
         if current:
@@ -627,8 +568,6 @@ class MainWindow(QMainWindow):
         elif '|' in found_text:
             self._status_connection.setText(f'{found_text}  |  {total_params} params')
 
-        self._schedule_health_check()
-
     def _on_param_change_requested(
         self, node_name: str, param_name: str, value: object
     ) -> None:
@@ -643,7 +582,6 @@ class MainWindow(QMainWindow):
                 plugin_filter=self._param_panel._selected_plugin,
                 pending_params=self._param_panel.pending_param_names(),
             )
-        self._schedule_health_check()
 
     def _on_param_set_requested(
         self, node_name: str, param_name: str, value: object
@@ -1016,29 +954,6 @@ class MainWindow(QMainWindow):
         self._add_recent_file(filepath)
         self.set_status(f'Loaded config: {filepath}')
 
-    def _on_export(self) -> None:
-        yaml_str = self._yaml_panel._editor.toPlainText()
-        ExportDialog.run(self, yaml_str)
-
-    def _on_import(self) -> None:
-        ImportDialog.run(self, self._apply_imported_params)
-
-    def _apply_imported_params(
-        self, filepath: str, data: dict[str, dict[str, Any]]
-    ) -> None:
-        type_map: dict[str, str] = {
-            pv.definition.param: pv.definition.type
-            for pv in self._current_params
-        }
-        total = 0
-        for node_name, params in data.items():
-            full_node = node_name if node_name.startswith('/') else f'/{node_name}'
-            for param_name, value in params.items():
-                type_hint = type_map.get(param_name, '')
-                self._node.request_set_param(full_node, param_name, value, type_hint)
-                total += 1
-        self.set_status(f'Importing {total} parameters from {Path(filepath).name}')
-
     def _on_params_externally_changed(self, node_name: str, changed: list) -> None:
         for param_name, _new_value in changed:
             self._param_panel.highlight_external_change(param_name)
@@ -1274,13 +1189,6 @@ class MainWindow(QMainWindow):
             sizes[index] = max(self._saved_panel_sizes[index], 100)
         self._splitter.setSizes(sizes)
 
-    def _run_health_now(self) -> None:
-        all_params: list[ParamValue] = []
-        for params in self._all_node_params.values():
-            all_params.extend(params)
-        self._health_panel.run_checks_now(all_params)
-        self.set_status('Health check complete.')
-
     def _show_shortcuts(self) -> None:
         dialog = QDialog(self)
         dialog.setWindowTitle('Keyboard Shortcuts')
@@ -1299,8 +1207,9 @@ class MainWindow(QMainWindow):
         shortcuts.setHtml(
             '<table cellspacing="4">'
             '<tr><td><b>Ctrl+K</b></td><td>Focus param search</td></tr>'
-            '<tr><td><b>Ctrl+I</b></td><td>Import YAML</td></tr>'
-            '<tr><td><b>Ctrl+S</b></td><td>Export YAML</td></tr>'
+            '<tr><td><b>Ctrl+O</b></td><td>Load config file</td></tr>'
+            '<tr><td><b>Ctrl+S</b></td><td>Save config</td></tr>'
+            '<tr><td><b>Ctrl+Shift+S</b></td><td>Save config as...</td></tr>'
             '<tr><td><b>Ctrl+R</b></td><td>Refresh node discovery</td></tr>'
             '<tr><td><b>Ctrl+D</b></td><td>Toggle descriptions</td></tr>'
             '<tr><td><b>Ctrl+1</b></td><td>Toggle Node panel</td></tr>'
@@ -1378,7 +1287,9 @@ class MainWindow(QMainWindow):
             if 'splitter_sizes' in state:
                 self._splitter.setSizes(state['splitter_sizes'])
             if 'show_descriptions' in state:
-                self._toggle_desc_action.setChecked(state['show_descriptions'])
+                val = state['show_descriptions']
+                self._toggle_desc_action.setChecked(val)
+                self._param_panel._desc_btn.setChecked(val)
         except Exception:
             logger.warning('Failed to restore window state', exc_info=True)
 
@@ -1404,36 +1315,6 @@ class MainWindow(QMainWindow):
         self._save_window_state()
         self._node.unwatch_node()
         super().closeEvent(event)
-
-    # ------------------------------------------------------------------
-    # Health check scheduling
-    # ------------------------------------------------------------------
-
-    def _schedule_health_check(self) -> None:
-        all_params: list[ParamValue] = []
-        for params in self._all_node_params.values():
-            all_params.extend(params)
-        self._health_panel.schedule_check(all_params)
-
-    # ------------------------------------------------------------------
-    # Preset handling
-    # ------------------------------------------------------------------
-
-    def _open_preset_dialog(self, initial_preset: str | None = None) -> None:
-        dialog = PresetDialog(
-            on_apply=self._apply_preset,
-            initial_preset=initial_preset,
-            parent=self,
-        )
-        dialog.exec()
-
-    def _apply_preset(self, preset_name: str, preset_data: dict[str, dict]) -> None:
-        count = apply_preset(self._node, preset_data, self._node._schema)
-        display_name = PRESET_META.get(preset_name, {}).get('name', preset_name)
-        self.set_status(
-            f'Applying preset "{display_name}" ({count} parameter updates queued)'
-        )
-        logger.info('Applied preset %r: %d params queued', preset_name, count)
 
     # ------------------------------------------------------------------
     # Public helpers

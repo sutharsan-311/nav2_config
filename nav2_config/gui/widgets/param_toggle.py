@@ -28,9 +28,11 @@ class ParamToggle(QWidget):
         layout.setSpacing(0)
 
         self._checkbox = QCheckBox()
-        self._checkbox.stateChanged.connect(
-            lambda state: self.value_changed.emit(bool(state))
-        )
+        # Use toggled(bool) rather than stateChanged(Qt.CheckState) — in PyQt6
+        # versions < 6.4, Qt.CheckState is not an IntEnum, so bool(Unchecked)
+        # is True (it's a non-None object), which breaks the IDLE→READY state
+        # machine when the user unchecks a True-default parameter.
+        self._checkbox.toggled.connect(self.value_changed)
         layout.addWidget(self._checkbox)
         layout.addStretch()
 

@@ -27,6 +27,23 @@ from nav2_config.types.params import Nav2ParamDef, ParamValue
 
 logger = logging.getLogger(__name__)
 
+#: Parameter name substrings that are infrastructure / not useful to show in the GUI.
+_PARAM_FILTER_SUBSTRINGS = ('qos_overrides', 'use_sim_time', 'bond_disable_heartbeat')
+
+
+def _dot_prefix_category(name: str) -> str:
+    """Return a grouping category based on the dot-prefix of a parameter name.
+
+    Examples::
+        "controller_frequency"         -> "Base Parameters"
+        "FollowPath.max_vel_x"         -> "FollowPath"
+        "FollowPath.GoalAlign.weight"  -> "FollowPath.GoalAlign"
+    """
+    parts = name.split('.')
+    if len(parts) <= 1:
+        return 'Base Parameters'
+    return '.'.join(parts[:-1])
+
 
 class SignalBridge(QObject):
     """Qt signal bridge for crossing the ROS2-thread / Qt-main-thread boundary.
@@ -306,7 +323,7 @@ class Nav2ConfigNode(Node):
         if not watched:
             return
         try:
-            fresh = self._param_client.get_all_nav2_params(watched, self._schema)
+            fresh = self._build_param_values(watched)
         except Exception:
             return  # Node may have gone offline — silently skip this tick.
         changed = self._watcher.diff(fresh)
@@ -410,18 +427,101 @@ class Nav2ConfigNode(Node):
             logger.warning('Unknown request op: %r', op)
 
     def _fetch_params_for_node(self, node_name: str) -> None:
-        """Fetch all schema-defined params for *node_name* and emit the result.
+        """Fetch all live params for *node_name*, merging with schema where available.
 
         Called on the ROS2 thread.  Emits ``signals.params_received``.
         """
-        param_values: list[ParamValue] = self._param_client.get_all_nav2_params(
-            node_name, self._schema
-        )
+        param_values = self._build_param_values(node_name)
         # Update watcher baseline so poll doesn't flag these values as external changes.
         if self._watcher.watched_node == node_name:
             self._watcher.set_baseline(param_values)
         self.signals.params_received.emit(node_name, param_values)
         self.get_logger().debug(f"Fetched {len(param_values)} params for {node_name}")
+
+    def _build_param_values(self, node_name: str) -> list[ParamValue]:
+        """Build the full ParamValue list for *node_name*.
+
+        1. Lists all live parameters from the running node.
+        2. Filters out infrastructure params (qos_overrides etc.).
+        3. Fetches all live values in one RPC call.
+        4. For each param: uses schema metadata if available, otherwise synthesises
+           a minimal Nav2ParamDef from the live type and a dot-prefix category.
+
+        Falls back to schema-only params (with ``is_live=False``) when the node
+        is not reachable (i.e. ``list_params`` returns an empty list).
+        """
+        bare_node = node_name.rstrip('/').rsplit('/', 1)[-1]
+
+        live_names = [
+            n for n in self._param_client.list_params(node_name)
+            if not any(f in n for f in _PARAM_FILTER_SUBSTRINGS)
+        ]
+
+        if not live_names:
+            # Node offline — fall back to schema defaults so the panel isn't empty.
+            return self._param_client.get_all_nav2_params(node_name, self._schema)
+
+        live_values = self._param_client.get_params(node_name, live_names)
+
+        results: list[ParamValue] = []
+        for name in live_names:
+            schema_entry = self._find_schema_entry(node_name, name)
+            value = live_values.get(name)
+
+            if schema_entry:
+                results.append(ParamValue(
+                    definition=schema_entry,
+                    current_value=value if value is not None else schema_entry.default,
+                    is_modified=(value != schema_entry.default) if value is not None else False,
+                    is_live=(value is not None),
+                ))
+            else:
+                param_type = self._detect_type(value)
+                category = _dot_prefix_category(name)
+                defn = Nav2ParamDef(
+                    node=bare_node,
+                    param=name,
+                    ros2_name=name,
+                    type=param_type,
+                    default=value,
+                    range=None,
+                    unit='',
+                    description='',
+                    impact='',
+                    category=category,
+                    plugin_specific=('.' in name),
+                    plugin=name.split('.')[0] if '.' in name else None,
+                    hot_reload=True,
+                    post_set_action=None,
+                    tags=[],
+                )
+                results.append(ParamValue(
+                    definition=defn,
+                    current_value=value,
+                    is_modified=False,
+                    is_live=True,
+                ))
+
+        return results
+
+    @staticmethod
+    def _detect_type(value: object) -> str:
+        """Infer a schema type string from a Python value returned by ROS2."""
+        if isinstance(value, bool):
+            return 'bool'
+        if isinstance(value, int):
+            return 'int'
+        if isinstance(value, float):
+            return 'double'
+        if isinstance(value, list):
+            if value and all(isinstance(v, bool) for v in value):
+                return 'bool_array'
+            if value and all(isinstance(v, int) for v in value):
+                return 'int_array'
+            if value and all(isinstance(v, float) for v in value):
+                return 'double_array'
+            return 'string_array'
+        return 'string'
 
     def _set_param(
         self,

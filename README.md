@@ -17,7 +17,6 @@ Tune your robot's navigation parameters **while it's running** — without killi
 - **167 parameters** across 11 Nav2 nodes, each with human-readable descriptions and tuning advice
 - **Health check** — catches dangerous configs (e.g. `inflation_radius < robot_radius`, mismatched frames)
 - **Plugin-aware** — select MPPI / DWB / RPP controller and see only the relevant parameters
-- **Environment presets** — hospital corridor, warehouse, outdoor campus, simulation, and retail starter configs
 - **YAML export** — save your tuned parameters to a deployment-ready `nav2_params.yaml`
 - **YAML import** — load a YAML file and apply its parameters to running nodes instantly
 - **Dark theme** — ROS tool aesthetic matching RViz2, rqt, and Foxglove
@@ -95,7 +94,6 @@ Parameters that require a node restart (like changing plugins) are marked with a
 | Tuning advice | ✗ | ✓ |
 | Health check | ✗ | ✓ |
 | Plugin awareness | ✗ | ✓ |
-| Environment presets | ✗ | ✓ |
 | YAML export | ✗ | ✓ |
 
 ## Contributing
@@ -104,7 +102,6 @@ PRs are welcome. A few areas where contributions are especially valuable:
 
 - **Parameter schema** (`nav2_config/schema/nav2_params.json`) — better descriptions, missing parameters, corrected ranges
 - **Health check rules** (`nav2_config/core/health_check.py`) — new cross-parameter validation rules
-- **Environment presets** (`nav2_config/schema/presets/`) — new robot environments
 - **ROS2 distro testing** — test reports on Iron and Jazzy
 
 ### Development Setup

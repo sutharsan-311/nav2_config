@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 
-from PyQt6.QtCore import Qt, QRegularExpression, pyqtSignal
+from PyQt6.QtCore import Qt, QRegularExpression, QSize, pyqtSignal
 from PyQt6.QtGui import (
     QColor,
     QFont,
@@ -25,6 +25,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from nav2_config.gui import icons as _icons
 
 from nav2_config.types.params import ParamValue
 from nav2_config.core.yaml_exporter import export_yaml
@@ -200,6 +202,10 @@ class YamlPanel(QWidget):
         self._save_btn.setFixedHeight(20)
         self._save_btn.setToolTip('Save config file  (Ctrl+S)')
         self._save_btn.setVisible(False)
+        _save_icon = _icons.yaml_save()
+        if not _save_icon.isNull():
+            self._save_btn.setIcon(_save_icon)
+            self._save_btn.setIconSize(QSize(14, 14))
         self._save_btn.setStyleSheet(
             'QPushButton { background: #2a82da; color: #ffffff; '
             'border: 1px solid #1a6abf; font-size: 9pt; font-weight: bold; padding: 0 8px; }'
@@ -213,6 +219,10 @@ class YamlPanel(QWidget):
         copy_btn = QPushButton('Copy')
         copy_btn.setFixedHeight(20)
         copy_btn.setToolTip('Copy YAML to clipboard')
+        _copy_icon = _icons.yaml_copy()
+        if not _copy_icon.isNull():
+            copy_btn.setIcon(_copy_icon)
+            copy_btn.setIconSize(QSize(14, 14))
         copy_btn.setStyleSheet(
             f'QPushButton:pressed {{ background: #3399ff; color: #ffffff; '
             f'border-color: #2277cc; }}'

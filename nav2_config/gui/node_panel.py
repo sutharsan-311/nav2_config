@@ -20,6 +20,7 @@ from PyQt6.QtWidgets import (
 )
 
 from nav2_config.core.node_discovery import NAV2_NODES
+from nav2_config.gui import icons as _icons
 
 logger = logging.getLogger(__name__)
 
@@ -52,12 +53,17 @@ def _lifecycle_color(state: str, found: bool) -> str:
 
 
 class NodeRow(QWidget):
-    """Single row in the node list: coloured dot + display name + state + param count."""
+    """Single row in the node list: coloured dot + node icon + display name + state + param count."""
 
     def __init__(
-        self, display_name: str, found: bool, parent: QWidget | None = None
+        self,
+        display_name: str,
+        found: bool,
+        node_path: str = '',
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
+        self._node_path = node_path
         self._build(display_name, found)
 
     def _build(self, display_name: str, found: bool) -> None:
@@ -69,6 +75,12 @@ class NodeRow(QWidget):
         self._dot.setFixedWidth(10)
         self._dot.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         layout.addWidget(self._dot)
+
+        # Node-type icon
+        self._icon_label = QLabel()
+        self._icon_label.setFixedSize(16, 16)
+        self._icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self._icon_label)
 
         name_col = QVBoxLayout()
         name_col.setContentsMargins(0, 0, 0, 0)
@@ -105,6 +117,7 @@ class NodeRow(QWidget):
         self._found = found
         self._state = 'unknown'
         self._update_dot()
+        self._update_node_icon()
 
     # ------------------------------------------------------------------
     # Public state setters
@@ -114,6 +127,7 @@ class NodeRow(QWidget):
         """Update whether the node is currently discovered."""
         self._found = found
         self._update_dot()
+        self._update_node_icon()
         if not found:
             self._state_label.setText('')
 
@@ -121,6 +135,7 @@ class NodeRow(QWidget):
         """Update the lifecycle state label and dot colour."""
         self._state = state
         self._update_dot()
+        self._update_node_icon()
         self._state_label.setText(f'({state})' if state not in ('unknown', '') else '')
 
     def set_selected(self, selected: bool) -> None:
@@ -155,6 +170,14 @@ class NodeRow(QWidget):
     def _update_dot(self) -> None:
         color = _lifecycle_color(self._state, self._found)
         self._dot.setStyleSheet(f'color: {color}; font-size: 8px;')
+
+    def _update_node_icon(self) -> None:
+        active = self._found and self._state == 'active'
+        icon = _icons.node_icon(self._node_path, active)
+        if not icon.isNull():
+            self._icon_label.setPixmap(icon.pixmap(16, 16))
+        else:
+            self._icon_label.clear()
 
 
 class _LifecycleBar(QWidget):
@@ -365,7 +388,6 @@ class NodePanel(QWidget):
         layout.addWidget(self._make_title_bar())
         layout.addWidget(self._make_list(), stretch=1)
         layout.addWidget(self._make_lifecycle_bar())
-        layout.addWidget(self._make_action_bar())
         layout.addWidget(self._make_footer())
 
         for path, display_name in NAV2_NODES.items():
@@ -390,9 +412,15 @@ class NodePanel(QWidget):
         layout.addWidget(title)
         layout.addStretch()
 
-        refresh_btn = QPushButton('↻')
+        refresh_btn = QPushButton()
         refresh_btn.setFixedSize(22, 22)
         refresh_btn.setToolTip('Refresh node discovery  (Ctrl+R)')
+        _refresh_icon = _icons.toolbar_refresh()
+        if not _refresh_icon.isNull():
+            refresh_btn.setIcon(_refresh_icon)
+            refresh_btn.setIconSize(QSize(14, 14))
+        else:
+            refresh_btn.setText('↻')
         refresh_btn.setStyleSheet(
             f'QPushButton {{ background: transparent; border: 1px solid transparent; '
             f'color: {_FG_DIM}; font-size: 12px; }}'
@@ -426,42 +454,6 @@ class NodePanel(QWidget):
         self._lc_bar.action_requested.connect(self._on_lc_bar_action)
         return self._lc_bar
 
-    def _make_action_bar(self) -> QWidget:
-        bar = QWidget()
-        bar.setFixedHeight(30)
-        bar.setStyleSheet(
-            f'QWidget {{ background: {_BG_HDR}; border-top: 1px solid {_BORDER}; }}'
-        )
-
-        layout = QHBoxLayout(bar)
-        layout.setContentsMargins(6, 3, 6, 3)
-        layout.setSpacing(3)
-
-        for label, tooltip in [
-            ('Import', 'Import parameters from YAML  (Ctrl+I)'),
-            ('Export', 'Export parameters to YAML  (Ctrl+S)'),
-            ('Presets', 'Apply environment preset'),
-        ]:
-            btn = QPushButton(label)
-            btn.setToolTip(tooltip)
-            btn.setFixedHeight(22)
-            btn.setStyleSheet(
-                f'QPushButton {{ background: #555555; border: 1px solid {_BORDER}; '
-                f'color: {_FG}; font-size: 9pt; padding: 0 6px; }}'
-                f'QPushButton:hover {{ background: #666666; }}'
-                f'QPushButton:pressed {{ background: #444444; }}'
-            )
-            layout.addWidget(btn)
-            if label == 'Import':
-                self.import_btn = btn
-            elif label == 'Export':
-                self.export_btn = btn
-            elif label == 'Presets':
-                self.presets_btn = btn
-
-        layout.addStretch()
-        return bar
-
     def _make_footer(self) -> QWidget:
         footer = QWidget()
         footer.setFixedHeight(22)
@@ -486,7 +478,7 @@ class NodePanel(QWidget):
         item.setSizeHint(QSize(0, 38))
         item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
 
-        row = NodeRow(display_name, found)
+        row = NodeRow(display_name, found, node_path=path)
 
         self._list.addItem(item)
         self._list.setItemWidget(item, row)

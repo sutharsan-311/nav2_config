@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QHBoxLayout,
@@ -20,6 +20,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from nav2_config.gui import icons as _icons
 
 from nav2_config.types.params import ParamValue
 from nav2_config.gui.widgets.param_row import ParamRow
@@ -80,6 +82,15 @@ class _CategorySection(QWidget):
         hdr_layout = QHBoxLayout(self._header)
         hdr_layout.setContentsMargins(8, 0, 8, 0)
         hdr_layout.setSpacing(4)
+
+        # Category icon
+        self._cat_icon_label = QLabel()
+        self._cat_icon_label.setFixedSize(16, 16)
+        self._cat_icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        cat_icon = _icons.category_icon(self._category)
+        if cat_icon is not None:
+            self._cat_icon_label.setPixmap(cat_icon.pixmap(14, 14))
+        hdr_layout.addWidget(self._cat_icon_label)
 
         self._name_label = QLabel()
         self._name_label.setStyleSheet(
@@ -188,7 +199,7 @@ class ParamPanel(QWidget):
         self._all_rows: list[ParamRow] = []
         self._selected_plugin: str | None = None
         self._plugin_buttons: dict[str, QPushButton] = {}
-        self._show_descriptions: bool = True
+        self._show_descriptions: bool = False
         self._topic_discovery = topic_discovery
         self._frame_discovery = frame_discovery
         self._build_ui()
@@ -283,7 +294,7 @@ class ParamPanel(QWidget):
         # "Desc" toggle button
         self._desc_btn = QPushButton('Desc')
         self._desc_btn.setCheckable(True)
-        self._desc_btn.setChecked(True)
+        self._desc_btn.setChecked(False)
         self._desc_btn.setFixedHeight(20)
         self._desc_btn.setToolTip('Toggle parameter descriptions')
         self._desc_btn.setStyleSheet(

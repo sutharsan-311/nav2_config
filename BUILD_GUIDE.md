@@ -103,7 +103,7 @@ Build the application entry point and threading model:
 - Splitter initial sizes: [240, stretch, 300]
 - All three panels collapsible (splitter handles are draggable to 0)
 - Bottom status bar: QStatusBar showing "Disconnected — No Nav2 nodes found"
-- Menu bar: File (Import YAML, Export YAML, Quit), Presets (5 preset actions), Help (About)
+- Menu bar: File (Import YAML, Export YAML, Quit), Help (About)
 - Apply the dark theme from theme.py
 
 5. Make sure the entry point works:
@@ -403,10 +403,10 @@ Read CLAUDE.md. Build the YAML preview and export/import.
 
 ---
 
-## SESSION 7: Health Check + Presets (~20 min)
+## SESSION 7: Health Check (~20 min)
 
 ```
-Read CLAUDE.md. Port health check and presets from web version.
+Read CLAUDE.md. Port health check from web version.
 
 1. nav2_config/core/health_check.py:
 - Port the health check rules from the web version.
@@ -422,33 +422,8 @@ Read CLAUDE.md. Port health check and presets from web version.
 - Clicking an affected param scrolls to it in the ParamPanel
 - Auto-runs when params change (debounced 1 second)
 
-3. nav2_config/core/presets.py:
-- Function load_preset(name: str) -> dict[str, dict[str, Any]]:
-  Loads a preset YAML from the schema/presets/ directory.
-  Returns the param overrides.
-
-- Function apply_preset(node: Nav2ConfigNode, preset: dict):
-  For each param in the preset, calls set_param on the live node.
-  Returns list of successes and failures.
-
-4. Create preset YAML files in schema/presets/:
-- hospital_corridor.yaml
-- open_warehouse.yaml
-- outdoor_campus.yaml
-- simulation_turtlebot3.yaml
-- tight_retail.yaml
-Each file is a standard nav2_params.yaml with only the overridden values.
-
-5. nav2_config/gui/preset_dialog.py — PresetDialog(QDialog):
-- Shows the 5 presets in a list
-- Each shows: name, description, plugin combo, override count
-- "Apply" button: loads the preset and applies params to live nodes
-- "Preview" button: shows what params would change
-- Warning: "This will change X parameters on Y running nodes. Continue?"
-
-6. Wire into main_window.py:
+3. Wire into main_window.py:
 - Add HealthPanel below the status bar in ParamPanel (or as a collapsible dock)
-- Connect Presets menu actions to PresetDialog
 - Health check runs automatically after param changes
 ```
 
@@ -557,7 +532,6 @@ After all sessions, verify:
 - [ ] Export saves a valid nav2_params.yaml
 - [ ] Import loads a YAML and applies params to running nodes
 - [ ] Health check catches inflation_radius < robot_radius
-- [ ] Presets apply correctly to running nodes
 - [ ] Search filters params
 - [ ] Ctrl+K, Ctrl+S, Ctrl+I shortcuts work
 - [ ] Status bar shows accurate info
