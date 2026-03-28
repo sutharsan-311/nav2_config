@@ -61,11 +61,12 @@ def _is_topic_param(param_name: str) -> bool:
 # ---------------------------------------------------------------------------
 
 class _SetState(Enum):
-    IDLE    = auto()   # Value matches live — button disabled, grayed
-    READY   = auto()   # User changed value — button enabled, blue
-    PENDING = auto()   # Waiting for ROS2 response — button shows "..."
-    SUCCESS = auto()   # Set succeeded — shows green ✓
-    FAILED  = auto()   # Set failed — shows red ✗, clickable to retry
+    IDLE       = auto()   # Value matches live — button disabled, grayed
+    READY      = auto()   # User changed value — button enabled, blue
+    PENDING    = auto()   # Waiting for ROS2 response — button shows "..."
+    SUCCESS    = auto()   # Set succeeded — shows green checkmark
+    FAILED     = auto()   # Set failed — shows red X, clickable to retry
+    SAVED_FILE = auto()   # Non-hot-reload: saved to file, restart needed — amber
 
 
 _STATE_CFG: dict[_SetState, tuple[str, str, bool]] = {
@@ -98,7 +99,7 @@ _STATE_CFG: dict[_SetState, tuple[str, str, bool]] = {
         '    background: #e8f5e9; color: #4caf50;'
         '    border: none; font-size: 11pt; padding: 0;'
         '}',
-        '✓', False,
+        '\u2713', False,
     ),
     _SetState.FAILED: (
         'QPushButton {'
@@ -106,7 +107,14 @@ _STATE_CFG: dict[_SetState, tuple[str, str, bool]] = {
         '    border: 1px solid #ef9a9a; font-size: 11pt; padding: 0;'
         '}'
         'QPushButton:hover { background: #ffcdd2; }',
-        '✗', True,
+        '\u2717', True,
+    ),
+    _SetState.SAVED_FILE: (
+        'QPushButton {'
+        '    background: #fff3e0; color: #f57c00;'
+        '    border: 1px solid #ffb74d; font-size: 10pt; padding: 0;'
+        '}',
+        '\u21bb', False,
     ),
 }
 
@@ -140,6 +148,8 @@ class _SetButton(QPushButton):
         self.setEnabled(enabled)
         if state == _SetState.FAILED:
             self.setToolTip('Failed to set parameter — click to retry')
+        elif state == _SetState.SAVED_FILE:
+            self.setToolTip('Saved to config file — restart Nav2 to apply')
         else:
             self.setToolTip('')
 
@@ -213,12 +223,20 @@ class ParamRow(QWidget):
         name_layout.setContentsMargins(4, 0, 4, 0)
         name_layout.setSpacing(4)
 
-        self._modified_dot = QLabel('●')
+        self._modified_dot = QLabel('\u25cf')
         self._modified_dot.setFixedWidth(8)
         self._modified_dot.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         self._modified_dot.setStyleSheet(f'color: {_BLUE}; font-size: 7px;')
         self._modified_dot.setVisible(self._param_value.is_modified)
         name_layout.addWidget(self._modified_dot)
+
+        # Amber dot: visible when file value differs from live (confirmed) value
+        self._file_dot = QLabel('\u25cf')
+        self._file_dot.setFixedWidth(8)
+        self._file_dot.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self._file_dot.setStyleSheet(f'color: {_AMBER}; font-size: 7px;')
+        self._file_dot.setVisible(False)
+        name_layout.addWidget(self._file_dot)
 
         self._name_label = QLabel(self._param_value.definition.param)
         self._name_label.setAlignment(Qt.AlignmentFlag.AlignVCenter)
@@ -282,6 +300,7 @@ class ParamRow(QWidget):
 
         self._apply_row_bg()
         self._update_name_style()
+        self._refresh_file_dot()
 
     def _make_input_widget(
         self,
@@ -363,12 +382,28 @@ class ParamRow(QWidget):
                 f'background: transparent;'
             )
 
+    def _refresh_file_dot(self) -> None:
+        """Show/hide/update the amber file-vs-live dot for the current file_value."""
+        fv = self._param_value.file_value
+        if fv is None:
+            self._file_dot.setVisible(False)
+            return
+        live = self._param_value.confirmed_value
+        differs = fv != live
+        self._file_dot.setVisible(differs)
+        if differs:
+            self._file_dot.setToolTip(
+                f'File: {fv} | Live: {live} -- values differ'
+            )
+        else:
+            self._file_dot.setToolTip('')
+
     def _sync_set_button(self) -> None:
         """Update Set button state based on current vs confirmed value.
 
-        Never overrides PENDING state (in-flight set must complete first).
+        Never overrides PENDING or SAVED_FILE states.
         """
-        if self._set_btn.state == _SetState.PENDING:
+        if self._set_btn.state in (_SetState.PENDING, _SetState.SAVED_FILE):
             return
         if self._param_value.is_pending:
             self._set_btn.set_state(_SetState.READY)
@@ -390,6 +425,10 @@ class ParamRow(QWidget):
         self._modified_dot.setVisible(self._param_value.is_modified)
         self._update_name_style()
         self.param_changed.emit(self._param_value.definition.param, value)
+        # If the row was in SAVED_FILE state (non-hot-reload saved to file), allow
+        # the user to re-edit — clear that state so _sync_set_button() can proceed.
+        if self._set_btn.state == _SetState.SAVED_FILE:
+            self._set_btn.set_state(_SetState.IDLE)
         self._sync_set_button()
 
     def _on_set_clicked(self) -> None:
@@ -426,7 +465,7 @@ class ParamRow(QWidget):
             self._param_value.confirm(self._sent_value)
             self._modified_dot.setVisible(self._param_value.is_modified)
             self._update_name_style()
-            # If user changed value during the pending period, go back to READY.
+            self._refresh_file_dot()
             if self._param_value.is_pending:
                 self._set_btn.set_state(_SetState.READY)
             else:
@@ -447,6 +486,32 @@ class ParamRow(QWidget):
         """Restore the alternating background after a flash effect."""
         self._apply_row_bg()
 
+    def receive_file_save_result(self) -> None:
+        """Mark this row as saved to the config file (non-hot-reload param).
+
+        Transitions the Set button to the amber SAVED_FILE state to indicate
+        the value is queued for the next Nav2 restart.  The confirmed_value is
+        updated to match current_value so is_pending becomes False.
+        """
+        self._sent_value = self._param_value.current_value
+        self._param_value.confirm(self._sent_value)
+        self._modified_dot.setVisible(self._param_value.is_modified)
+        self._update_name_style()
+        self._set_btn.set_state(_SetState.SAVED_FILE)
+
+    def update_file_value(self, file_value: Any) -> None:
+        """Update the file-vs-live indicator based on *file_value*.
+
+        Shows the amber dot when *file_value* differs from the confirmed live
+        value, with a tooltip explaining both values.
+
+        Args:
+            file_value: The value currently in the nav2_params.yaml file,
+                or ``None`` if the param is absent from the file.
+        """
+        self._param_value.file_value = file_value
+        self._refresh_file_dot()
+
     def set_description_visible(self, visible: bool) -> None:
         """Show or hide the description text line."""
         self._show_description = visible
@@ -462,6 +527,7 @@ class ParamRow(QWidget):
         self._param_value.confirm(value)
         self._modified_dot.setVisible(self._param_value.is_modified)
         self._update_name_style()
+        self._refresh_file_dot()
         self._set_btn.set_state(_SetState.IDLE)
         if self._input_widget is None:
             return

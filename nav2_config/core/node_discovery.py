@@ -48,3 +48,28 @@ def discover_nav2_nodes(node: Node) -> dict[str, bool]:
         running.add(full_path)
 
     return {nav_node: (nav_node in running) for nav_node in NAV2_NODES}
+
+
+#: Known Nav2 lifecycle manager node paths → human-readable scope names.
+LIFECYCLE_MANAGERS: dict[str, str] = {
+    '/lifecycle_manager_navigation': 'Navigation',
+    '/lifecycle_manager_localization': 'Localization',
+}
+
+
+def discover_lifecycle_managers(node: Node) -> dict[str, bool]:
+    """Check which Nav2 lifecycle managers are currently running.
+
+    Args:
+        node: The rclpy Node used to call the ROS2 graph API.
+
+    Returns:
+        dict mapping each :data:`LIFECYCLE_MANAGERS` key to ``True`` (running)
+        or ``False`` (not found).
+    """
+    nodes_and_ns = node.get_node_names_and_namespaces()
+    running: set[str] = set()
+    for name, ns in nodes_and_ns:
+        full_path = '/' + name if ns == '/' else ns + '/' + name
+        running.add(full_path)
+    return {mgr: (mgr in running) for mgr in LIFECYCLE_MANAGERS}

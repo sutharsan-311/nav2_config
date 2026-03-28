@@ -75,13 +75,15 @@ class Nav2ParamDef:
 class ParamValue:
     """A live parameter value paired with its schema definition.
 
-    Two value fields are tracked:
+    Three value fields are tracked:
     - ``current_value``: the pending/displayed value (updated on every GUI change).
     - ``confirmed_value``: the value last confirmed as live on the ROS2 node
       (updated only when a parameter set succeeds or fresh params are fetched).
+    - ``file_value``: the value read from the nav2_params.yaml config file
+      (set by MainWindow after a config file is loaded; None if no file is loaded).
 
     ``is_pending`` is True when the user has made a change that has not yet been
-    sent to the ROS2 node (current_value ≠ confirmed_value).
+    sent to the ROS2 node (current_value != confirmed_value).
     """
 
     definition: Nav2ParamDef
@@ -89,6 +91,7 @@ class ParamValue:
     is_modified: bool = False   # True if current_value differs from definition.default
     is_live: bool = False       # True if current_value was fetched from a running node
     confirmed_value: Any = None # Last value confirmed live on the ROS2 node
+    file_value: Any = None      # Value from nav2_params.yaml; None if no config loaded
 
     def __post_init__(self) -> None:
         if self.confirmed_value is None:

@@ -225,3 +225,10 @@ The approach:
 - Desktop entry file (so it shows up in app launchers)
 - README with install instructions
 - Test on Humble + Jazzy
+
+## IMPORTANT: ROS2 Logging
+
+ROS2's rclpy logger does NOT support multiple arguments like Python's logging module.
+WRONG: self.get_logger().info("value is %s", val)
+RIGHT: self.get_logger().info(f"value is {val}")
+Always use f-strings with ROS2 loggers.

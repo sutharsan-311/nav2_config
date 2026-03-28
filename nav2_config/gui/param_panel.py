@@ -505,6 +505,31 @@ class ParamPanel(QWidget):
                 break
         self._update_set_all_btn()
 
+    def mark_param_file_saved(self, param_name: str) -> None:
+        """Mark *param_name* as saved to the config file (non-hot-reload).
+
+        Transitions the matching row's Set button to the amber SAVED_FILE state
+        to indicate the value is queued for the next Nav2 restart.
+        """
+        for row in self._all_rows:
+            if row._param_value.definition.param == param_name:
+                row.receive_file_save_result()
+                break
+        self._update_set_all_btn()
+
+    def update_file_values(self, file_values: dict[str, object]) -> None:
+        """Update the file-vs-live indicator on all rows.
+
+        Args:
+            file_values: Mapping of ``param_name -> file_value`` from the
+                loaded nav2_params.yaml.  Missing keys mean the param is
+                absent from the file.
+        """
+        for row in self._all_rows:
+            param_name = row._param_value.definition.param
+            fv = file_values.get(param_name)
+            row.update_file_value(fv)
+
     def highlight_external_change(self, param_name: str) -> None:
         """Flash a param row with RViz2 blue to indicate an externally-set change."""
         from PyQt6.QtCore import QTimer
