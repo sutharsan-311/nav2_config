@@ -101,7 +101,7 @@ Parameters that require a node restart (like changing plugins) are written to th
 
 ## Contributing
 
-PRs are welcome. A few areas where contributions are especially valuable:
+PRs are welcome. Good areas to contribute:
 
 - **Parameter schema** (`nav2_config/schema/nav2_params.json`) — better descriptions, missing parameters, corrected ranges
 - **ROS2 distro testing** — test reports on Iron and Jazzy
