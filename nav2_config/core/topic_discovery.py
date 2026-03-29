@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """TopicDiscovery — discovers available ROS2 topics by type.
 
 Wraps node.get_topic_names_and_types() so the GUI can populate

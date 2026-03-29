@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """YAML import for Nav2 parameter files.
 
 Parses nav2_params.yaml files and returns a nested dict of

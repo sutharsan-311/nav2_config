@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """LoadConfigDialog -- shown on startup or via File > Load Config.
 
 Lets the user select their nav2_params.yaml file.  Remembers the last

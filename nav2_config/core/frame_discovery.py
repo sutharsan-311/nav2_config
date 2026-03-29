@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """FrameDiscovery — discovers available TF2 frames.
 
 Sets up a tf2_ros Buffer + TransformListener on the given ROS2 node and

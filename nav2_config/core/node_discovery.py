@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """Nav2 node discovery: checks which Nav2 nodes are currently running."""
 
 from __future__ import annotations

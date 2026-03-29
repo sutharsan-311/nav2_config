@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """ROS2 lifecycle service client for Nav2 nodes.
 
 All public methods are synchronous and must be called from the ROS2 thread.

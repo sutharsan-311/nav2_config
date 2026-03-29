@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """RViz2 light theme for nav2_config using Qt Fusion style + QPalette.
 
 Matches RViz2's actual appearance: light gray Qt Fusion application with a

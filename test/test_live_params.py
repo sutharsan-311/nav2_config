@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 #!/usr/bin/env python3
 """Live integration test: compare nav2_params.json schema against running Nav2 nodes.
 

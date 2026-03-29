@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """Main window for nav2_config: three-panel splitter layout.
 
 Styled to match RViz2: light gray Qt Fusion theme, QToolBar with

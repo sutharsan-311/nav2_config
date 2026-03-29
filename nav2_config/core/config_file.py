@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """ConfigFile — manages the user's nav2_params.yaml as the source of truth.
 
 Nav2's YAML structure has two forms:

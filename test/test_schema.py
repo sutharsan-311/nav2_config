@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """Tests for nav2_params.json schema loading and correctness."""
 
 import json

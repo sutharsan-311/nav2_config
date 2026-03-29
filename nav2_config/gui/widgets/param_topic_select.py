@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """param_topic_select — RViz2-style topic and TF frame dropdown widgets.
 
 ParamTopicSelect: editable combo that auto-populates with ROS2 topics

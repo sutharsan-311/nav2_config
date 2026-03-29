@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """ParamSlider — synced QSlider + spinbox with unit label.
 
 RViz2 light style: light groove (#e0e0e0), gray handle (#888888), blue

@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """ParamRow — single parameter row styled exactly like RViz2's property editor.
 
 Two columns: name (40%) | widget (60%).

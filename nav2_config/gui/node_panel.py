@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """Node panel — left panel showing discovered Nav2 nodes with lifecycle state.
 
 Flat QListWidget with two-line rows: [icon] [name / state + dot] [count badge].

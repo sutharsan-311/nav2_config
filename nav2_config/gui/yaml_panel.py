@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """YamlPanel — right panel: live YAML preview with VS Code-style syntax highlighting.
 
 Styled to match RViz2's panel headers (light gray, 28px) with a white editor

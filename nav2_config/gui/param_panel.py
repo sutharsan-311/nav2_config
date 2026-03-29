@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """ParamPanel — center panel: scrollable, searchable parameter editor.
 
 Styled to match RViz2's Properties panel: two-column tree layout with

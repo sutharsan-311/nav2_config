@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """Nav2 service caller — fires follow-up services after parameter changes."""
 
 from __future__ import annotations

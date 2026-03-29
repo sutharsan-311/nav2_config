@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """ROS2 node for nav2_config: discovers Nav2 nodes and manages parameter I/O."""
 
 from __future__ import annotations

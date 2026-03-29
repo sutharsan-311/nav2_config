@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """YAML export for Nav2 parameter values.
 
 Generates a nav2_params.yaml string from live ParamValue objects, grouped by

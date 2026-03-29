@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 from setuptools import setup, find_packages
 import os
 from glob import glob
@@ -31,7 +34,7 @@ setup(
     maintainer='Sutharsan',
     maintainer_email='sutharsanmail311@gmail.com',
     description='Real-time visual parameter tuning GUI for Nav2',
-    license='MIT',
+    license='Apache-2.0',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [

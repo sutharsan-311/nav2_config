@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """ParamToggle — standard QCheckBox wrapper for boolean parameters.
 
 RViz2 light style: uses Qt's native Fusion checkbox — no custom painting.

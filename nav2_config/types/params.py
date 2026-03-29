@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """Data types for Nav2 parameter schema and live values."""
 
 from __future__ import annotations

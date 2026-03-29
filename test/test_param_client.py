@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """Tests for Nav2ParamClient: mocked ROS2 service calls."""
 
 from __future__ import annotations

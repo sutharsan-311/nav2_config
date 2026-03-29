@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """ParamWatcher — detects externally-changed parameters by snapshot diffing."""
 
 from __future__ import annotations

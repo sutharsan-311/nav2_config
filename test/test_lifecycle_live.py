@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """Live integration tests for nav2_config lifecycle client.
 
 Requires a running TurtleBot3 simulation (Nav2 stack active).
@@ -6,6 +9,7 @@ Run with:
     python3 test/test_lifecycle_live.py
 """
 
+import os
 import subprocess
 import sys
 import time
@@ -90,7 +94,7 @@ def test_lifecycle_client() -> None:
 
     # Add the workspace source root to the path so the package is importable
     # regardless of whether the test is run before `colcon build`.
-    ws_src = '/home/susan/ros2_ws/src/nav2_config'
+    ws_src = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if ws_src not in sys.path:
         sys.path.insert(0, ws_src)
 

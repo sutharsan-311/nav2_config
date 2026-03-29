@@ -1,10 +1,14 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """Comprehensive test of post_set_action service calls against live TurtleBot3 sim."""
 
+import os
 import subprocess
 import time
 import sys
 
-sys.path.insert(0, '/home/susan/ros2_ws/src/nav2_config')
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def run(cmd, timeout=30):

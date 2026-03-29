@@ -1,3 +1,6 @@
+# Copyright 2025-2026 Sutharsan
+# SPDX-License-Identifier: Apache-2.0
+
 """ParamInput — system-font text / number input for free-form parameters.
 
 RViz2 style: dark input background (#2d2d2d), system sans-serif font (not
