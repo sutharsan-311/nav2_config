@@ -386,6 +386,10 @@ class ParamPanel(QWidget):
         if self._search.text():
             self._on_search_changed(self._search.text())
 
+    def filter_params(self, query: str) -> None:
+        """Apply a search filter from an external widget (e.g., toolbar search box)."""
+        self._search.setText(query)
+
     def _clear_search(self) -> None:
         if self._search.text():
             self._search.clear()

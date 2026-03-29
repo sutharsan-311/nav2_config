@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from nav2_config.core.config_file import ConfigFile
 
 from lifecycle_msgs.msg import Transition
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QSize, QTimer
 from PyQt6.QtGui import QAction, QCloseEvent, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QDialog,
@@ -21,12 +21,14 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
+    QLineEdit,
     QMainWindow,
     QMenu,
     QMenuBar,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
+    QSizePolicy,
     QSplitter,
     QStatusBar,
     QTextBrowser,
@@ -40,7 +42,7 @@ from nav2_config.gui.icons import (
     menu_about, menu_descriptions, menu_open,
     menu_quit, menu_refresh, menu_save, menu_save_as,
     menu_shortcuts, status_connected, status_disconnected,
-    toolbar_refresh, toolbar_restart,
+    toolbar_load_config, toolbar_refresh, toolbar_restart, toolbar_save,
 )
 from nav2_config.gui.node_panel import NodePanel
 from nav2_config.gui.param_panel import ParamPanel
@@ -361,11 +363,13 @@ class MainWindow(QMainWindow):
         help_menu.addAction(about_action)
 
     def _setup_toolbar(self) -> None:
-        """Build the RViz2-style flat toolbar."""
+        """Build the main toolbar with icon+text buttons and a search field."""
         tb: QToolBar = self.addToolBar('Main')
         tb.setMovable(False)
         tb.setFloatable(False)
         tb.setObjectName('mainToolBar')
+        tb.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        tb.setIconSize(QSize(16, 16))
 
         def _add_action(icon: 'QIcon', label: str, tooltip: str) -> QAction:
             action = QAction(icon, label, self)
@@ -378,14 +382,42 @@ class MainWindow(QMainWindow):
         )
         self._tb_refresh.triggered.connect(self._node.force_discover)
 
-        tb.addSeparator()
-
         self._tb_restart_all = _add_action(
             toolbar_restart(),
-            'Restart Nav2 Stack',
+            'Restart Nav2',
             'Restart all Nav2 nodes in lifecycle order',
         )
         self._tb_restart_all.triggered.connect(self._on_restart_all_nav2)
+
+        self._tb_load_config = _add_action(
+            toolbar_load_config(), 'Load Config', 'Load a Nav2 configuration YAML  (Ctrl+O)'
+        )
+        self._tb_load_config.triggered.connect(self._on_load_config)
+
+        self._tb_save = _add_action(
+            toolbar_save(), 'Save', 'Save current parameters to YAML  (Ctrl+S)'
+        )
+        self._tb_save.triggered.connect(self._on_save)
+
+        # Spacer to push the search field to the right
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        tb.addWidget(spacer)
+
+        tb.addSeparator()
+
+        # Search field
+        self._search_box = QLineEdit()
+        self._search_box.setPlaceholderText('Search params...')
+        self._search_box.setFixedWidth(220)
+        self._search_box.setFixedHeight(24)
+        self._search_box.setClearButtonEnabled(True)
+        self._search_box.setStyleSheet(
+            'QLineEdit { border: 1px solid #aaa; padding: 0 6px; font-size: 9pt; }'
+            'QLineEdit:focus { border-color: #3399ff; }'
+        )
+        self._search_box.textChanged.connect(self._on_search_changed)
+        tb.addWidget(self._search_box)
 
         self._toolbar = tb
 
@@ -1175,6 +1207,10 @@ class MainWindow(QMainWindow):
         self._node.signals.lifecycle_change_result.connect(dialog.on_result)
         self._node.request_lifecycle_restart_all()
         dialog.show()
+
+    def _on_search_changed(self, text: str) -> None:
+        """Forward the search field text to the param panel filter."""
+        self._param_panel.filter_params(text)
 
     def _on_toggle_descriptions(self, checked: bool) -> None:
         """Sync View > Show Descriptions with the param panel Desc toggle."""
