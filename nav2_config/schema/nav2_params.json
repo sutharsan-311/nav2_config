@@ -6887,7 +6887,7 @@
   {
     "node": "global_costmap",
     "param": "lethal_cost_threshold",
-    "type": "integer",
+    "type": "int",
     "default": 100,
     "range": {
       "min": 0,
@@ -7412,7 +7412,7 @@
   {
     "node": "global_costmap",
     "param": "unknown_cost_value",
-    "type": "integer",
+    "type": "int",
     "default": 255,
     "range": {
       "min": 0,
@@ -7565,7 +7565,7 @@
   {
     "node": "local_costmap",
     "param": "lethal_cost_threshold",
-    "type": "integer",
+    "type": "int",
     "default": 100,
     "range": {
       "min": 0,
@@ -7696,7 +7696,7 @@
   {
     "node": "local_costmap",
     "param": "unknown_cost_value",
-    "type": "integer",
+    "type": "int",
     "default": 255,
     "range": {
       "min": 0,
@@ -7736,7 +7736,7 @@
   {
     "node": "local_costmap",
     "param": "voxel_layer.combination_method",
-    "type": "integer",
+    "type": "int",
     "default": 1,
     "range": {
       "min": 0,
@@ -7776,7 +7776,7 @@
   {
     "node": "local_costmap",
     "param": "voxel_layer.mark_threshold",
-    "type": "integer",
+    "type": "int",
     "default": 0,
     "range": {
       "min": 0,
@@ -7900,7 +7900,7 @@
   {
     "node": "local_costmap",
     "param": "voxel_layer.unknown_threshold",
-    "type": "integer",
+    "type": "int",
     "default": 15,
     "range": {
       "min": 0,
