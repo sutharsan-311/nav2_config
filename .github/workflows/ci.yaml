@@ -25,7 +25,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-pyqt6
+          pip install PyQt6
 
       - name: Install rosdep dependencies
         run: |
