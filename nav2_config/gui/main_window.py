@@ -6,6 +6,8 @@ flat icon buttons, full menu bar, 22px status bar.
 
 import json
 import logging
+import os
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -82,6 +84,8 @@ _GREEN    = '#4caf50'
 _RED      = '#e53935'
 
 logger = logging.getLogger(__name__)
+
+_ROS_DISTRO: str = os.environ.get('ROS_DISTRO', 'unknown').capitalize()
 
 
 class _RestartNotificationBar(QWidget):
@@ -270,7 +274,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def _build_ui(self) -> None:
-        self.setWindowTitle('nav2_config')
+        self.setWindowTitle(f'nav2_config (ROS2 {_ROS_DISTRO})')
         self.setMinimumSize(1200, 700)
         # Fusion handles the main window background via the palette.
 
@@ -533,7 +537,9 @@ class MainWindow(QMainWindow):
         total_params = sum(len(p) for p in self._all_node_params.values())
 
         if found == 0:
-            self._status_connection.setText(f'Disconnected  |  0/{total} nodes')
+            self._status_connection.setText(
+                f'Disconnected  |  0/{total} nodes  |  ROS2 {_ROS_DISTRO}'
+            )
             self._status_connection.setStyleSheet(
                 f'color: {_RED}; padding: 0 4px 0 0; font-size: 9pt;'
             )
@@ -541,7 +547,7 @@ class MainWindow(QMainWindow):
         else:
             param_part = f'  |  {total_params} params' if total_params else ''
             self._status_connection.setText(
-                f'Connected  |  {found}/{total} nodes{param_part}'
+                f'Connected  |  {found}/{total} nodes{param_part}  |  ROS2 {_ROS_DISTRO}'
             )
             self._status_connection.setStyleSheet(
                 f'color: {_GREEN}; padding: 0 4px 0 0; font-size: 9pt;'
@@ -826,12 +832,12 @@ class MainWindow(QMainWindow):
         if self._config_file:
             dirty_marker = ' *' if self._dirty else ''
             self.setWindowTitle(
-                f'nav2_config -- {self._config_file.filepath}{dirty_marker}'
+                f'nav2_config (ROS2 {_ROS_DISTRO}) -- {self._config_file.filepath}{dirty_marker}'
             )
             self._save_action.setEnabled(True)
             self._save_as_action.setEnabled(True)
         else:
-            self.setWindowTitle('nav2_config')
+            self.setWindowTitle(f'nav2_config (ROS2 {_ROS_DISTRO})')
             self._save_action.setEnabled(False)
             self._save_as_action.setEnabled(False)
 
@@ -1263,9 +1269,14 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
     def _show_about(self) -> None:
+        from PyQt6.QtCore import QT_VERSION_STR
+        python_version = (
+            f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
+        )
+
         dialog = QDialog(self)
         dialog.setWindowTitle('About nav2_config')
-        dialog.setFixedSize(400, 220)
+        dialog.setFixedSize(400, 260)
 
         layout = QVBoxLayout(dialog)
         layout.setContentsMargins(20, 16, 20, 12)
@@ -1284,12 +1295,16 @@ class MainWindow(QMainWindow):
         info = QTextBrowser()
         info.setOpenExternalLinks(True)
         info.setStyleSheet('font-size: 9pt; padding: 6px;')
+        ros2_line = f'ROS2: {_ROS_DISTRO}'
+        python_line = f'Python: {python_version}'
+        qt_line = f'Qt: {QT_VERSION_STR}'
         info.setHtml(
             '<p>Built by <b>Sutharsan</b><br>'
             'A ROS2 desktop GUI for live Nav2 parameter tuning. '
             'No node restarts required.</p>'
+            f'<p>{ros2_line}<br>{python_line}<br>{qt_line}</p>'
         )
-        info.setMaximumHeight(72)
+        info.setMaximumHeight(110)
         layout.addWidget(info)
         layout.addStretch()
 

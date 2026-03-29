@@ -21,8 +21,6 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from nav2_config.gui import icons as _icons
-
 from nav2_config.types.params import ParamValue
 from nav2_config.gui.widgets.param_row import ParamRow
 
@@ -42,10 +40,6 @@ _FG       = '#1a1a1a'
 _FG_DIM   = '#666666'
 _AMBER    = '#ff9800'
 
-# ── Nodes whose plugin selector bar is shown ────────────────────────────────
-_CONTROLLER_PLUGINS = ['RPP', 'MPPI', 'DWB']
-_PLANNER_PLUGINS = ['NavFn', 'SmacPlanner2D', 'SmacPlannerHybrid', 'ThetaStar']
-
 
 class _CategorySection(QWidget):
     """Collapsible section grouping ParamRow widgets under a category header.
@@ -54,10 +48,12 @@ class _CategorySection(QWidget):
     expand arrow, category name, row count in dim text.
     """
 
+    toggled = pyqtSignal(str, bool)  # (category, expanded)
+
     def __init__(self, category: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._category = category
-        self._expanded = True
+        self._expanded = False  # collapsed by default
         self._rows: list[ParamRow] = []
         self._build_ui()
 
@@ -83,15 +79,6 @@ class _CategorySection(QWidget):
         hdr_layout.setContentsMargins(8, 0, 8, 0)
         hdr_layout.setSpacing(4)
 
-        # Category icon
-        self._cat_icon_label = QLabel()
-        self._cat_icon_label.setFixedSize(16, 16)
-        self._cat_icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        cat_icon = _icons.category_icon(self._category)
-        if cat_icon is not None:
-            self._cat_icon_label.setPixmap(cat_icon.pixmap(14, 14))
-        hdr_layout.addWidget(self._cat_icon_label)
-
         self._name_label = QLabel()
         self._name_label.setStyleSheet(
             f'color: {_FG}; font-size: 10pt; font-weight: bold; background: transparent;'
@@ -114,6 +101,7 @@ class _CategorySection(QWidget):
         layout.addWidget(self._content)
 
         self._refresh_header()
+        self._content.setVisible(False)  # start collapsed
 
     def _refresh_header(self) -> None:
         arrow = '▾' if self._expanded else '▸'
@@ -123,6 +111,13 @@ class _CategorySection(QWidget):
     def _toggle(self) -> None:
         self._expanded = not self._expanded
         self._content.setVisible(self._expanded)
+        self._refresh_header()
+        self.toggled.emit(self._category, self._expanded)
+
+    def set_expanded(self, expanded: bool) -> None:
+        """Programmatically expand or collapse without emitting the toggled signal."""
+        self._expanded = expanded
+        self._content.setVisible(expanded)
         self._refresh_header()
 
     # ------------------------------------------------------------------
@@ -197,11 +192,13 @@ class ParamPanel(QWidget):
         self._param_values: list[ParamValue] = []
         self._sections: dict[str, _CategorySection] = {}
         self._all_rows: list[ParamRow] = []
-        self._selected_plugin: str | None = None
-        self._plugin_buttons: dict[str, QPushButton] = {}
         self._show_descriptions: bool = False
         self._topic_discovery = topic_discovery
         self._frame_discovery = frame_discovery
+        # per-node memory: {node_name -> set of expanded category names}
+        self._expanded_categories: dict[str, set[str]] = {}
+        # pre-search snapshot of expanded state (None = not in search mode)
+        self._pre_search_expanded: set[str] | None = None
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -214,7 +211,6 @@ class ParamPanel(QWidget):
         layout.setSpacing(0)
 
         layout.addWidget(self._make_title_bar())
-        layout.addWidget(self._make_plugin_bar())
 
         # Scroll area for the parameter rows
         self._scroll_area = QScrollArea()
@@ -291,6 +287,22 @@ class ParamPanel(QWidget):
         escape = QShortcut(QKeySequence('Escape'), self)
         escape.activated.connect(self._clear_search)
 
+        # "Expand All / Collapse All" toggle
+        self._expand_all_btn = QPushButton('⊞ All')
+        self._expand_all_btn.setCheckable(True)
+        self._expand_all_btn.setChecked(False)
+        self._expand_all_btn.setFixedHeight(20)
+        self._expand_all_btn.setToolTip('Expand all categories / Collapse all categories')
+        self._expand_all_btn.setStyleSheet(
+            f'QPushButton {{ background: #e0e0e0; border: 1px solid {_BORDER}; '
+            f'color: {_FG}; font-size: 9pt; padding: 0 6px; }}'
+            f'QPushButton:checked {{ background: {_BLUE}; border-color: #1a6abf; '
+            f'color: #ffffff; }}'
+            f'QPushButton:hover:!checked {{ background: #d4d4d4; }}'
+        )
+        self._expand_all_btn.toggled.connect(self._on_expand_all_toggled)
+        layout.addWidget(self._expand_all_btn)
+
         # "Desc" toggle button
         self._desc_btn = QPushButton('Desc')
         self._desc_btn.setCheckable(True)
@@ -309,58 +321,6 @@ class ParamPanel(QWidget):
 
         return bar
 
-    def _make_plugin_bar(self) -> QWidget:
-        self._plugin_bar = QWidget()
-        self._plugin_bar.setFixedHeight(28)
-        self._plugin_bar.setStyleSheet(
-            f'background: {_BG_HDR}; border-bottom: 1px solid {_BORDER};'
-        )
-        self._plugin_bar.setVisible(False)
-
-        self._plugin_bar_layout = QHBoxLayout(self._plugin_bar)
-        self._plugin_bar_layout.setContentsMargins(8, 3, 8, 3)
-        self._plugin_bar_layout.setSpacing(3)
-
-        lbl = QLabel('Plugin:')
-        lbl.setStyleSheet(f'color: {_FG_DIM}; font-size: 9pt;')
-        self._plugin_bar_layout.addWidget(lbl)
-        self._plugin_bar_layout.addStretch()
-
-        return self._plugin_bar
-
-    # ------------------------------------------------------------------
-    # Private: plugin bar setup
-    # ------------------------------------------------------------------
-
-    def _setup_plugin_bar(self, plugins: list[str]) -> None:
-        for btn in self._plugin_buttons.values():
-            self._plugin_bar_layout.removeWidget(btn)
-            btn.deleteLater()
-        self._plugin_buttons.clear()
-        self._selected_plugin = None
-
-        stretch = self._plugin_bar_layout.takeAt(self._plugin_bar_layout.count() - 1)
-
-        for plugin in plugins:
-            btn = QPushButton(plugin)
-            btn.setCheckable(True)
-            btn.setFixedHeight(20)
-            btn.setStyleSheet(
-                f'QPushButton {{ background: #555555; border: 1px solid {_BORDER}; '
-                f'color: {_FG}; padding: 0 8px; font-size: 9pt; }}'
-                f'QPushButton:checked {{ background: {_BLUE}; color: #ffffff; '
-                f'border-color: #1a6abf; }}'
-                f'QPushButton:hover:!checked {{ background: #666666; }}'
-            )
-            btn.clicked.connect(
-                lambda checked, p=plugin: self._on_plugin_selected(p, checked)
-            )
-            self._plugin_buttons[plugin] = btn
-            self._plugin_bar_layout.addWidget(btn)
-
-        self._plugin_bar_layout.addStretch()
-        self._plugin_bar.setVisible(True)
-
     # ------------------------------------------------------------------
     # Private: filtering and description toggle
     # ------------------------------------------------------------------
@@ -370,21 +330,6 @@ class ParamPanel(QWidget):
         self._show_descriptions = checked
         for section in self._sections.values():
             section.set_descriptions_visible(checked)
-
-    def _on_plugin_selected(self, plugin: str, checked: bool) -> None:
-        if checked:
-            self._selected_plugin = plugin
-            for p, btn in self._plugin_buttons.items():
-                if p != plugin:
-                    btn.setChecked(False)
-        else:
-            self._selected_plugin = None
-
-        for section in self._sections.values():
-            section.apply_plugin_filter(self._selected_plugin)
-
-        if self._search.text():
-            self._on_search_changed(self._search.text())
 
     def filter_params(self, query: str) -> None:
         """Apply a search filter from an external widget (e.g., toolbar search box)."""
@@ -396,14 +341,47 @@ class ParamPanel(QWidget):
 
     def _on_search_changed(self, query: str) -> None:
         total_visible = 0
-        for section in self._sections.values():
-            total_visible += section.apply_filter(query)
-
         if query:
+            # Save collapsed state on first keystroke, then expand all matching sections
+            if self._pre_search_expanded is None:
+                self._pre_search_expanded = {
+                    cat for cat, sec in self._sections.items() if sec._expanded
+                }
+            for section in self._sections.values():
+                count = section.apply_filter(query)
+                if count > 0:
+                    section.set_expanded(True)
+                total_visible += count
             total_all = len(self._all_rows)
             self._count_label.setText(f'{total_visible}/{total_all}')
         else:
+            # Restore pre-search collapsed state
+            pre = self._pre_search_expanded or set()
+            for cat, section in self._sections.items():
+                section.apply_filter('')
+                section.set_expanded(cat in pre)
+            self._pre_search_expanded = None
             self._refresh_count_label()
+
+    def _on_section_toggled(self, category: str, expanded: bool) -> None:
+        """Remember which categories are open for the current node."""
+        node_set = self._expanded_categories.setdefault(self._node_name, set())
+        if expanded:
+            node_set.add(category)
+        else:
+            node_set.discard(category)
+
+    def _on_expand_all_toggled(self, checked: bool) -> None:
+        """Expand or collapse all category sections at once."""
+        self._expand_all_btn.setText('⊟ All' if checked else '⊞ All')
+        for section in self._sections.values():
+            section.set_expanded(checked)
+        # Update remembered state to match
+        node_set = self._expanded_categories.setdefault(self._node_name, set())
+        if checked:
+            node_set.update(self._sections.keys())
+        else:
+            node_set.clear()
 
     def _refresh_count_label(self) -> None:
         modified = sum(1 for pv in self._param_values if pv.is_modified)
@@ -470,23 +448,19 @@ class ParamPanel(QWidget):
             self._update_set_all_btn()
             return
 
-        bare_node = self._node_name.lstrip('/')
-        if bare_node == 'controller_server':
-            self._setup_plugin_bar(_CONTROLLER_PLUGINS)
-        elif bare_node == 'planner_server':
-            self._setup_plugin_bar(_PLANNER_PLUGINS)
-        else:
-            for btn in self._plugin_buttons.values():
-                btn.deleteLater()
-            self._plugin_buttons.clear()
-            self._plugin_bar.setVisible(False)
-            self._selected_plugin = None
-
         categories: dict[str, list[ParamValue]] = {}
         for pv in params:
             categories.setdefault(pv.definition.category, []).append(pv)
 
         self._scroll_layout.takeAt(self._scroll_layout.count() - 1)
+
+        remembered = self._expanded_categories.get(self._node_name, set())
+        # Reset expand-all button without triggering its toggle handler
+        self._expand_all_btn.blockSignals(True)
+        self._expand_all_btn.setChecked(False)
+        self._expand_all_btn.setText('⊞ All')
+        self._expand_all_btn.blockSignals(False)
+        self._pre_search_expanded = None
 
         for category in sorted(categories):
             section = _CategorySection(category)
@@ -501,6 +475,10 @@ class ParamPanel(QWidget):
                 row.param_set_requested.connect(self._on_row_set_requested)
                 section.add_row(row)
                 self._all_rows.append(row)
+            # Restore remembered expansion state for this node
+            if category in remembered:
+                section.set_expanded(True)
+            section.toggled.connect(self._on_section_toggled)
             self._sections[category] = section
             self._scroll_layout.addWidget(section)
 
@@ -582,6 +560,16 @@ class ParamPanel(QWidget):
         self.param_change_requested.emit(self._node_name, param_name, value)
         self._refresh_count_label()
         self._update_set_all_btn()
+        # Auto-expand the category containing the modified param so it's visible
+        for cat, section in self._sections.items():
+            for row in section.rows:
+                if row._param_value.definition.param == param_name:
+                    if not section._expanded:
+                        section.set_expanded(True)
+                        self._expanded_categories.setdefault(
+                            self._node_name, set()
+                        ).add(cat)
+                    return
 
     def _on_row_set_requested(self, param_name: str, value: object) -> None:
         """Called when a row's Set button is clicked; forwards to the main window."""

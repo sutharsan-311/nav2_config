@@ -6,28 +6,33 @@ Tune your robot's navigation parameters **while it's running** — without killi
 
 ## Screenshot
 
-![nav2_config screenshot](docs/screenshot.png)
-
-*Screenshot placeholder — replace with an actual screenshot once the GUI is running.*
+![nav2_config](screenshot.png)
 
 ## Features
 
-- **Real-time tuning** — change a parameter, the effect is immediate on the running robot
-- **Auto-discovery** — finds all running Nav2 nodes automatically via ROS2 node graph
-- **167 parameters** across 11 Nav2 nodes, each with human-readable descriptions and tuning advice
-- **Health check** — catches dangerous configs (e.g. `inflation_radius < robot_radius`, mismatched frames)
-- **Plugin-aware** — select MPPI / DWB / RPP controller and see only the relevant parameters
-- **YAML export** — save your tuned parameters to a deployment-ready `nav2_params.yaml`
-- **YAML import** — load a YAML file and apply its parameters to running nodes instantly
-- **Dark theme** — ROS tool aesthetic matching RViz2, rqt, and Foxglove
+- **Real-time parameter tuning** — change a parameter via `ros2 param set`, the effect is immediate on the running robot
+- **Auto-discovery** — continuously polls for running Nav2 nodes via ROS2 node graph
+- **Works with ANY Nav2 plugin** — reads live parameters directly, not just hardcoded schema entries
+- **278 parameters** with descriptions, ranges, and tuning advice
+- **Per-param Set button** — visual feedback cycle: idle → ready → pending → success / failed
+- **Automatic post-set service calls** — clears costmaps, reloads map, triggers AMCL nomotion update after relevant param changes
+- **Config file as source of truth** — load/save `nav2_params.yaml`; startup dialog lets you pick a config file
+- **Lifecycle management** — restart the Nav2 stack via `lifecycle_manager` from the GUI
+- **RViz2-native light theme** — looks at home alongside RViz2, rqt, and Foxglove
+- **Topic and TF frame dropdowns** — auto-populated from the live ROS2 graph
+- **YAML preview** — live-generated YAML with syntax highlighting
+- **Plugin-aware filtering** — show only RPP / MPPI / DWB or NavFn / Smac / ThetaStar params
+- **Keyboard shortcuts** — `Ctrl+K` search, `Ctrl+S` save, `Ctrl+O` load
 
 ## Supported ROS2 Distros
 
 | Distro | Ubuntu | Status |
 |--------|--------|--------|
-| Humble Hawksbill | 22.04 LTS | Supported |
-| Iron Irwini | 22.04 LTS | Supported |
-| Jazzy Jalisco | 24.04 LTS | Supported |
+| Humble Hawksbill | 22.04 LTS | Tested |
+| Iron Irwini | 22.04 LTS | Should work (untested) |
+| Jazzy Jalisco | 24.04 LTS | Should work (untested) |
+
+nav2_config uses standard rclpy APIs (param services, lifecycle services) that are identical across Humble, Iron, and Jazzy. If you test on Iron or Jazzy, please report any issues.
 
 ## Installation
 
@@ -62,28 +67,24 @@ ros2 launch nav2_bringup tb3_simulation_launch.py
 # 2. In another terminal, launch nav2_config
 source ~/ros2_ws/install/setup.bash
 ros2 run nav2_config gui
-
-# 3. Optional: start with a specific parameter file pre-loaded
-ros2 run nav2_config gui --ros-args -p config_file:=/path/to/nav2_params.yaml
 ```
 
-The GUI auto-discovers running Nav2 nodes. Click any node in the left panel to view and edit its parameters.
+On startup, a dialog asks you to select a `nav2_params.yaml` config file. This file is used as the source of truth for parameter values. Click any node in the left panel to view and edit its parameters.
 
 ## Keyboard Shortcuts
 
 | Shortcut | Action |
 |----------|--------|
 | `Ctrl+K` | Focus search |
-| `Ctrl+S` | Export YAML |
-| `Ctrl+I` | Import YAML |
-| `Ctrl+R` | Refresh node discovery |
+| `Ctrl+S` | Save YAML |
+| `Ctrl+O` | Load YAML |
 | `Escape` | Clear search |
 
 ## How It Works
 
 nav2_config uses ROS2's built-in parameter services (`list_parameters`, `get_parameters`, `set_parameters`) to read and write parameters on running nodes. Most Nav2 parameters support dynamic reconfiguration — changes take effect immediately without restarting the node.
 
-Parameters that require a node restart (like changing plugins) are marked with a restart icon in the GUI.
+Parameters that require a node restart (like changing plugins) are written to the config file and queued for the next Nav2 lifecycle restart.
 
 ## vs rqt_reconfigure
 
@@ -92,16 +93,17 @@ Parameters that require a node restart (like changing plugins) are marked with a
 | Generic params | ✓ | ✓ |
 | Nav2-specific descriptions | ✗ | ✓ |
 | Tuning advice | ✗ | ✓ |
-| Health check | ✗ | ✓ |
 | Plugin awareness | ✗ | ✓ |
-| YAML export | ✗ | ✓ |
+| YAML config file management | ✗ | ✓ |
+| Post-set service calls | ✗ | ✓ |
+| Lifecycle management | ✗ | ✓ |
+| RViz2 light theme | ✗ | ✓ |
 
 ## Contributing
 
 PRs are welcome. A few areas where contributions are especially valuable:
 
 - **Parameter schema** (`nav2_config/schema/nav2_params.json`) — better descriptions, missing parameters, corrected ranges
-- **Health check rules** (`nav2_config/core/health_check.py`) — new cross-parameter validation rules
 - **ROS2 distro testing** — test reports on Iron and Jazzy
 
 ### Development Setup

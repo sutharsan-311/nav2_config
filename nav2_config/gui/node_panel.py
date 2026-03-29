@@ -1,15 +1,14 @@
 """Node panel — left panel showing discovered Nav2 nodes with lifecycle state.
 
-Flat QListWidget with one row per node: icon, display name, state label,
-and param count.  No expand arrows.  No bottom button bar.
-Right-click shows lifecycle context menu.
+Flat QListWidget with two-line rows: [icon] [name / state + dot] [count badge].
+Right-click shows lifecycle context menu.  Selected row gets a 3 px left border
+in the node's icon colour, like an IDE active-file indicator.
 """
 
 import logging
 
-from PyQt6.QtCore import Qt, QPoint, QSize, pyqtSignal
+from PyQt6.QtCore import Qt, QPoint, QRect, QSize, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
-from PyQt6.QtCore import QRect
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -25,7 +24,7 @@ from nav2_config.gui.icons import node_icon
 
 logger = logging.getLogger(__name__)
 
-# ── Colour constants ──────────────────────────────────────────────────────────
+# ── Colour palette ────────────────────────────────────────────────────────────
 _GREEN    = '#4caf50'
 _AMBER    = '#ff9800'
 _GRAY     = '#999999'
@@ -33,12 +32,15 @@ _RED      = '#e53935'
 _ORANGE   = '#ff6d00'
 _BLUE     = '#3399ff'
 _BG_PANEL = '#ffffff'
-_BG_HDR   = '#d0d0d0'
+_BG_ROW2  = '#fafafa'          # alternating row tint
+_BG_HDR   = '#f0f0f0'          # header strip
+_BG_SEL   = '#3399ff'          # selected row
+_BG_HOV   = '#e3f2fd'          # hovered row
 _BORDER   = '#c0c0c0'
 _FG       = '#1a1a1a'
 _FG_DIM   = '#666666'
 
-# ── Node icon definitions (letter + color for the colored-square fallback) ────
+# ── Icon letter + colour per node ─────────────────────────────────────────────
 _NODE_ICON_DEFS: dict[str, tuple[str, str]] = {
     '/amcl':                          ('A',  '#2196f3'),
     '/controller_server':             ('C',  '#4caf50'),
@@ -54,11 +56,76 @@ _NODE_ICON_DEFS: dict[str, tuple[str, str]] = {
 }
 
 _ICON_CACHE: dict[tuple[str, str], QIcon] = {}
-_ROW_HEIGHT = 36
+_ROW_HEIGHT = 44
+_LEFT_BORDER_W = 3   # px — coloured left-edge on selected row
 
+
+# ── Small helper widgets ──────────────────────────────────────────────────────
+
+class _StatusDot(QWidget):
+    """6 px filled circle drawn with QPainter — state indicator."""
+
+    _D = 6
+
+    def __init__(self, color: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._color = QColor(color)
+        self.setFixedSize(self._D + 4, self._D + 4)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+
+    def set_color(self, color: str) -> None:
+        self._color = QColor(color)
+        self.update()
+
+    def paintEvent(self, _event) -> None:  # type: ignore[override]
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        p.setBrush(self._color)
+        p.setPen(Qt.PenStyle.NoPen)
+        offset = (self.width() - self._D) // 2
+        p.drawEllipse(offset, offset, self._D, self._D)
+        p.end()
+
+
+class _CountBadge(QWidget):
+    """Rounded-rectangle pill showing a param count.  Hidden when count is 0."""
+
+    _W = 36
+    _H = 18
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._count = 0
+        self.setFixedSize(self._W, self._H)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.hide()
+
+    def set_count(self, count: int) -> None:
+        self._count = count
+        self.setVisible(count > 0)
+        self.update()
+
+    def paintEvent(self, _event) -> None:  # type: ignore[override]
+        if self._count <= 0:
+            return
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        # Pill background
+        p.setBrush(QColor('#e8e8e8'))
+        p.setPen(Qt.PenStyle.NoPen)
+        p.drawRoundedRect(0, 2, self._W, self._H - 4, 7, 7)
+        # Count text
+        p.setPen(QColor('#444444'))
+        p.setFont(QFont('Ubuntu', 7))
+        p.drawText(QRect(0, 2, self._W, self._H - 4), Qt.AlignmentFlag.AlignCenter,
+                   str(self._count))
+        p.end()
+
+
+# ── Coloured letter icon (fallback when SVG unavailable) ─────────────────────
 
 def _colored_letter_icon(letter: str, color: str, size: int = 20) -> QIcon:
-    """Colored rounded-rectangle with a white letter — fallback when SVG unavailable."""
+    """Rounded rectangle with a white letter — cached."""
     cache_key = (letter, color)
     if cache_key in _ICON_CACHE:
         return _ICON_CACHE[cache_key]
@@ -68,7 +135,7 @@ def _colored_letter_icon(letter: str, color: str, size: int = 20) -> QIcon:
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
     p.setBrush(QColor(color))
     p.setPen(Qt.PenStyle.NoPen)
-    p.drawRoundedRect(1, 1, size - 2, size - 2, 3, 3)
+    p.drawRoundedRect(1, 1, size - 2, size - 2, 4, 4)
     p.setPen(QColor('#ffffff'))
     pt = 9 if len(letter) == 1 else 6
     p.setFont(QFont('Ubuntu', pt, QFont.Weight.Bold))
@@ -80,7 +147,7 @@ def _colored_letter_icon(letter: str, color: str, size: int = 20) -> QIcon:
 
 
 def _panel_icon(size: int = 14) -> QPixmap:
-    """Small grid pixmap for the panel header."""
+    """Small grid pixmap for the panel header decoration."""
     px = QPixmap(size, size)
     px.fill(Qt.GlobalColor.transparent)
     p = QPainter(px)
@@ -103,61 +170,160 @@ def _state_color(state: str, found: bool) -> str:
         'unconfigured': _GRAY,
         'finalized':    _RED,
         'not found':    _GRAY,
+        'restart!':     _AMBER,
     }.get(state, _GRAY)
 
 
 # ── Per-node row widget ───────────────────────────────────────────────────────
 
 class _NodeRow(QWidget):
-    """Single flat node row: [icon] [name] [state] [count]."""
+    """Two-line row: [icon] [name\\nstate ● ] [count badge].
+
+    Selected rows get a 3 px left border in the node's icon colour, drawn via
+    paintEvent so it sits on top of the QListWidget blue selection highlight.
+    Label colours flip to white when selected so they remain legible.
+    """
 
     ICON_SIZE = 20
 
-    def __init__(self, node_path: str, display_name: str, parent: QWidget | None = None) -> None:
+    def __init__(self, node_path: str, display_name: str,
+                 parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._node_path = node_path
+        self._found = False
+        self._state = 'not found'
+        self._is_selected = False
+        _, self._border_color = _NODE_ICON_DEFS.get(node_path, ('?', '#666666'))
         self.setAutoFillBackground(False)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self._build_ui(display_name)
 
+    # ------------------------------------------------------------------
+    # Construction
+    # ------------------------------------------------------------------
+
     def _build_ui(self, display_name: str) -> None:
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(8, 0, 8, 0)
+        # Left margin > border width so text doesn't overlap the painted border
+        layout.setContentsMargins(_LEFT_BORDER_W + 8, 0, 8, 0)
         layout.setSpacing(8)
 
-        # Node type icon
+        # ── Node type icon ──
         self._icon_lbl = QLabel()
         self._icon_lbl.setFixedSize(self.ICON_SIZE, self.ICON_SIZE)
         self._icon_lbl.setStyleSheet('background: transparent;')
         self._set_icon(active=False)
         layout.addWidget(self._icon_lbl)
 
-        # Display name (bold)
+        # ── Centre column: name + state row ──
+        center = QWidget()
+        center.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        center.setStyleSheet('background: transparent;')
+        cv = QVBoxLayout(center)
+        cv.setContentsMargins(0, 5, 0, 5)
+        cv.setSpacing(1)
+
         self._name_lbl = QLabel(display_name)
         self._name_lbl.setStyleSheet(
-            f'font-weight: bold; font-size: 9pt; color: {_GRAY}; background: transparent;'
+            f'font-weight: 600; font-size: 10pt; color: {_GRAY}; background: transparent;'
         )
-        layout.addWidget(self._name_lbl, stretch=1)
+        cv.addWidget(self._name_lbl)
 
-        # Lifecycle state label
+        # State label + status dot side by side
+        state_row = QWidget()
+        state_row.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        state_row.setStyleSheet('background: transparent;')
+        sr = QHBoxLayout(state_row)
+        sr.setContentsMargins(0, 0, 0, 0)
+        sr.setSpacing(4)
+
         self._state_lbl = QLabel('not found')
-        self._state_lbl.setFixedWidth(76)
-        self._state_lbl.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         self._state_lbl.setStyleSheet(
             f'color: {_GRAY}; font-size: 8pt; background: transparent;'
         )
-        layout.addWidget(self._state_lbl)
+        sr.addWidget(self._state_lbl)
 
-        # Param count (right-aligned gray)
-        self._count_lbl = QLabel('')
-        self._count_lbl.setFixedWidth(32)
-        self._count_lbl.setAlignment(
-            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        self._dot = _StatusDot(_GRAY)
+        sr.addWidget(self._dot)
+        sr.addStretch()
+
+        cv.addWidget(state_row)
+        layout.addWidget(center, stretch=1)
+
+        # ── Right: param count badge ──
+        self._badge = _CountBadge()
+        layout.addWidget(self._badge)
+
+    # ------------------------------------------------------------------
+    # paintEvent — coloured left border when selected
+    # ------------------------------------------------------------------
+
+    def paintEvent(self, event) -> None:  # type: ignore[override]
+        super().paintEvent(event)
+        if self._is_selected:
+            p = QPainter(self)
+            p.fillRect(0, 0, _LEFT_BORDER_W, self.height(), QColor(self._border_color))
+            p.end()
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def set_selected(self, selected: bool) -> None:
+        """Flip selected state — updates label colours and left border."""
+        self._is_selected = selected
+        self._apply_label_colors()
+        self.update()
+
+    def update_state(self, found: bool, state: str, pending: bool) -> None:
+        """Refresh icon, state text, dot colour, and label colours."""
+        self._found = found
+        self._state = state
+        self._set_icon(active=found and state == 'active')
+
+        display_state = (
+            (state if state not in ('unknown', '') else 'found') if found else 'not found'
         )
-        self._count_lbl.setStyleSheet(
-            f'color: {_GRAY}; font-size: 8pt; background: transparent;'
-        )
-        layout.addWidget(self._count_lbl)
+        if pending and found:
+            display_state = 'restart!'
+
+        self._state_lbl.setText(display_state)
+        dot_color = _AMBER if (pending and found) else _state_color(display_state, found)
+        self._dot.set_color(dot_color)
+
+        if not self._is_selected:
+            self._apply_label_colors()
+
+    def update_count(self, count: int) -> None:
+        """Update the param count badge."""
+        self._badge.set_count(count)
+
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+
+    def _apply_label_colors(self) -> None:
+        """Set name/state label colours depending on selection + node state."""
+        if self._is_selected:
+            self._name_lbl.setStyleSheet(
+                'font-weight: 600; font-size: 10pt; color: white; background: transparent;'
+            )
+            self._state_lbl.setStyleSheet(
+                'color: rgba(255,255,255,200); font-size: 8pt; background: transparent;'
+            )
+        else:
+            if not self._found:
+                name_color = _GRAY
+            else:
+                _, icon_color = _NODE_ICON_DEFS.get(self._node_path, ('?', '#666666'))
+                name_color = icon_color if self._state == 'active' else _FG
+            self._name_lbl.setStyleSheet(
+                f'font-weight: 600; font-size: 10pt; color: {name_color}; background: transparent;'
+            )
+            state_color = _state_color(self._state, self._found)
+            self._state_lbl.setStyleSheet(
+                f'color: {state_color}; font-size: 8pt; background: transparent;'
+            )
 
     def _set_icon(self, active: bool) -> None:
         icon = node_icon(self._node_path, active)
@@ -167,36 +333,6 @@ class _NodeRow(QWidget):
             letter, color = _NODE_ICON_DEFS.get(self._node_path, ('?', '#666666'))
             fallback = _colored_letter_icon(letter, color, self.ICON_SIZE)
             self._icon_lbl.setPixmap(fallback.pixmap(self.ICON_SIZE, self.ICON_SIZE))
-
-    def update_state(self, found: bool, state: str, pending: bool) -> None:
-        """Refresh the name color, state label, and icon."""
-        self._set_icon(active=found and state == 'active')
-
-        # Name color
-        if not found:
-            name_color = _GRAY
-        else:
-            _, icon_color = _NODE_ICON_DEFS.get(self._node_path, ('?', '#666666'))
-            name_color = icon_color if state == 'active' else _FG
-        self._name_lbl.setStyleSheet(
-            f'font-weight: bold; font-size: 9pt; color: {name_color}; background: transparent;'
-        )
-
-        # State label
-        display_state = (state if state not in ('unknown', '') else 'found') if found else 'not found'
-        if pending and found:
-            display_state = 'restart!'
-        color = _state_color(display_state, found)
-        if pending and found:
-            color = _AMBER
-        self._state_lbl.setText(display_state)
-        self._state_lbl.setStyleSheet(
-            f'color: {color}; font-size: 8pt; background: transparent;'
-        )
-
-    def update_count(self, count: int) -> None:
-        """Update the param count display."""
-        self._count_lbl.setText(str(count) if count else '')
 
 
 # ── NodePanel ────────────────────────────────────────────────────────────────
@@ -230,6 +366,17 @@ class NodePanel(QWidget):
         self._build_ui()
 
     # ------------------------------------------------------------------
+    # paintEvent — right border separating this panel from param panel
+    # ------------------------------------------------------------------
+
+    def paintEvent(self, event) -> None:  # type: ignore[override]
+        super().paintEvent(event)
+        p = QPainter(self)
+        p.setPen(QColor(_BORDER))
+        p.drawLine(self.width() - 1, 0, self.width() - 1, self.height())
+        p.end()
+
+    # ------------------------------------------------------------------
     # UI construction
     # ------------------------------------------------------------------
 
@@ -238,59 +385,43 @@ class NodePanel(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         layout.addWidget(self._make_header())
-        layout.addWidget(self._make_count_bar())
         layout.addWidget(self._make_list(), stretch=1)
 
     def _make_header(self) -> QWidget:
+        """Panel header: icon + bold title on left, connected count on right."""
         bar = QWidget()
-        bar.setFixedHeight(28)
+        bar.setFixedHeight(30)
         bar.setStyleSheet(
             f'QWidget {{ background: {_BG_HDR}; border-bottom: 1px solid {_BORDER}; }}'
         )
         layout = QHBoxLayout(bar)
-        layout.setContentsMargins(8, 0, 6, 0)
+        layout.setContentsMargins(8, 0, 8, 0)
         layout.setSpacing(5)
 
+        # Decorative grid icon
         icon_lbl = QLabel()
         icon_lbl.setFixedSize(14, 14)
         icon_lbl.setPixmap(_panel_icon())
         icon_lbl.setStyleSheet('background: transparent;')
         layout.addWidget(icon_lbl)
 
+        # Title
         title = QLabel('Nav2 Nodes')
         title.setStyleSheet(
-            f'color: {_FG}; font-size: 10pt; font-weight: bold; background: transparent;'
+            f'color: {_FG}; font-size: 11pt; font-weight: bold; background: transparent;'
         )
         title.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-        layout.addWidget(title)
-        layout.addStretch()
+        layout.addWidget(title, stretch=1)
 
-        dot = QLabel('●')
-        dot.setFixedSize(14, 14)
-        dot.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        dot.setStyleSheet(
-            f'color: {_ORANGE}; font-size: 10px; background: transparent; border: none;'
-        )
-        dot.setToolTip('Nav2 Nodes panel')
-        layout.addWidget(dot)
-        return bar
-
-    def _make_count_bar(self) -> QWidget:
-        bar = QWidget()
-        bar.setFixedHeight(22)
-        bar.setStyleSheet(
-            f'QWidget {{ background: {_BG_PANEL}; border-bottom: 1px solid {_BORDER}; }}'
-        )
-        layout = QHBoxLayout(bar)
-        layout.setContentsMargins(10, 0, 10, 0)
-        layout.setSpacing(0)
-
+        # Connected count — right-aligned, colour-coded
         self._count_header = QLabel()
         self._count_header.setStyleSheet('background: transparent;')
-        self._count_header.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+        self._count_header.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
         self._update_count_header(0)
         layout.addWidget(self._count_header)
-        layout.addStretch()
+
         return bar
 
     def _update_count_header(self, found: int) -> None:
@@ -302,11 +433,10 @@ class NodePanel(QWidget):
         else:
             count_color = _AMBER
         self._count_header.setText(
-            f'<span style="color:{_FG_DIM}; font-size:8pt;">'
-            f'Nav2 Nodes — '
-            f'<b style="color:{count_color};">{found}/{total}</b>'
-            f'<span style="color:{_FG_DIM};"> connected</span>'
+            f'<span style="font-size:8pt; color:{count_color}; font-weight:bold;">'
+            f'{found}/{total}'
             f'</span>'
+            f'<span style="font-size:8pt; color:{_FG_DIM};"> connected</span>'
         )
 
     def _make_list(self) -> QListWidget:
@@ -322,21 +452,24 @@ class NodePanel(QWidget):
             f'}}'
             f'QListWidget::item {{'
             f'  border: none;'
+            f'  border-bottom: 1px solid #e0e0e0;'
             f'  padding: 0;'
             f'}}'
             f'QListWidget::item:selected {{'
-            f'  background: {_BLUE};'
+            f'  background: {_BG_SEL};'
             f'}}'
             f'QListWidget::item:hover:!selected {{'
-            f'  background: #f0f0f0;'
+            f'  background: {_BG_HOV};'
             f'}}'
         )
 
-        for path, display_name in NAV2_NODES.items():
+        for i, (path, display_name) in enumerate(NAV2_NODES.items()):
             item = QListWidgetItem()
             item.setData(Qt.ItemDataRole.UserRole, path)
             item.setSizeHint(QSize(0, _ROW_HEIGHT))
             item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
+            # Subtle alternating tint — QSS selected/hover states override this
+            item.setBackground(QColor(_BG_ROW2 if i % 2 else _BG_PANEL))
             self._list.addItem(item)
 
             row = _NodeRow(path, display_name)
@@ -370,7 +503,7 @@ class NodePanel(QWidget):
             self._refresh_row(path)
 
     def set_param_count(self, node_path: str, count: int) -> None:
-        """Update the param count shown in the row."""
+        """Update the param count shown in the row badge."""
         self._param_counts[node_path] = count
         row = self._node_rows.get(node_path)
         if row:
@@ -405,16 +538,24 @@ class NodePanel(QWidget):
     def _item_for_pos(self, pos: QPoint) -> QListWidgetItem | None:
         return self._list.itemAt(pos)
 
+    def _set_row_selected(self, node_path: str | None, selected: bool) -> None:
+        if node_path and node_path in self._node_rows:
+            self._node_rows[node_path].set_selected(selected)
+
     # ------------------------------------------------------------------
     # Slots
     # ------------------------------------------------------------------
 
     def _on_item_clicked(self, item: QListWidgetItem) -> None:
         node_path: object = item.data(Qt.ItemDataRole.UserRole)
-        if isinstance(node_path, str) and node_path.startswith('/'):
-            self._selected_node = node_path
-            self.node_selected.emit(node_path)
-            logger.debug('Node selected: %s', node_path)
+        if not isinstance(node_path, str) or not node_path.startswith('/'):
+            return
+        # Update left-border selection indicator
+        self._set_row_selected(self._selected_node, False)
+        self._selected_node = node_path
+        self._set_row_selected(node_path, True)
+        self.node_selected.emit(node_path)
+        logger.debug('Node selected: %s', node_path)
 
     def _on_context_menu(self, pos: QPoint) -> None:
         """Show lifecycle-action context menu for the node under the cursor."""
