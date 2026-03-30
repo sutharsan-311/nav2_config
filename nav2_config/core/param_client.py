@@ -349,7 +349,7 @@ class Nav2ParamClient:
                 ParamValue(
                     definition=d,
                     current_value=current_value,
-                    is_modified=(current_value != d.default),
+                    is_modified=is_live and (current_value != d.default),
                     is_live=is_live,
                 )
             )

@@ -114,7 +114,8 @@ class ParamValue:
         Does NOT update confirmed_value — call :meth:`confirm` for that.
         """
         self.current_value = new_value
-        self.is_modified = new_value != self.definition.default
+        baseline = self.confirmed_value if self.is_live else self.definition.default
+        self.is_modified = new_value != baseline
 
     def confirm(self, confirmed: Any) -> None:
         """Record that *confirmed* was successfully set on the ROS2 node.

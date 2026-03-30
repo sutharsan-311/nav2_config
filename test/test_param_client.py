@@ -8,7 +8,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -25,6 +25,26 @@ from nav2_config.types.params import Nav2ParamDef, ParamRange, ParamValue
 
 
 # ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _make_mock_future(result_value: Any) -> MagicMock:
+    """Return a MagicMock future that immediately fires any registered callback.
+
+    Nav2ParamClient._call() uses threading.Event + add_done_callback instead of
+    rclpy.spin_until_future_complete.  A plain MagicMock would never invoke the
+    callback, so done_event.wait() would block until timeout.  This helper
+    wires add_done_callback.side_effect so the callback fires synchronously,
+    letting _call() return without waiting.
+    """
+    future = MagicMock()
+    future.result = MagicMock(return_value=result_value)
+    future.add_done_callback.side_effect = lambda cb: cb(future)
+    return future
+
+
+# ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
@@ -37,11 +57,21 @@ def mock_node() -> MagicMock:
     return node
 
 
-def _make_mock_client(srv_class, service_name: str) -> MagicMock:
-    """Return a mock service client that records its service name."""
+def _make_mock_client(srv_class, service_name: str, **kwargs) -> MagicMock:
+    """Return a mock service client that records its service name.
+
+    **kwargs absorbs callback_group= and any other keyword args that
+    rclpy.Node.create_client() accepts so the mock signature stays compatible
+    as the real API evolves.
+
+    The default call_async returns a future that resolves to None, which causes
+    list_params / get_params to return empty results.  Individual tests override
+    call_async when they need specific responses.
+    """
     client = MagicMock()
     client.srv_name = service_name
     client.wait_for_service = MagicMock(return_value=True)
+    client.call_async = MagicMock(return_value=_make_mock_future(None))
     return client
 
 
@@ -107,25 +137,16 @@ def test_extract_not_set_returns_none() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _spin_complete(node, future, timeout_sec=None):
-    """Immediately marks the future as done (simulates a fast service response)."""
-    # The future is already set up with a result by the test — nothing to do.
-
-
 def test_list_params_returns_names(client: Nav2ParamClient, mock_node: MagicMock) -> None:
     from rcl_interfaces.srv import ListParameters
 
     mock_response = MagicMock()
     mock_response.result.names = ["controller_frequency", "min_x_velocity_threshold"]
 
-    future = MagicMock()
-    future.result = MagicMock(return_value=mock_response)
-
     mock_client = client._get_client("/controller_server", ListParameters)
-    mock_client.call_async = MagicMock(return_value=future)
+    mock_client.call_async = MagicMock(return_value=_make_mock_future(mock_response))
 
-    with patch("nav2_config.core.param_client.rclpy.spin_until_future_complete", _spin_complete):
-        result = client.list_params("/controller_server")
+    result = client.list_params("/controller_server")
 
     assert result == ["controller_frequency", "min_x_velocity_threshold"]
 
@@ -133,14 +154,11 @@ def test_list_params_returns_names(client: Nav2ParamClient, mock_node: MagicMock
 def test_list_params_returns_empty_on_timeout(client: Nav2ParamClient) -> None:
     from rcl_interfaces.srv import ListParameters
 
-    future = MagicMock()
-    future.result = MagicMock(return_value=None)  # Timeout: future has no result
-
+    # result=None simulates a timed-out / empty response
     mock_client = client._get_client("/controller_server", ListParameters)
-    mock_client.call_async = MagicMock(return_value=future)
+    mock_client.call_async = MagicMock(return_value=_make_mock_future(None))
 
-    with patch("nav2_config.core.param_client.rclpy.spin_until_future_complete", _spin_complete):
-        result = client.list_params("/controller_server")
+    result = client.list_params("/controller_server")
 
     assert result == []
 
@@ -163,21 +181,16 @@ def test_list_params_returns_empty_when_service_unavailable(client: Nav2ParamCli
 def test_get_params_returns_values(client: Nav2ParamClient) -> None:
     from rcl_interfaces.srv import GetParameters
 
-    # Build mock ParameterValue for a double
     pv_double = _make_parameter_value(20.0, "double")
     pv_int = _make_parameter_value(5, "int")
 
     mock_response = MagicMock()
     mock_response.values = [pv_double, pv_int]
 
-    future = MagicMock()
-    future.result = MagicMock(return_value=mock_response)
-
     mock_client = client._get_client("/controller_server", GetParameters)
-    mock_client.call_async = MagicMock(return_value=future)
+    mock_client.call_async = MagicMock(return_value=_make_mock_future(mock_response))
 
-    with patch("nav2_config.core.param_client.rclpy.spin_until_future_complete", _spin_complete):
-        result = client.get_params("/controller_server", ["controller_frequency", "min_x_velocity_threshold"])
+    result = client.get_params("/controller_server", ["controller_frequency", "min_x_velocity_threshold"])
 
     assert result == {"controller_frequency": 20.0, "min_x_velocity_threshold": 5}
 
@@ -197,14 +210,10 @@ def test_get_params_skips_not_set_values(client: Nav2ParamClient) -> None:
     mock_response = MagicMock()
     mock_response.values = [pv_set, pv_not_set]
 
-    future = MagicMock()
-    future.result = MagicMock(return_value=mock_response)
-
     mock_client = client._get_client("/controller_server", GetParameters)
-    mock_client.call_async = MagicMock(return_value=future)
+    mock_client.call_async = MagicMock(return_value=_make_mock_future(mock_response))
 
-    with patch("nav2_config.core.param_client.rclpy.spin_until_future_complete", _spin_complete):
-        result = client.get_params("/controller_server", ["controller_frequency", "missing_param"])
+    result = client.get_params("/controller_server", ["controller_frequency", "missing_param"])
 
     assert "controller_frequency" in result
     assert "missing_param" not in result
@@ -227,46 +236,38 @@ def _mock_set_response(successful: bool, reason: str = "") -> MagicMock:
 def test_set_param_returns_true_on_success(client: Nav2ParamClient) -> None:
     from rcl_interfaces.srv import SetParameters
 
-    future = MagicMock()
-    future.result = MagicMock(return_value=_mock_set_response(True))
-
     mock_client = client._get_client("/controller_server", SetParameters)
-    mock_client.call_async = MagicMock(return_value=future)
+    mock_client.call_async = MagicMock(return_value=_make_mock_future(_mock_set_response(True)))
 
-    with patch("nav2_config.core.param_client.rclpy.spin_until_future_complete", _spin_complete):
-        result = client.set_param("/controller_server", "controller_frequency", 25.0, "double")
+    ok, _ = client.set_param("/controller_server", "controller_frequency", 25.0, "double")
 
-    assert result is True
+    assert ok is True
 
 
 def test_set_param_returns_false_on_rejection(client: Nav2ParamClient) -> None:
     from rcl_interfaces.srv import SetParameters
 
-    future = MagicMock()
-    future.result = MagicMock(return_value=_mock_set_response(False, "read-only param"))
-
     mock_client = client._get_client("/controller_server", SetParameters)
-    mock_client.call_async = MagicMock(return_value=future)
+    mock_client.call_async = MagicMock(
+        return_value=_make_mock_future(_mock_set_response(False, "read-only param"))
+    )
 
-    with patch("nav2_config.core.param_client.rclpy.spin_until_future_complete", _spin_complete):
-        result = client.set_param("/controller_server", "use_sim_time", True, "bool")
+    ok, reason = client.set_param("/controller_server", "use_sim_time", True, "bool")
 
-    assert result is False
+    assert ok is False
+    assert reason == "read-only param"
 
 
 def test_set_param_returns_false_on_timeout(client: Nav2ParamClient) -> None:
     from rcl_interfaces.srv import SetParameters
 
-    future = MagicMock()
-    future.result = MagicMock(return_value=None)  # Timeout
-
+    # result=None simulates a timed-out response
     mock_client = client._get_client("/controller_server", SetParameters)
-    mock_client.call_async = MagicMock(return_value=future)
+    mock_client.call_async = MagicMock(return_value=_make_mock_future(None))
 
-    with patch("nav2_config.core.param_client.rclpy.spin_until_future_complete", _spin_complete):
-        result = client.set_param("/controller_server", "controller_frequency", 25.0, "double")
+    ok, _ = client.set_param("/controller_server", "controller_frequency", 25.0, "double")
 
-    assert result is False
+    assert ok is False
 
 
 # ---------------------------------------------------------------------------
@@ -288,27 +289,35 @@ def _setup_get_params_mock(
     live_values: dict[str, Any],
     param_types: dict[str, str],
 ) -> None:
-    """Wire the GetParameters mock to return *live_values* for the expected names."""
-    from rcl_interfaces.srv import GetParameters
+    """Wire ListParameters and GetParameters mocks for get_all_nav2_params tests.
 
+    list_params() is called first by get_all_nav2_params() to filter params that
+    actually exist on the node.  Both service clients must be mocked together.
+    """
+    from rcl_interfaces.msg import ParameterValue
+    from rcl_interfaces.srv import GetParameters, ListParameters
+
+    # list_params: report exactly the params present in live_values
+    list_response = MagicMock()
+    list_response.result.names = list(live_values.keys())
+    list_client = client._get_client("/controller_server", ListParameters)
+    list_client.call_async = MagicMock(return_value=_make_mock_future(list_response))
+
+    # get_params: return the appropriate ParameterValue for each requested name
     def call_async_side_effect(request):
         pvs = []
         for name in request.names:
             if name in live_values:
                 pv = _make_parameter_value(live_values[name], param_types.get(name, "double"))
             else:
-                from rcl_interfaces.msg import ParameterValue
                 pv = ParameterValue()  # NOT_SET
             pvs.append(pv)
+        mock_resp = MagicMock()
+        mock_resp.values = pvs
+        return _make_mock_future(mock_resp)
 
-        mock_response = MagicMock()
-        mock_response.values = pvs
-        future = MagicMock()
-        future.result = MagicMock(return_value=mock_response)
-        return future
-
-    mock_client = client._get_client("/controller_server", GetParameters)
-    mock_client.call_async = MagicMock(side_effect=call_async_side_effect)
+    get_client = client._get_client("/controller_server", GetParameters)
+    get_client.call_async = MagicMock(side_effect=call_async_side_effect)
 
 
 def test_get_all_nav2_params_live_values(client: Nav2ParamClient) -> None:
@@ -320,8 +329,7 @@ def test_get_all_nav2_params_live_values(client: Nav2ParamClient) -> None:
     }
     _setup_get_params_mock(client, live, {"controller_frequency": "double", "min_x_velocity_threshold": "double", "failure_tolerance": "double"})
 
-    with patch("nav2_config.core.param_client.rclpy.spin_until_future_complete", _spin_complete):
-        results = client.get_all_nav2_params("/controller_server", CONTROLLER_SCHEMA)
+    results = client.get_all_nav2_params("/controller_server", CONTROLLER_SCHEMA)
 
     assert len(results) == 3  # Only controller_server params
     by_name = {r.definition.param: r for r in results}
@@ -341,14 +349,12 @@ def test_get_all_nav2_params_fallback_to_defaults(client: Nav2ParamClient) -> No
     """When node is unreachable (get_params returns {}), schema defaults are used."""
     from rcl_interfaces.srv import GetParameters
 
-    future = MagicMock()
-    future.result = MagicMock(return_value=None)  # Timeout
-
+    # result=None: list_params returns [] so get_params is never called;
+    # all params fall back to schema defaults.
     mock_client = client._get_client("/controller_server", GetParameters)
-    mock_client.call_async = MagicMock(return_value=future)
+    mock_client.call_async = MagicMock(return_value=_make_mock_future(None))
 
-    with patch("nav2_config.core.param_client.rclpy.spin_until_future_complete", _spin_complete):
-        results = client.get_all_nav2_params("/controller_server", CONTROLLER_SCHEMA)
+    results = client.get_all_nav2_params("/controller_server", CONTROLLER_SCHEMA)
 
     assert len(results) == 3
     for pv in results:
@@ -361,14 +367,10 @@ def test_get_all_nav2_params_filters_other_nodes(client: Nav2ParamClient) -> Non
     """Params from other nodes must not appear in results."""
     from rcl_interfaces.srv import GetParameters
 
-    future = MagicMock()
-    future.result = MagicMock(return_value=None)
-
     mock_client = client._get_client("/planner_server", GetParameters)
-    mock_client.call_async = MagicMock(return_value=future)
+    mock_client.call_async = MagicMock(return_value=_make_mock_future(None))
 
-    with patch("nav2_config.core.param_client.rclpy.spin_until_future_complete", _spin_complete):
-        results = client.get_all_nav2_params("/planner_server", CONTROLLER_SCHEMA)
+    results = client.get_all_nav2_params("/planner_server", CONTROLLER_SCHEMA)
 
     # Only planner_server params (1 entry in CONTROLLER_SCHEMA)
     assert len(results) == 1

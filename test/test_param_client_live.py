@@ -35,6 +35,9 @@ from rclpy.node import Node
 
 from nav2_config.core.param_client import Nav2ParamClient
 
+import pytest
+pytestmark = pytest.mark.skip(reason="requires live Nav2 stack")
+
 
 # ---------------------------------------------------------------------------
 # ANSI helpers (same as test_live_params.py)

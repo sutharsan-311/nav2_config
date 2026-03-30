@@ -198,6 +198,7 @@ class ParamPanel(QWidget):
         self._show_descriptions: bool = False
         self._topic_discovery = topic_discovery
         self._frame_discovery = frame_discovery
+        self._selected_plugin: str | None = None
         # per-node memory: {node_name -> set of expanded category names}
         self._expanded_categories: dict[str, set[str]] = {}
         # pre-search snapshot of expanded state (None = not in search mode)

@@ -15,6 +15,9 @@ import sys
 import time
 import threading
 
+import pytest
+pytestmark = pytest.mark.skip(reason="requires live Nav2 stack")
+
 
 def run(cmd: str, timeout: int = 10) -> tuple[str, int]:
     result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=timeout)

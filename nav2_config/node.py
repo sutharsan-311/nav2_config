@@ -475,7 +475,7 @@ class Nav2ConfigNode(Node):
                 results.append(ParamValue(
                     definition=schema_entry,
                     current_value=value if value is not None else schema_entry.default,
-                    is_modified=(value != schema_entry.default) if value is not None else False,
+                    is_modified=False,
                     is_live=(value is not None),
                 ))
             else:
