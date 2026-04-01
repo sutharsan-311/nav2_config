@@ -23,7 +23,7 @@ from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QApplication
 
 from nav2_config.node import Nav2ConfigNode
-from nav2_config.gui.main_window import MainWindow, _load_settings
+from nav2_config.gui.main_window import MainWindow
 from nav2_config.gui.theme import apply_theme
 from nav2_config.gui.icons import app_icon
 from nav2_config.types.params import load_schema
@@ -73,26 +73,9 @@ def main() -> None:
     apply_theme(app)
     app.setWindowIcon(app_icon())
 
-    # 4. Show Load Config dialog
-    from nav2_config.gui.load_dialog import LoadConfigDialog
-    from nav2_config.core.config_file import ConfigFile
-
-    settings = _load_settings()
-    recent_files: list[str] = settings.get('recent_files', [])
-
-    load_dialog = LoadConfigDialog(recent_files=recent_files)
-    config_file: ConfigFile | None = None
-
-    if load_dialog.exec():
-        filepath = load_dialog.selected_filepath()
-        if filepath:
-            try:
-                config_file = ConfigFile(filepath)
-                config_file.load()
-                logger.info('Config file loaded: %s', filepath)
-            except Exception as exc:
-                logger.warning('Failed to load config file %s: %s', filepath, exc)
-                config_file = None
+    # 4. Open main window without a startup config dialog.
+    # Config loading is user-initiated via File > Load Config.
+    config_file = None
 
     # 5. Open main window
     window = MainWindow(node, config_file=config_file)

@@ -12,8 +12,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from PyQt6.QtCore import Qt, QSize, pyqtSignal
-from PyQt6.QtGui import QKeySequence, QShortcut
+from PyQt6.QtCore import Qt, QSize, QRect, pyqtSignal
+from PyQt6.QtGui import QColor, QPainter, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -43,6 +43,173 @@ _FG       = '#1a1a1a'
 _FG_DIM   = '#666666'
 _AMBER    = '#ff9800'
 
+
+# ── Lifecycle control bar ─────────────────────────────────────────────────────
+
+_STATE_TRANSITIONS: dict[str, list[str]] = {
+    'unconfigured': ['configure'],
+    'inactive':     ['activate', 'cleanup', 'shutdown'],
+    'active':       ['deactivate', 'shutdown'],
+}
+
+_ACTION_LABELS: dict[str, str] = {
+    'configure':  'Configure',
+    'activate':   'Activate',
+    'deactivate': 'Deactivate',
+    'cleanup':    'Cleanup',
+    'shutdown':   'Shutdown',
+}
+
+_STATE_COLORS: dict[str, str] = {
+    'active':       '#4caf50',
+    'inactive':     '#ff9800',
+    'unconfigured': '#999999',
+    'finalized':    '#e53935',
+}
+
+_LC_BTN_STYLE = (
+    'QPushButton {'
+    '  background: #e8e8e8;'
+    '  border: 1px solid #c0c0c0;'
+    '  color: #1a1a1a;'
+    '  font-size: 8pt;'
+    '  padding: 1px 7px;'
+    '}'
+    'QPushButton:hover { background: #d4d4d4; }'
+)
+
+
+class _StateBadge(QWidget):
+    """Small colored pill showing lifecycle state text."""
+
+    _H = 16
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._state = ''
+        self._color = QColor('#999999')
+        self.setFixedHeight(self._H)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+
+    def set_state(self, state: str) -> None:
+        self._state = state
+        self._color = QColor(_STATE_COLORS.get(state, '#999999'))
+        self.setFixedWidth(max(50, len(state) * 7 + 12))
+        self.update()
+
+    def paintEvent(self, _event) -> None:  # type: ignore[override]
+        if not self._state:
+            return
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        p.setBrush(self._color)
+        p.setPen(Qt.PenStyle.NoPen)
+        p.drawRoundedRect(0, 1, self.width(), self._H - 2, 4, 4)
+        p.setPen(QColor('#ffffff'))
+        from PyQt6.QtGui import QFont
+        p.setFont(QFont('Ubuntu', 7, QFont.Weight.Bold))
+        p.drawText(QRect(0, 1, self.width(), self._H - 2),
+                   Qt.AlignmentFlag.AlignCenter, self._state)
+        p.end()
+
+
+class _LifecycleBar(QWidget):
+    """Shown above the param list when a node is selected.
+
+    Displays the node's current lifecycle state and action buttons for valid
+    transitions.  When lifecycle_manager is running, direct transition buttons
+    are hidden entirely — only the state badge is shown with a note directing
+    the user to the stack controls in the left panel.
+    """
+
+    action_requested = pyqtSignal(str)  # action name: 'activate', 'deactivate', etc.
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._node_path: str = ''
+        self._state: str = ''
+        self._lc_manager_present: bool = False
+        self._build_ui()
+        self.hide()
+
+    def _build_ui(self) -> None:
+        self.setFixedHeight(30)
+        self.setStyleSheet(
+            'QWidget { background: #eaf0fa; border-bottom: 1px solid #c0c0c0; }'
+        )
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(8, 0, 8, 0)
+        layout.setSpacing(6)
+
+        self._node_lbl = QLabel()
+        self._node_lbl.setStyleSheet(
+            'color: #1a1a1a; font-size: 8pt; font-weight: bold; background: transparent;'
+        )
+        layout.addWidget(self._node_lbl)
+
+        self._badge = _StateBadge()
+        layout.addWidget(self._badge)
+
+        # Managed-by-lifecycle_manager note (shown when lc_manager present)
+        self._managed_lbl = QLabel('managed by lifecycle_manager — use stack controls')
+        self._managed_lbl.setStyleSheet(
+            'color: #666666; font-size: 8pt; font-style: italic; background: transparent;'
+        )
+        layout.addWidget(self._managed_lbl)
+
+        # Transition buttons (hidden when lifecycle_manager present)
+        self._btn_container = QWidget()
+        self._btn_container.setStyleSheet('background: transparent;')
+        btn_layout = QHBoxLayout(self._btn_container)
+        btn_layout.setContentsMargins(0, 0, 0, 0)
+        btn_layout.setSpacing(4)
+        self._buttons: dict[str, QPushButton] = {}
+        for action, label in _ACTION_LABELS.items():
+            btn = QPushButton(label)
+            btn.setFixedHeight(20)
+            btn.setStyleSheet(_LC_BTN_STYLE)
+            btn.clicked.connect(
+                lambda _checked, a=action: self.action_requested.emit(a)
+            )
+            btn_layout.addWidget(btn)
+            self._buttons[action] = btn
+        layout.addWidget(self._btn_container)
+
+        layout.addStretch()
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def set_node(self, node_path: str, state: str, lc_manager_present: bool) -> None:
+        """Update the bar for the currently selected node."""
+        self._node_path = node_path
+        self._state = state
+        self._lc_manager_present = lc_manager_present
+
+        bare = node_path.lstrip('/').rsplit('/', 1)[-1]
+        self._node_lbl.setText(bare)
+        self._badge.set_state(state)
+
+        if lc_manager_present:
+            self._btn_container.hide()
+            self._managed_lbl.show()
+        else:
+            self._managed_lbl.hide()
+            self._btn_container.show()
+            valid = _STATE_TRANSITIONS.get(state, [])
+            for action, btn in self._buttons.items():
+                btn.setVisible(action in valid)
+
+        self.show()
+
+    def clear(self) -> None:
+        """Hide the bar when no node is selected."""
+        self._node_path = ''
+        self.hide()
+
+
+# ── Category sections ─────────────────────────────────────────────────────────
 
 class _CategorySection(QWidget):
     """Collapsible section grouping ParamRow widgets under a category header.
@@ -181,8 +348,9 @@ class ParamPanel(QWidget):
             The main window routes this to the ROS2 node.
     """
 
-    param_change_requested = pyqtSignal(str, str, object)
-    param_set_requested    = pyqtSignal(str, str, object)
+    param_change_requested    = pyqtSignal(str, str, object)
+    param_set_requested       = pyqtSignal(str, str, object)
+    lifecycle_action_requested = pyqtSignal(str, str)  # (node_path, action)
 
     def __init__(
         self,
@@ -203,6 +371,7 @@ class ParamPanel(QWidget):
         self._expanded_categories: dict[str, set[str]] = {}
         # pre-search snapshot of expanded state (None = not in search mode)
         self._pre_search_expanded: set[str] | None = None
+        self._lc_bar: _LifecycleBar | None = None
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -215,6 +384,10 @@ class ParamPanel(QWidget):
         layout.setSpacing(0)
 
         layout.addWidget(self._make_title_bar())
+
+        self._lc_bar = _LifecycleBar()
+        self._lc_bar.action_requested.connect(self._on_lc_action)
+        layout.addWidget(self._lc_bar)
 
         # Scroll area for the parameter rows
         self._scroll_area = QScrollArea()
@@ -324,6 +497,29 @@ class ParamPanel(QWidget):
         layout.addWidget(self._desc_btn)
 
         return bar
+
+    # ------------------------------------------------------------------
+    # Lifecycle bar — public API and private slot
+    # ------------------------------------------------------------------
+
+    def update_lifecycle_state(
+        self, node_path: str, state: str, lc_manager_present: bool
+    ) -> None:
+        """Refresh the lifecycle bar for *node_path* if it is currently shown."""
+        if self._lc_bar is None:
+            return
+        if node_path and node_path == self._node_name:
+            self._lc_bar.set_node(node_path, state, lc_manager_present)
+
+    def clear_lifecycle_bar(self) -> None:
+        """Hide the lifecycle bar (called when no node is selected)."""
+        if self._lc_bar is not None:
+            self._lc_bar.clear()
+
+    def _on_lc_action(self, action: str) -> None:
+        """Forward a lifecycle button click to MainWindow via signal."""
+        if self._node_name:
+            self.lifecycle_action_requested.emit(self._node_name, action)
 
     # ------------------------------------------------------------------
     # Private: filtering and description toggle

@@ -414,6 +414,16 @@ class LifecycleManagerClient:
         logger.info('lifecycle_manager %s: sending STARTUP', self._manager_path)
         return self._call_command(_MGR_STARTUP)
 
+    def pause(self) -> bool:
+        """Send PAUSE — deactivates all managed nodes without cleanup.
+
+        Nodes land in ``inactive`` state and can be resumed cheaply with
+        :meth:`startup` (STARTUP).  This is the safe way to temporarily halt
+        navigation without a full RESET/STARTUP cycle.
+        """
+        logger.info('lifecycle_manager %s: sending PAUSE', self._manager_path)
+        return self._call_command(_MGR_PAUSE)
+
     def restart_stack(
         self,
         progress_cb: Callable[[str], None] | None = None,

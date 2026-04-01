@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMenu,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -175,6 +176,66 @@ def _state_color(state: str, found: bool) -> str:
         'not found':    _GRAY,
         'restart!':     _AMBER,
     }.get(state, _GRAY)
+
+
+# ── Stack-level control bar ──────────────────────────────────────────────────
+
+_BTN_STYLE = (
+    f'QPushButton {{'
+    f'  background: #e0e0e0;'
+    f'  border: 1px solid {_BORDER};'
+    f'  color: {_FG};'
+    f'  font-size: 8pt;'
+    f'  padding: 2px 8px;'
+    f'}}'
+    f'QPushButton:hover:enabled {{ background: #d4d4d4; }}'
+    f'QPushButton:disabled {{ color: #aaaaaa; }}'
+)
+
+_NO_MGR_TIP = 'lifecycle_manager not detected'
+
+
+class _StackControlBar(QWidget):
+    """Thin strip with Restart Stack and Pause Stack buttons.
+
+    Both buttons require lifecycle_manager to be running.  When absent they
+    are disabled and show a tooltip explaining why.
+    """
+
+    restart_requested = pyqtSignal()
+    pause_requested   = pyqtSignal()
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setFixedHeight(30)
+        self.setStyleSheet(
+            f'QWidget {{ background: {_BG_HDR}; border-bottom: 1px solid {_BORDER}; }}'
+        )
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(8, 0, 8, 0)
+        layout.setSpacing(6)
+
+        self._restart_btn = QPushButton('\u21bb Restart Stack')
+        self._restart_btn.setFixedHeight(20)
+        self._restart_btn.setStyleSheet(_BTN_STYLE)
+        self._restart_btn.clicked.connect(self.restart_requested)
+        layout.addWidget(self._restart_btn)
+
+        self._pause_btn = QPushButton('\u23f8 Pause Stack')
+        self._pause_btn.setFixedHeight(20)
+        self._pause_btn.setStyleSheet(_BTN_STYLE)
+        self._pause_btn.clicked.connect(self.pause_requested)
+        layout.addWidget(self._pause_btn)
+
+        layout.addStretch()
+        self.set_manager_present(False)
+
+    def set_manager_present(self, present: bool) -> None:
+        """Enable or disable both buttons based on lifecycle_manager presence."""
+        tip = '' if present else _NO_MGR_TIP
+        for btn in (self._restart_btn, self._pause_btn):
+            btn.setEnabled(present)
+            btn.setToolTip(tip)
 
 
 # ── Per-node row widget ───────────────────────────────────────────────────────
@@ -354,6 +415,7 @@ class NodePanel(QWidget):
     node_selected = pyqtSignal(str)
     refresh_requested = pyqtSignal()
     lifecycle_action_requested = pyqtSignal(str, str)
+    pause_stack_requested = pyqtSignal()
     load_config_requested = pyqtSignal()
     save_requested = pyqtSignal()
 
@@ -366,6 +428,7 @@ class NodePanel(QWidget):
         self._lifecycle_manager_present: bool = False
         self._selected_node: str | None = None
         self._node_rows: dict[str, _NodeRow] = {}
+        self._stack_bar: _StackControlBar | None = None
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -388,6 +451,12 @@ class NodePanel(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         layout.addWidget(self._make_header())
+        self._stack_bar = _StackControlBar()
+        self._stack_bar.restart_requested.connect(
+            lambda: self.lifecycle_action_requested.emit('', 'restart_stack')
+        )
+        self._stack_bar.pause_requested.connect(self.pause_stack_requested)
+        layout.addWidget(self._stack_bar)
         layout.addWidget(self._make_list(), stretch=1)
 
     def _make_header(self) -> QWidget:
@@ -521,8 +590,10 @@ class NodePanel(QWidget):
         self._refresh_row(node_path)
 
     def set_lifecycle_manager_present(self, present: bool) -> None:
-        """Record lifecycle_manager presence (used by context menu logic)."""
+        """Record lifecycle_manager presence (used by context menu and stack bar)."""
         self._lifecycle_manager_present = present
+        if self._stack_bar is not None:
+            self._stack_bar.set_manager_present(present)
 
     # ------------------------------------------------------------------
     # Private helpers

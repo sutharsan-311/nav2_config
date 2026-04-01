@@ -522,6 +522,13 @@ class MainWindow(QMainWindow):
         self._node_panel.lifecycle_action_requested.connect(
             self._on_lifecycle_action_requested
         )
+        self._node_panel.pause_stack_requested.connect(self._on_pause_stack)
+        self._param_panel.lifecycle_action_requested.connect(
+            self._on_lifecycle_action_requested
+        )
+        self._node.signals.lifecycle_states_updated.connect(
+            self._on_lifecycle_states_updated_for_param_panel
+        )
         self._node.signals.lifecycle_manager_status.connect(
             self._on_lifecycle_manager_status
         )
@@ -571,6 +578,11 @@ class MainWindow(QMainWindow):
         self._node.watch_node(node_path)
         self._node.request_fetch_params(node_path)
         self._status_bar.showMessage(node_path.lstrip('/'))
+        # Populate lifecycle bar immediately from cached state.
+        known_state = self._node.get_lifecycle_state(node_path)
+        self._param_panel.update_lifecycle_state(
+            node_path, known_state, self._lifecycle_manager_present
+        )
 
     def _on_params_received(self, node_name: str, params: list) -> None:
         # Overlay file values from the config file so rows can show file-vs-live
@@ -1011,10 +1023,30 @@ class MainWindow(QMainWindow):
     # Lifecycle action slots
     # ------------------------------------------------------------------
 
+    def _on_lifecycle_states_updated_for_param_panel(
+        self, states: dict[str, str]
+    ) -> None:
+        """Forward lifecycle state updates to the param panel's lifecycle bar."""
+        current = self._param_panel._node_name
+        if current and current in states:
+            self._param_panel.update_lifecycle_state(
+                current, states[current], self._lifecycle_manager_present
+            )
+
+    def _on_pause_stack(self) -> None:
+        """Handler for Pause Stack button — fire immediately, no confirmation."""
+        self._node.request_lifecycle_pause_stack()
+        self.set_status('Pausing Nav2 stack...')
+
     def _on_lifecycle_manager_status(self, present: bool, manager_path: str) -> None:
         """Called when lifecycle_manager presence changes."""
         self._lifecycle_manager_present = present
         self._node_panel.set_lifecycle_manager_present(present)
+        # Refresh the param panel's lifecycle bar with the updated manager state.
+        current = self._param_panel._node_name
+        if current:
+            known_state = self._node.get_lifecycle_state(current)
+            self._param_panel.update_lifecycle_state(current, known_state, present)
         if present:
             bare = manager_path.lstrip('/')
             self.set_status(f'lifecycle_manager detected: /{bare} — stack-level restart enabled')
