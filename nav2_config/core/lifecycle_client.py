@@ -235,7 +235,13 @@ class LifecycleClient:
         node_name: str,
         progress_cb: Callable[[str], None] | None = None,
     ) -> tuple[bool, str]:
-        """Full restart sequence: deactivate → cleanup → configure → activate.
+        """Full restart sequence, starting from the node's current state.
+
+        Queries current state first and skips transitions that have already
+        happened:
+        - active       → deactivate → cleanup → configure → activate
+        - inactive     →              cleanup → configure → activate
+        - unconfigured →                        configure → activate
 
         Args:
             node_name: Full ROS2 node path.
@@ -245,12 +251,29 @@ class LifecycleClient:
         Returns:
             ``(success, message)`` — if a step fails, *message* names the step.
         """
-        steps = [
-            ('Deactivating', self.deactivate),
-            ('Cleaning up', self.cleanup),
-            ('Configuring', self.configure),
-            ('Activating', self.activate),
-        ]
+        current_state = self.get_state(node_name, availability_timeout=_POLL_AVAILABILITY_TIMEOUT)
+
+        if current_state == 'active':
+            steps = [
+                ('Deactivating', self.deactivate),
+                ('Cleaning up', self.cleanup),
+                ('Configuring', self.configure),
+                ('Activating', self.activate),
+            ]
+        elif current_state == 'inactive':
+            steps = [
+                ('Cleaning up', self.cleanup),
+                ('Configuring', self.configure),
+                ('Activating', self.activate),
+            ]
+        elif current_state == 'unconfigured':
+            steps = [
+                ('Configuring', self.configure),
+                ('Activating', self.activate),
+            ]
+        else:
+            return False, f'Cannot restart: current state is {current_state!r}'
+
         for step_name, func in steps:
             if progress_cb:
                 progress_cb(step_name)

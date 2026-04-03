@@ -404,9 +404,10 @@ class Nav2ConfigNode(Node):
     def force_discover(self) -> None:
         """Trigger one immediate discovery pass (e.g. from Refresh button).
 
-        Safe to call from any thread; discovery result is emitted via signal.
+        Safe to call from any thread; the work executes on the ROS2 thread via
+        the request queue and result is emitted via signal.
         """
-        self._on_discovery_tick()
+        self._request_queue.put(('discover',))
 
     # ------------------------------------------------------------------
     # Parameter request processing (ROS2 thread only)
@@ -448,6 +449,8 @@ class Nav2ConfigNode(Node):
         elif op == 'load_map':
             _, map_url = item
             self._do_load_map(map_url)
+        elif op == 'discover':
+            self._on_discovery_tick()
         else:
             logger.warning('Unknown request op: %r', op)
 

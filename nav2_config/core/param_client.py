@@ -62,7 +62,8 @@ def _make_parameter_value(value: Any, type_hint: str) -> ParameterValue:
     """Build a ``ParameterValue`` message from a Python value and schema type hint.
 
     ``type_hint`` comes from ``Nav2ParamDef.type``: one of
-    ``"double"``, ``"int"``, ``"bool"``, ``"string"``, ``"string_array"``.
+    ``"double"``, ``"int"``, ``"bool"``, ``"string"``, ``"string_array"``,
+    ``"bool_array"``, ``"int_array"``, ``"double_array"``.
     """
     pv = ParameterValue()
     if type_hint == "bool":
@@ -77,9 +78,18 @@ def _make_parameter_value(value: Any, type_hint: str) -> ParameterValue:
     elif type_hint == "string":
         pv.type = ParameterType.PARAMETER_STRING
         pv.string_value = str(value)
+    elif type_hint == "bool_array":
+        pv.type = ParameterType.PARAMETER_BOOL_ARRAY
+        pv.bool_array_value = [bool(v) for v in value]
+    elif type_hint == "int_array":
+        pv.type = ParameterType.PARAMETER_INTEGER_ARRAY
+        pv.integer_array_value = [int(v) for v in value]
+    elif type_hint == "double_array":
+        pv.type = ParameterType.PARAMETER_DOUBLE_ARRAY
+        pv.double_array_value = [float(v) for v in value]
     elif type_hint == "string_array":
         pv.type = ParameterType.PARAMETER_STRING_ARRAY
-        pv.string_array_value = [str(v) for v in value]
+        pv.string_array_value = list(value)
     else:
         # Best-effort type inference for unknown schema types.
         if isinstance(value, bool):

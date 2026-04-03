@@ -311,7 +311,10 @@ class ParamRow(QWidget):
         """Instantiate the appropriate input widget from the param schema."""
         defn = self._param_value.definition
         val = self._param_value.current_value
-        current_str = str(val) if val is not None else ''
+        if isinstance(val, list):
+            current_str = ', '.join(str(v) for v in val)
+        else:
+            current_str = str(val) if val is not None else ''
 
         if defn.type == 'bool':
             w = ParamToggle()
@@ -424,6 +427,24 @@ class ParamRow(QWidget):
         dot and name style, emits ``param_changed`` for the YAML panel, and
         updates the Set button state.
         """
+        param_type = self._param_value.definition.type
+        if param_type in ('string_array', 'bool_array', 'int_array', 'double_array') \
+                and isinstance(value, str):
+            items = [item.strip() for item in value.split(',') if item.strip()]
+            if param_type == 'bool_array':
+                value = [v.lower() in ('true', '1', 'yes') for v in items]
+            elif param_type == 'int_array':
+                try:
+                    value = [int(v) for v in items]
+                except ValueError:
+                    pass
+            elif param_type == 'double_array':
+                try:
+                    value = [float(v) for v in items]
+                except ValueError:
+                    pass
+            else:
+                value = items
         self._param_value.update(value)
         self._modified_dot.setVisible(self._param_value.is_modified)
         self._update_name_style()
