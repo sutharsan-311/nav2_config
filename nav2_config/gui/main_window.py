@@ -1008,7 +1008,8 @@ class MainWindow(QMainWindow):
         self.set_status(f'Loaded config: {filepath}')
 
     def _on_params_externally_changed(self, node_name: str, changed: list) -> None:
-        for param_name, _new_value in changed:
+        for param_name, new_value in changed:
+            self._param_panel.update_param_value(param_name, new_value)
             self._param_panel.highlight_external_change(param_name)
         if len(changed) == 1:
             name, val = changed[0]

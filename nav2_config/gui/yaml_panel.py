@@ -275,7 +275,7 @@ class YamlPanel(QWidget):
             self._update_title(1)
             return
 
-        bare = self._current_node.lstrip('/')
+        bare = self._current_node.lstrip('/').split('/')[0]
         section = self._extract_node_section(self._full_yaml_str or '', bare)
 
         if section is None:

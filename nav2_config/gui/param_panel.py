@@ -723,6 +723,13 @@ class ParamPanel(QWidget):
             fv = file_values.get(param_name)
             row.update_file_value(fv)
 
+    def update_param_value(self, param_name: str, value: Any) -> None:
+        """Apply a live-updated value to the matching param row."""
+        for row in self._all_rows:
+            if row._param_value.definition.param == param_name:
+                row.set_value(value)
+                break
+
     def highlight_external_change(self, param_name: str) -> None:
         """Flash a param row with RViz2 blue to indicate an externally-set change."""
         from PyQt6.QtCore import QTimer

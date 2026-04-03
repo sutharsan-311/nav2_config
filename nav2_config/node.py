@@ -152,8 +152,8 @@ class Nav2ConfigNode(Node):
             for path in LIFECYCLE_MANAGERS
         }
 
-        #: Currently-detected lifecycle_manager node path, or None if not running.
-        self._lifecycle_manager_node: str | None = None
+        #: All currently-running lifecycle_manager node paths.
+        self._active_lifecycle_managers: set[str] = set()
 
         #: Thread-safe queue for GUI → ROS2 parameter operation requests.
         #: Each item is a tuple: ("fetch", node_name) or ("set", ...) or lifecycle ops.
@@ -718,19 +718,17 @@ class Nav2ConfigNode(Node):
         self,
         nodes_and_ns: list[tuple[str, str]] | None = None,
     ) -> None:
-        """Detect whether a lifecycle_manager is running; emit signal on change."""
+        """Detect all running lifecycle_managers; emit signal on change."""
         mgr_status = discover_lifecycle_managers(self, nodes_and_ns)
-        # Use the first running manager found (navigation takes priority).
-        active = next((p for p in LIFECYCLE_MANAGERS if mgr_status.get(p)), None)
-        if active != self._lifecycle_manager_node:
-            self._lifecycle_manager_node = active
-            self.signals.lifecycle_manager_status.emit(
-                active is not None,
-                active or '',
-            )
+        active = {p for p, running in mgr_status.items() if running}
+        if active != self._active_lifecycle_managers:
+            self._active_lifecycle_managers = active
+            present = bool(active)
+            primary = next(iter(sorted(active))) if active else ''
+            self.signals.lifecycle_manager_status.emit(present, primary)
             if active:
                 self.get_logger().info(
-                    f'lifecycle_manager detected: {active} — using managed lifecycle operations'
+                    f'lifecycle_managers detected: {sorted(active)}'
                 )
             else:
                 self.get_logger().info(
@@ -738,14 +736,13 @@ class Nav2ConfigNode(Node):
                 )
 
     def _do_lifecycle_manager_restart(self) -> None:
-        """Restart all Nav2 nodes via lifecycle_manager's manage_nodes service.
+        """Restart all Nav2 nodes via all active lifecycle_managers.
 
-        If lifecycle_manager is not detected, falls back to the direct
+        If no lifecycle_manager is detected, falls back to the direct
         per-node restart sequence.  Emits ``lifecycle_progress`` and
-        ``lifecycle_change_result``.
+        a single aggregated ``lifecycle_change_result``.
         """
-        mgr_path = self._lifecycle_manager_node
-        if mgr_path is None:
+        if not self._active_lifecycle_managers:
             self.get_logger().warning(
                 'request_nav2_stack_restart: no lifecycle_manager detected, '
                 'falling back to direct per-node restart'
@@ -753,14 +750,20 @@ class Nav2ConfigNode(Node):
             self._do_lifecycle_restart_all()
             return
 
-        client = self._lifecycle_manager_clients[mgr_path]
+        all_ok = True
+        result_lines: list[str] = []
+        for mgr_path in sorted(self._active_lifecycle_managers):
+            client = self._lifecycle_manager_clients[mgr_path]
 
-        def _progress(step: str) -> None:
-            self.signals.lifecycle_progress.emit(mgr_path, step)
+            def _progress(step: str, _mgr: str = mgr_path) -> None:
+                self.signals.lifecycle_progress.emit(_mgr, step)
 
-        success, msg = client.restart_stack(progress_cb=_progress)
-        self.signals.lifecycle_change_result.emit(mgr_path, success, msg)
-        self.get_logger().info(f'lifecycle_manager restart via {mgr_path}: {msg}')
+            ok, msg = client.restart_stack(progress_cb=_progress)
+            all_ok = all_ok and ok
+            result_lines.append(f'{mgr_path.lstrip("/")} → {msg}')
+            self.get_logger().info(f'lifecycle_manager restart via {mgr_path}: {msg}')
+
+        self.signals.lifecycle_change_result.emit('', all_ok, '; '.join(result_lines))
 
         # Re-poll all lifecycle states after the restart completes.
         discovered = self._prev_discovered or set()
@@ -774,14 +777,13 @@ class Nav2ConfigNode(Node):
             self.signals.lifecycle_states_updated.emit(new_states)
 
     def _do_lifecycle_manager_pause(self) -> None:
-        """Pause all Nav2 nodes via lifecycle_manager's PAUSE command.
+        """Pause all Nav2 nodes via all active lifecycle_managers.
 
         Deactivates all managed nodes without cleanup — they land in
-        ``inactive`` state.  If lifecycle_manager is not detected, emits a
+        ``inactive`` state.  If no lifecycle_manager is detected, emits a
         failure result so the GUI can report it without crashing.
         """
-        mgr_path = self._lifecycle_manager_node
-        if mgr_path is None:
+        if not self._active_lifecycle_managers:
             self.get_logger().warning(
                 'request_lifecycle_pause_stack: no lifecycle_manager detected — cannot pause'
             )
@@ -790,11 +792,16 @@ class Nav2ConfigNode(Node):
             )
             return
 
-        client = self._lifecycle_manager_clients[mgr_path]
-        success = client.pause()
-        msg = 'Stack paused (nodes inactive)' if success else 'Pause failed'
-        self.signals.lifecycle_change_result.emit(mgr_path, success, msg)
-        self.get_logger().info(f'lifecycle_manager pause via {mgr_path}: {msg}')
+        all_ok = True
+        for mgr_path in sorted(self._active_lifecycle_managers):
+            ok = self._lifecycle_manager_clients[mgr_path].pause()
+            all_ok = all_ok and ok
+            self.get_logger().info(
+                f'lifecycle_manager pause via {mgr_path}: {"ok" if ok else "failed"}'
+            )
+
+        msg = 'Stack paused (nodes inactive)' if all_ok else 'Pause failed'
+        self.signals.lifecycle_change_result.emit('', all_ok, msg)
 
         # Re-poll states so the GUI reflects inactive immediately.
         discovered = self._prev_discovered or set()

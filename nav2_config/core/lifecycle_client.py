@@ -119,8 +119,12 @@ class LifecycleClient:
         result_holder: list[object] = [None]
 
         def _on_done(fut: object) -> None:
-            result_holder[0] = fut.result()
-            done_event.set()
+            try:
+                result_holder[0] = fut.result()
+            except Exception as exc:
+                logger.warning('Lifecycle service call failed on %s: %s', client.srv_name, exc)
+            finally:
+                done_event.set()
 
         future.add_done_callback(_on_done)
         if not done_event.wait(timeout=_SERVICE_TIMEOUT):
@@ -390,8 +394,15 @@ class LifecycleManagerClient:
         result_holder: list[object] = [None]
 
         def _on_done(fut: object) -> None:
-            result_holder[0] = fut.result()
-            done_event.set()
+            try:
+                result_holder[0] = fut.result()
+            except Exception as exc:
+                logger.warning(
+                    'lifecycle_manager %s command %d failed: %s',
+                    self._manager_path, command, exc,
+                )
+            finally:
+                done_event.set()
 
         future.add_done_callback(_on_done)
         if not done_event.wait(timeout=_MGR_CALL_TIMEOUT):

@@ -175,8 +175,14 @@ class Nav2ServiceCaller:
         result_holder: list[Any] = [None]
 
         def _on_done(fut: Any) -> None:
-            result_holder[0] = fut.result()
-            done_event.set()
+            try:
+                result_holder[0] = fut.result()
+            except Exception as exc:
+                self._node.get_logger().warning(
+                    f'Service call failed on {client.srv_name}: {exc}'
+                )
+            finally:
+                done_event.set()
 
         future = client.call_async(request)
         future.add_done_callback(_on_done)

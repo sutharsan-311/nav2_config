@@ -170,8 +170,12 @@ class Nav2ParamClient:
         result_holder: list[Any] = [None]
 
         def _on_done(fut: Any) -> None:
-            result_holder[0] = fut.result()
-            done_event.set()
+            try:
+                result_holder[0] = fut.result()
+            except Exception as exc:
+                logger.warning("Service call failed on %s: %s", client.srv_name, exc)
+            finally:
+                done_event.set()
 
         future.add_done_callback(_on_done)
 
