@@ -270,6 +270,7 @@ class MainWindow(QMainWindow):
         self._node = node
         self._config_file: 'ConfigFile | None' = config_file
         self._dirty: bool = False
+        self._pending_config_set: dict[str, tuple] = {}
         self._current_params: list[ParamValue] = []
         self._all_node_params: dict[str, list[ParamValue]] = {}
         self._saved_panel_sizes: list[int] = [240, 10000, 300]
@@ -671,12 +672,12 @@ class MainWindow(QMainWindow):
                 post_set_action = row._param_value.definition.post_set_action
                 break
 
-        # Always update the config file in-memory when one is loaded
-        if self._config_file:
-            self._config_file.set_value(node_name, ros2_name, value)
-            self._mark_dirty()
-
         if hot_reload:
+            # Stage config change — applied only after ROS2 confirms success.
+            # This prevents the in-memory config from diverging when the set
+            # call times out or is rejected by the node.
+            if self._config_file:
+                self._pending_config_set[param_name] = (node_name, ros2_name, value)
             # Immediate live effect via ROS2 service.
             # Any follow-up action (clear_costmaps, load_map, nomotion_update)
             # is handled automatically by _after_param_set in the ROS2 thread.
@@ -684,22 +685,30 @@ class MainWindow(QMainWindow):
                 self.set_status('Loading map...', timeout_ms=0)
             self._node.request_set_param(node_name, param_name, value, type_hint)
         else:
-            # Non-hot-reload: auto-save config to disk; restart Nav2 to apply.
+            # Non-hot-reload: update config in-memory then save to disk immediately.
             if self._config_file:
+                self._config_file.set_value(node_name, ros2_name, value)
+                self._mark_dirty()
                 try:
                     self._config_file.save()
                 except Exception as exc:
                     logger.warning('Auto-save failed after non-hot-reload param set: %s', exc)
-                else:
-                    self._dirty = False
-                    self._update_title()
-                    self._yaml_panel.set_save_button_dirty(False)
-                    self._yaml_panel.set_file_content(
-                        self._config_file.to_yaml_string(), dirty=False
+                    QMessageBox.critical(
+                        self,
+                        'Save Failed',
+                        f'Could not save config to disk:\n{exc}\n\n'
+                        'The parameter change was NOT written to the file.',
                     )
-                    self._node.get_logger().info(
-                        f"Config saved: {param_name} = {value}"
-                    )
+                    return
+                self._dirty = False
+                self._update_title()
+                self._yaml_panel.set_save_button_dirty(False)
+                self._yaml_panel.set_file_content(
+                    self._config_file.to_yaml_string(), dirty=False
+                )
+                self._node.get_logger().info(
+                    f"Config saved: {param_name} = {value}"
+                )
             self._param_panel.mark_param_file_saved(param_name)
             self._node_panel.set_node_restart_pending(node_name, True)
             self.set_status(f'Config saved: {param_name}. Restart Nav2 to apply.')
@@ -735,6 +744,13 @@ class MainWindow(QMainWindow):
     ) -> None:
         # Route result to the matching row's Set button (updates confirmed_value).
         self._param_panel.update_set_result(param_name, success)
+
+        # Apply or discard the staged config change for hot-reload params.
+        staged = self._pending_config_set.pop(param_name, None)
+        if staged is not None and success and self._config_file:
+            staged_node, staged_ros2_name, staged_value = staged
+            self._config_file.set_value(staged_node, staged_ros2_name, staged_value)
+            self._mark_dirty()
 
         # Refresh YAML panel
         if self._config_file:

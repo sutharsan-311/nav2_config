@@ -445,6 +445,16 @@ class ParamRow(QWidget):
                     pass
             else:
                 value = items
+        if param_type == 'int' and isinstance(value, str):
+            try:
+                value = int(value)
+            except ValueError:
+                pass
+        elif param_type == 'double' and isinstance(value, str):
+            try:
+                value = float(value)
+            except ValueError:
+                pass
         self._param_value.update(value)
         self._modified_dot.setVisible(self._param_value.is_modified)
         self._update_name_style()
