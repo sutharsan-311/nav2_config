@@ -172,11 +172,24 @@ class _RestartAllProgressDialog(QDialog):
     and updates its log text area in real time.
     """
 
-    def __init__(self, node_count: int, parent: QWidget | None = None) -> None:
+    def __init__(self, node_count: int, signals: object, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._expected = node_count
         self._done_count = 0
+        self._signals = signals
         self._build_ui()
+        self.finished.connect(self._cleanup)
+
+    def _cleanup(self) -> None:
+        """Disconnect owned signal connections when the dialog closes."""
+        try:
+            self._signals.lifecycle_progress.disconnect(self.on_progress)
+        except (RuntimeError, TypeError):
+            pass
+        try:
+            self._signals.lifecycle_change_result.disconnect(self.on_result)
+        except (RuntimeError, TypeError):
+            pass
 
     def _build_ui(self) -> None:
         self.setWindowTitle('Restarting Nav2 Stack...')
@@ -693,13 +706,17 @@ class MainWindow(QMainWindow):
 
             def _on_save_restart() -> None:
                 self.set_status('Restarting Nav2 via lifecycle_manager...', timeout_ms=0)
-                dialog = _RestartAllProgressDialog(1, parent=self)
+                dialog = _RestartAllProgressDialog(1, signals=self._node.signals, parent=self)
                 self._node.signals.lifecycle_progress.connect(dialog.on_progress)
                 self._node.signals.lifecycle_change_result.connect(dialog.on_result)
-                self._node.signals.lifecycle_change_result.connect(
-                    lambda _np, ok, _msg, n=node_name: (
-                        self._node_panel.set_node_restart_pending(n, False) if ok else None
-                    )
+
+                def _clear_pending(_np: str, ok: bool, _msg: str, n: str = node_name) -> None:
+                    if ok:
+                        self._node_panel.set_node_restart_pending(n, False)
+
+                self._node.signals.lifecycle_change_result.connect(_clear_pending)
+                dialog.finished.connect(
+                    lambda: self._node.signals.lifecycle_change_result.disconnect(_clear_pending)
                 )
                 self._node.request_nav2_stack_restart()
                 dialog.show()
@@ -815,7 +832,7 @@ class MainWindow(QMainWindow):
         """Show the restart notification bar when a restart_stack param is set live."""
         def _on_save_restart() -> None:
             self.set_status('Restarting Nav2 via lifecycle_manager...', timeout_ms=0)
-            dialog = _RestartAllProgressDialog(1, parent=self)
+            dialog = _RestartAllProgressDialog(1, signals=self._node.signals, parent=self)
             self._node.signals.lifecycle_progress.connect(dialog.on_progress)
             self._node.signals.lifecycle_change_result.connect(dialog.on_result)
             self._node.request_nav2_stack_restart()
@@ -888,6 +905,7 @@ class MainWindow(QMainWindow):
         if not result:
             return
         filepath: str = dialog.selected_filepath()  # type: ignore[attr-defined]
+        connect_to_nodes: bool = dialog.connect_to_nodes()  # type: ignore[attr-defined]
         if not filepath:
             return
         from nav2_config.core.config_file import ConfigFile
@@ -906,6 +924,9 @@ class MainWindow(QMainWindow):
         self._add_recent_file(filepath)
         self.set_status(f'Loaded config: {filepath}')
         logger.info('Config loaded: %s', filepath)
+        watched = self._node._watcher.watched_node
+        if connect_to_nodes and watched and self._node._prev_discovered:
+            self._node.request_fetch_params(watched)
 
     def _on_save(self) -> None:
         """File > Save (Ctrl+S): write the config file in place."""
@@ -1125,13 +1146,17 @@ class MainWindow(QMainWindow):
             self.set_status(
                 f'Nav2 stack restart triggered by change on {bare}...', timeout_ms=0
             )
-            dialog = _RestartAllProgressDialog(1, parent=self)
+            dialog = _RestartAllProgressDialog(1, signals=self._node.signals, parent=self)
             self._node.signals.lifecycle_progress.connect(dialog.on_progress)
             self._node.signals.lifecycle_change_result.connect(dialog.on_result)
-            self._node.signals.lifecycle_change_result.connect(
-                lambda np, ok, _msg, n=node_path: (
-                    self._node_panel.set_node_restart_pending(n, False) if ok else None
-                )
+
+            def _clear_pending(_np: str, ok: bool, _msg: str, n: str = node_path) -> None:
+                if ok:
+                    self._node_panel.set_node_restart_pending(n, False)
+
+            self._node.signals.lifecycle_change_result.connect(_clear_pending)
+            dialog.finished.connect(
+                lambda: self._node.signals.lifecycle_change_result.disconnect(_clear_pending)
             )
             self._node.request_nav2_stack_restart()
             dialog.show()
@@ -1215,7 +1240,7 @@ class MainWindow(QMainWindow):
                 return
 
             # One result expected (lifecycle_change_result from lifecycle_manager restart)
-            dialog = _RestartAllProgressDialog(1, parent=self)
+            dialog = _RestartAllProgressDialog(1, signals=self._node.signals, parent=self)
             self._node.signals.lifecycle_progress.connect(dialog.on_progress)
             self._node.signals.lifecycle_change_result.connect(dialog.on_result)
             self._node.request_nav2_stack_restart()
@@ -1244,7 +1269,7 @@ class MainWindow(QMainWindow):
         if reply != QMessageBox.StandardButton.Yes:
             return
 
-        dialog = _RestartAllProgressDialog(discovered_count, parent=self)
+        dialog = _RestartAllProgressDialog(discovered_count, signals=self._node.signals, parent=self)
         self._node.signals.lifecycle_progress.connect(dialog.on_progress)
         self._node.signals.lifecycle_change_result.connect(dialog.on_result)
         self._node.request_lifecycle_restart_all()

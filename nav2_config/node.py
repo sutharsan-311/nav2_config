@@ -349,6 +349,8 @@ class Nav2ConfigNode(Node):
             fresh = self._build_param_values(watched)
         except Exception:
             return  # Node may have gone offline — silently skip this tick.
+        if not any(pv.is_live for pv in fresh):
+            return  # All params are schema defaults — node is offline, skip diff.
         changed = self._watcher.diff(fresh)
         if changed:
             self.signals.params_externally_changed.emit(watched, changed)

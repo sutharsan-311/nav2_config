@@ -27,6 +27,8 @@ if TYPE_CHECKING:
     from rclpy.callback_groups import CallbackGroup
     from rclpy.node import Node
 
+from nav2_config.core.node_discovery import NAV2_NODES
+
 logger = logging.getLogger(__name__)
 
 #: Seconds to wait for a lifecycle service response before giving up.
@@ -38,18 +40,8 @@ _AVAILABILITY_TIMEOUT: float = 2.0
 #: Short timeout used when polling lifecycle state for all discovered nodes.
 _POLL_AVAILABILITY_TIMEOUT: float = 0.3
 
-#: Restart order matching Nav2's lifecycle_manager conventions.
-NAV2_RESTART_ORDER: list[str] = [
-    '/map_server',
-    '/amcl',
-    '/controller_server',
-    '/planner_server',
-    '/behavior_server',
-    '/bt_navigator',
-    '/smoother_server',
-    '/velocity_smoother',
-    '/waypoint_follower',
-]
+#: Restart order derived from NAV2_NODES — single source of truth, includes costmap nodes.
+NAV2_RESTART_ORDER: list[str] = list(NAV2_NODES.keys())
 
 
 class LifecycleClient:
