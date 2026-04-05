@@ -8,6 +8,12 @@ Tune your robot's navigation parameters **while it's running** — without killi
 
 ![nav2_config](screenshot.png)
 
+## Demo
+
+[![nav2_config demo](https://img.youtube.com/vi/e--45aJRZY4/maxresdefault.jpg)](https://www.youtube.com/watch?v=e--45aJRZY4)
+
+> Click to watch — real-time parameter tuning on a running Nav2 stack
+
 ## Features
 
 - **Real-time parameter tuning** — change a parameter via `ros2 param set`, the effect is immediate on the running robot
@@ -15,9 +21,12 @@ Tune your robot's navigation parameters **while it's running** — without killi
 - **Works with ANY Nav2 plugin** — reads live parameters directly, not just hardcoded schema entries
 - **278 parameters** with descriptions, ranges, and tuning advice
 - **Per-param Set button** — visual feedback cycle: idle → ready → pending → success / failed
+- **Config staged until set succeeds** — changes are only committed to the config file after ROS2 confirms the set succeeded; no silent corruption
 - **Automatic post-set service calls** — clears costmaps, reloads map, triggers AMCL nomotion update after relevant param changes
 - **Config file as source of truth** — load/save `nav2_params.yaml`; startup dialog lets you pick a config file
-- **Lifecycle management** — restart the Nav2 stack via `lifecycle_manager` from the GUI
+- **Lifecycle control panel** — Restart Stack / Pause Stack buttons with per-node state badges; works with multiple lifecycle managers (navigation + localization)
+- **Array parameter editing** — edit plugin lists, observation sources, and other array params directly in the GUI
+- **External change detection** — detects params changed outside nav2_config (via `ros2 param set` or another tool) and syncs the UI automatically
 - **RViz2-native light theme** — looks at home alongside RViz2, rqt, and Foxglove
 - **Topic and TF frame dropdowns** — auto-populated from the live ROS2 graph
 - **YAML preview** — live-generated YAML with syntax highlighting
@@ -69,7 +78,7 @@ source ~/ros2_ws/install/setup.bash
 ros2 run nav2_config gui
 ```
 
-On startup, a dialog asks you to select a `nav2_params.yaml` config file. This file is used as the source of truth for parameter values. Click any node in the left panel to view and edit its parameters.
+On startup, a dialog asks you to select a `nav2_params.yaml` config file. This file is the source of truth for parameter values. Click any node in the left panel to view and edit its parameters.
 
 ## Keyboard Shortcuts
 
@@ -97,6 +106,10 @@ Parameters that require a node restart (like changing plugins) are written to th
 | YAML config file management | ✗ | ✓ |
 | Post-set service calls | ✗ | ✓ |
 | Lifecycle management | ✗ | ✓ |
+| Array parameter editing (plugins, observation sources) | ✗ | ✓ |
+| Lifecycle control panel | ✗ | ✓ |
+| Multi lifecycle_manager support | ✗ | ✓ |
+| External change detection | ✗ | ✓ |
 | RViz2 light theme | ✗ | ✓ |
 
 ## Contributing
