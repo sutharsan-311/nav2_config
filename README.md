@@ -1,8 +1,19 @@
 # nav2_config
 
-> Real-time visual parameter tuning GUI for ROS2 Nav2
+> Real-time Nav2 tuning — no restart needed
 
 Tune your robot's navigation parameters **while it's running** — without killing and relaunching nodes. nav2_config connects to your live Nav2 stack and gives you a visual editor for every navigation parameter. Change `max_vel_x` and watch your robot speed up. Adjust `inflation_radius` and see the costmap respond. No more edit–kill–relaunch–wait–test cycles.
+
+## Why this matters
+
+Nav2 tuning without this tool looks like:
+- Edit YAML
+- Kill the stack
+- Wait for bringup
+- Test
+- Repeat
+
+nav2_config cuts that loop. Change a param, see the effect, adjust again — all on a running robot.
 
 ## Screenshot
 
@@ -16,22 +27,25 @@ Tune your robot's navigation parameters **while it's running** — without killi
 
 ## Features
 
+**Core**
 - **Real-time parameter tuning** — change a parameter via `ros2 param set`, the effect is immediate on the running robot
 - **Auto-discovery** — continuously polls for running Nav2 nodes via ROS2 node graph
 - **Works with ANY Nav2 plugin** — reads live parameters directly, not just hardcoded schema entries
 - **278 parameters** with descriptions, ranges, and tuning advice
 - **Per-param Set button** — visual feedback cycle: idle → ready → pending → success / failed
-- **Config staged until set succeeds** — changes are only committed to the config file after ROS2 confirms the set succeeded; no silent corruption
-- **Automatic post-set service calls** — clears costmaps, reloads map, triggers AMCL nomotion update after relevant param changes
 - **Config file as source of truth** — load/save `nav2_params.yaml`; startup dialog lets you pick a config file
-- **Lifecycle control panel** — Restart Stack / Pause Stack buttons with per-node state badges; works with multiple lifecycle managers (navigation + localization)
-- **Array parameter editing** — edit plugin lists, observation sources, and other array params directly in the GUI
-- **External change detection** — detects params changed outside nav2_config (via `ros2 param set` or another tool) and syncs the UI automatically
 - **RViz2-native light theme** — looks at home alongside RViz2, rqt, and Foxglove
 - **Topic and TF frame dropdowns** — auto-populated from the live ROS2 graph
 - **YAML preview** — live-generated YAML with syntax highlighting
-- **Plugin-aware filtering** — show only RPP / MPPI / DWB or NavFn / Smac / ThetaStar params
 - **Keyboard shortcuts** — `Ctrl+K` search, `Ctrl+S` save, `Ctrl+O` load
+
+**Advanced**
+- **Lifecycle control panel** — Restart Stack / Pause Stack buttons with per-node state badges
+- **Multi lifecycle_manager support** — works with navigation + localization managers simultaneously
+- **Array parameter editing** — edit plugin lists, observation sources, and other array params directly in the GUI
+- **Automatic post-set service calls** — clears costmaps, reloads map, triggers AMCL nomotion update after relevant param changes
+- **External change detection** — detects params changed outside nav2_config (via `ros2 param set` or another tool) and syncs the UI automatically
+- **Config staged until set succeeds** — changes are only committed to the config file after ROS2 confirms the set succeeded; no silent corruption
 
 ## Supported ROS2 Distros
 
@@ -89,12 +103,6 @@ On startup, a dialog asks you to select a `nav2_params.yaml` config file. This f
 | `Ctrl+O` | Load YAML |
 | `Escape` | Clear search |
 
-## How It Works
-
-nav2_config uses ROS2's built-in parameter services (`list_parameters`, `get_parameters`, `set_parameters`) to read and write parameters on running nodes. Most Nav2 parameters support dynamic reconfiguration — changes take effect immediately without restarting the node.
-
-Parameters that require a node restart (like changing plugins) are written to the config file and queued for the next Nav2 lifecycle restart.
-
 ## vs rqt_reconfigure
 
 | Feature | rqt_reconfigure | nav2_config |
@@ -111,6 +119,12 @@ Parameters that require a node restart (like changing plugins) are written to th
 | Multi lifecycle_manager support | ✗ | ✓ |
 | External change detection | ✗ | ✓ |
 | RViz2 light theme | ✗ | ✓ |
+
+## How It Works
+
+nav2_config uses ROS2's built-in parameter services (`list_parameters`, `get_parameters`, `set_parameters`) to read and write parameters on running nodes. Most Nav2 parameters support dynamic reconfiguration — changes take effect immediately without restarting the node.
+
+Parameters that require a node restart (like changing plugins) are written to the config file and queued for the next Nav2 lifecycle restart.
 
 ## Contributing
 
