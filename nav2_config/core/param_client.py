@@ -222,7 +222,7 @@ class Nav2ParamClient:
         logger.debug("list_params(%s): %d params", node_name, len(names))
         return names
 
-    def get_params(self, node_name: str, param_names: list[str]) -> dict[str, Any]:
+    def get_params(self, node_name: str, param_names: list[str]) -> dict[str, tuple[Any, int]]:
         """Fetch current values for the given parameter names from a Nav2 node.
 
         Calls ``/{node_name}/get_parameters``.
@@ -232,8 +232,9 @@ class Nav2ParamClient:
             param_names: Names of parameters to fetch.
 
         Returns:
-            ``{name: value}`` dict for each successfully retrieved parameter.
-            Parameters that could not be fetched (e.g. not set) are omitted.
+            ``{name: (value, ros2_type)}`` dict for each successfully retrieved
+            parameter, where ``ros2_type`` is the raw ``ParameterType`` int from
+            the ROS2 response.  Parameters that could not be fetched are omitted.
         """
         if not param_names:
             return {}
@@ -246,10 +247,10 @@ class Nav2ParamClient:
         if response is None:
             return {}
 
-        result: dict[str, Any] = {}
+        result: dict[str, tuple[Any, int]] = {}
         for name, pv in zip(param_names, response.values):
             if pv.type != ParameterType.PARAMETER_NOT_SET:
-                result[name] = _extract_value(pv)
+                result[name] = (_extract_value(pv), pv.type)
 
         logger.debug("get_params(%s): fetched %d/%d", node_name, len(result), len(param_names))
         return result
@@ -349,7 +350,9 @@ class Nav2ParamClient:
         # only request params that actually exist on the running node.
         existing_names: set[str] = set(self.list_params(node_name))
         ros2_names = [d.ros2_name for d in node_defs if d.ros2_name in existing_names]
-        live_values = self.get_params(node_name, ros2_names) if ros2_names else {}
+        live_typed = self.get_params(node_name, ros2_names) if ros2_names else {}
+        # Strip type info — schema-defined params already carry the correct type.
+        live_values = {k: v for k, (v, _) in live_typed.items()}
 
         result: list[ParamValue] = []
         for d in node_defs:

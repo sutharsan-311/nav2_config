@@ -12,6 +12,7 @@ from typing import Any
 import rclpy
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.node import Node
+from rcl_interfaces.msg import ParameterType
 from PyQt6.QtCore import QObject, pyqtSignal
 
 from nav2_config.core.lifecycle_client import LifecycleClient, LifecycleManagerClient, NAV2_RESTART_ORDER
@@ -491,12 +492,13 @@ class Nav2ConfigNode(Node):
             # Node offline — fall back to schema defaults so the panel isn't empty.
             return self._param_client.get_all_nav2_params(node_name, self._schema)
 
-        live_values = self._param_client.get_params(node_name, live_names)
+        live_typed = self._param_client.get_params(node_name, live_names)
 
         results: list[ParamValue] = []
         for name in live_names:
             schema_entry = self._find_schema_entry(node_name, name)
-            value = live_values.get(name)
+            entry = live_typed.get(name)
+            value, ros2_type = entry if entry is not None else (None, None)
 
             if schema_entry:
                 results.append(ParamValue(
@@ -506,7 +508,7 @@ class Nav2ConfigNode(Node):
                     is_live=(value is not None),
                 ))
             else:
-                param_type = self._detect_type(value)
+                param_type = self._detect_type(value, ros2_type)
                 category = _dot_prefix_category(name)
                 defn = Nav2ParamDef(
                     node=bare_node,
@@ -534,9 +536,29 @@ class Nav2ConfigNode(Node):
 
         return results
 
+    _ROS2_TYPE_MAP: dict[int, str] = {
+        ParameterType.PARAMETER_BOOL:          'bool',
+        ParameterType.PARAMETER_INTEGER:       'int',
+        ParameterType.PARAMETER_DOUBLE:        'double',
+        ParameterType.PARAMETER_STRING:        'string',
+        ParameterType.PARAMETER_BOOL_ARRAY:    'bool_array',
+        ParameterType.PARAMETER_INTEGER_ARRAY: 'int_array',
+        ParameterType.PARAMETER_DOUBLE_ARRAY:  'double_array',
+        ParameterType.PARAMETER_STRING_ARRAY:  'string_array',
+    }
+
     @staticmethod
-    def _detect_type(value: object) -> str:
-        """Infer a schema type string from a Python value returned by ROS2."""
+    def _detect_type(value: object, ros2_type: int | None = None) -> str:
+        """Infer a schema type string from a Python value returned by ROS2.
+
+        Uses the authoritative ROS2 ParameterType when available (live params).
+        Falls back to Python type inference for schema-only paths, with a
+        special case: a string of comma-separated numbers is treated as
+        double_array (handles params loaded from YAML as a quoted list).
+        """
+        if ros2_type is not None and ros2_type in Nav2ConfigNode._ROS2_TYPE_MAP:
+            return Nav2ConfigNode._ROS2_TYPE_MAP[ros2_type]
+
         if isinstance(value, bool):
             return 'bool'
         if isinstance(value, int):
@@ -551,6 +573,14 @@ class Nav2ConfigNode(Node):
             if value and all(isinstance(v, float) for v in value):
                 return 'double_array'
             return 'string_array'
+        if isinstance(value, str):
+            parts = [s.strip() for s in value.split(',')]
+            if len(parts) > 1:
+                try:
+                    [float(p) for p in parts]
+                    return 'double_array'
+                except ValueError:
+                    pass
         return 'string'
 
     def _set_param(

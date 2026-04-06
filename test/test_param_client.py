@@ -192,7 +192,11 @@ def test_get_params_returns_values(client: Nav2ParamClient) -> None:
 
     result = client.get_params("/controller_server", ["controller_frequency", "min_x_velocity_threshold"])
 
-    assert result == {"controller_frequency": 20.0, "min_x_velocity_threshold": 5}
+    from rcl_interfaces.msg import ParameterType
+    assert result == {
+        "controller_frequency": (20.0, ParameterType.PARAMETER_DOUBLE),
+        "min_x_velocity_threshold": (5, ParameterType.PARAMETER_INTEGER),
+    }
 
 
 def test_get_params_empty_input_returns_empty(client: Nav2ParamClient) -> None:
