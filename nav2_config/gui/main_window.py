@@ -551,6 +551,7 @@ class MainWindow(QMainWindow):
             self._on_lifecycle_action_requested
         )
         self._node_panel.pause_stack_requested.connect(self._on_pause_stack)
+        self._node_panel.resume_stack_requested.connect(self._on_resume_stack)
         self._param_panel.lifecycle_action_requested.connect(
             self._on_lifecycle_action_requested
         )
@@ -1096,6 +1097,11 @@ class MainWindow(QMainWindow):
         """Handler for Pause Stack button — fire immediately, no confirmation."""
         self._node.request_lifecycle_pause_stack()
         self.set_status('Pausing Nav2 stack...')
+
+    def _on_resume_stack(self) -> None:
+        """Handler for Resume Stack button — fire immediately, no confirmation."""
+        self._node.request_lifecycle_resume_stack()
+        self.set_status('Resuming Nav2 stack...')
 
     def _on_lifecycle_manager_status(self, present: bool, manager_path: str) -> None:
         """Called when lifecycle_manager presence changes."""

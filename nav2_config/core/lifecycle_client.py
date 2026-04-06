@@ -444,11 +444,21 @@ class LifecycleManagerClient:
         """Send PAUSE — deactivates all managed nodes without cleanup.
 
         Nodes land in ``inactive`` state and can be resumed cheaply with
-        :meth:`startup` (STARTUP).  This is the safe way to temporarily halt
+        :meth:`resume` (RESUME).  This is the safe way to temporarily halt
         navigation without a full RESET/STARTUP cycle.
         """
         logger.info('lifecycle_manager %s: sending PAUSE', self._manager_path)
         return self._call_command(_MGR_PAUSE)
+
+    def resume(self) -> bool:
+        """Send RESUME — reactivates all managed nodes from ``inactive`` state.
+
+        This is the lightweight counterpart to :meth:`pause`.  Nodes return to
+        ``active`` state without going through RESET/STARTUP, so it is much
+        faster than a full restart.
+        """
+        logger.info('lifecycle_manager %s: sending RESUME', self._manager_path)
+        return self._call_command(_MGR_RESUME)
 
     def restart_stack(
         self,

@@ -316,12 +316,25 @@ class Nav2ConfigNode(Node):
 
         Sends the PAUSE command to lifecycle_manager, which deactivates all
         managed nodes without cleanup.  Nodes land in ``inactive`` state and
-        can be resumed cheaply via ``request_nav2_stack_restart()``.
+        can be resumed cheaply via :meth:`request_lifecycle_resume_stack`.
 
         Requires lifecycle_manager to be running.  If it is absent the request
         silently emits a failure via ``signals.lifecycle_change_result``.
         """
         self._request_queue.put(('lifecycle_manager_pause',))
+
+    def request_lifecycle_resume_stack(self) -> None:
+        """Ask the ROS2 thread to resume all Nav2 nodes via lifecycle_manager.
+
+        Sends the RESUME command to lifecycle_manager, which reactivates all
+        managed nodes from ``inactive`` back to ``active`` state.  This is the
+        lightweight counterpart to :meth:`request_lifecycle_pause_stack` —
+        much faster than a full RESET/STARTUP restart cycle.
+
+        Requires lifecycle_manager to be running.  If it is absent the request
+        silently emits a failure via ``signals.lifecycle_change_result``.
+        """
+        self._request_queue.put(('lifecycle_manager_resume',))
 
     # ------------------------------------------------------------------
     # ROS2 timer callbacks
@@ -453,6 +466,8 @@ class Nav2ConfigNode(Node):
             self._do_lifecycle_manager_restart()
         elif op == 'lifecycle_manager_pause':
             self._do_lifecycle_manager_pause()
+        elif op == 'lifecycle_manager_resume':
+            self._do_lifecycle_manager_resume()
         elif op == 'lifecycle_shutdown':
             _, node_name = item
             self._do_lifecycle_shutdown(node_name)
@@ -850,6 +865,45 @@ class Nav2ConfigNode(Node):
         self.signals.lifecycle_change_result.emit('', all_ok, msg)
 
         # Re-poll states so the GUI reflects inactive immediately.
+        discovered = self._prev_discovered or set()
+        new_states: dict[str, str] = {}
+        for path in discovered:
+            new_states[path] = self._lifecycle_client.get_state(
+                path, availability_timeout=0.5
+            )
+        self._lifecycle_states.update(new_states)
+        if new_states:
+            self.signals.lifecycle_states_updated.emit(new_states)
+
+    def _do_lifecycle_manager_resume(self) -> None:
+        """Resume all Nav2 nodes via all active lifecycle_managers.
+
+        Reactivates all managed nodes from ``inactive`` back to ``active``
+        state using the RESUME command — the lightweight counterpart to
+        :meth:`_do_lifecycle_manager_pause`.  If no lifecycle_manager is
+        detected, emits a failure result so the GUI can report it.
+        """
+        if not self._active_lifecycle_managers:
+            self.get_logger().warning(
+                'request_lifecycle_resume_stack: no lifecycle_manager detected — cannot resume'
+            )
+            self.signals.lifecycle_change_result.emit(
+                '', False, 'Resume failed: lifecycle_manager not found'
+            )
+            return
+
+        all_ok = True
+        for mgr_path in sorted(self._active_lifecycle_managers):
+            ok = self._lifecycle_manager_clients[mgr_path].resume()
+            all_ok = all_ok and ok
+            self.get_logger().info(
+                f'lifecycle_manager resume via {mgr_path}: {"ok" if ok else "failed"}'
+            )
+
+        msg = 'Stack resumed (nodes active)' if all_ok else 'Resume failed'
+        self.signals.lifecycle_change_result.emit('', all_ok, msg)
+
+        # Re-poll states so the GUI reflects active immediately.
         discovered = self._prev_discovered or set()
         new_states: dict[str, str] = {}
         for path in discovered:

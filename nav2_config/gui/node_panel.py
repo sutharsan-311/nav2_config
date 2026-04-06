@@ -196,14 +196,15 @@ _NO_MGR_TIP = 'lifecycle_manager not detected'
 
 
 class _StackControlBar(QWidget):
-    """Thin strip with Restart Stack and Pause Stack buttons.
+    """Thin strip with Restart Stack, Pause Stack, and Resume Stack buttons.
 
-    Both buttons require lifecycle_manager to be running.  When absent they
+    All buttons require lifecycle_manager to be running.  When absent they
     are disabled and show a tooltip explaining why.
     """
 
     restart_requested = pyqtSignal()
     pause_requested   = pyqtSignal()
+    resume_requested  = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -227,13 +228,19 @@ class _StackControlBar(QWidget):
         self._pause_btn.clicked.connect(self.pause_requested)
         layout.addWidget(self._pause_btn)
 
+        self._resume_btn = QPushButton('\u25b6 Resume Stack')
+        self._resume_btn.setFixedHeight(20)
+        self._resume_btn.setStyleSheet(_BTN_STYLE)
+        self._resume_btn.clicked.connect(self.resume_requested)
+        layout.addWidget(self._resume_btn)
+
         layout.addStretch()
         self.set_manager_present(False)
 
     def set_manager_present(self, present: bool) -> None:
-        """Enable or disable both buttons based on lifecycle_manager presence."""
+        """Enable or disable all buttons based on lifecycle_manager presence."""
         tip = '' if present else _NO_MGR_TIP
-        for btn in (self._restart_btn, self._pause_btn):
+        for btn in (self._restart_btn, self._pause_btn, self._resume_btn):
             btn.setEnabled(present)
             btn.setToolTip(tip)
 
@@ -416,6 +423,7 @@ class NodePanel(QWidget):
     refresh_requested = pyqtSignal()
     lifecycle_action_requested = pyqtSignal(str, str)
     pause_stack_requested = pyqtSignal()
+    resume_stack_requested = pyqtSignal()
     load_config_requested = pyqtSignal()
     save_requested = pyqtSignal()
 
@@ -457,6 +465,7 @@ class NodePanel(QWidget):
             lambda: self.lifecycle_action_requested.emit('', 'restart_stack')
         )
         self._stack_bar.pause_requested.connect(self.pause_stack_requested)
+        self._stack_bar.resume_requested.connect(self.resume_stack_requested)
         layout.addWidget(self._stack_bar)
         layout.addWidget(self._make_list(), stretch=1)
 
