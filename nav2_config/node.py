@@ -572,6 +572,10 @@ class Nav2ConfigNode(Node):
                 return 'int_array'
             if value and all(isinstance(v, float) for v in value):
                 return 'double_array'
+            # Empty list: can't infer element type from contents, so prefer
+            # ros2_type when available rather than blindly returning string_array.
+            if not value and ros2_type is not None and ros2_type in Nav2ConfigNode._ROS2_TYPE_MAP:
+                return Nav2ConfigNode._ROS2_TYPE_MAP[ros2_type]
             return 'string_array'
         if isinstance(value, str):
             parts = [s.strip() for s in value.split(',')]
