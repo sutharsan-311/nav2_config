@@ -110,7 +110,6 @@ On startup, a dialog asks you to select a `nav2_params.yaml` config file. This f
 | Generic params | ✓ | ✓ |
 | Nav2-specific descriptions | ✗ | ✓ |
 | Tuning advice | ✗ | ✓ |
-| Plugin awareness | ✗ | ✓ |
 | YAML config file management | ✗ | ✓ |
 | Post-set service calls | ✗ | ✓ |
 | Lifecycle management | ✗ | ✓ |

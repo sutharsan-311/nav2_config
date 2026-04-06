@@ -619,7 +619,7 @@ class MainWindow(QMainWindow):
         else:
             self._yaml_panel.update_yaml(
                 params,
-                plugin_filter=self._param_panel._selected_plugin,
+                plugin_filter=None,
                 pending_params=set(),
             )
 
@@ -646,7 +646,7 @@ class MainWindow(QMainWindow):
         if not self._config_file:
             self._yaml_panel.update_yaml(
                 self._current_params,
-                plugin_filter=self._param_panel._selected_plugin,
+                plugin_filter=None,
                 pending_params=self._param_panel.pending_param_names(),
             )
 
@@ -760,7 +760,7 @@ class MainWindow(QMainWindow):
         else:
             self._yaml_panel.update_yaml(
                 self._current_params,
-                plugin_filter=self._param_panel._selected_plugin,
+                plugin_filter=None,
                 pending_params=self._param_panel.pending_param_names(),
             )
 
