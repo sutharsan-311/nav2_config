@@ -129,6 +129,7 @@ class _LifecycleBar(QWidget):
         self._node_path: str = ''
         self._state: str = ''
         self._lc_manager_present: bool = False
+        self._expert_mode: bool = False
         self._build_ui()
         self.hide()
 
@@ -191,7 +192,7 @@ class _LifecycleBar(QWidget):
         self._node_lbl.setText(bare)
         self._badge.set_state(state)
 
-        if lc_manager_present:
+        if lc_manager_present and not self._expert_mode:
             self._btn_container.hide()
             self._managed_lbl.show()
         else:
@@ -202,6 +203,12 @@ class _LifecycleBar(QWidget):
                 btn.setVisible(action in valid)
 
         self.show()
+
+    def set_expert_mode(self, enabled: bool) -> None:
+        """Toggle expert mode — refresh visibility of transition buttons."""
+        self._expert_mode = enabled
+        if self._node_path:
+            self.set_node(self._node_path, self._state, self._lc_manager_present)
 
     def clear(self) -> None:
         """Hide the bar when no node is selected."""
@@ -514,6 +521,11 @@ class ParamPanel(QWidget):
         """Hide the lifecycle bar (called when no node is selected)."""
         if self._lc_bar is not None:
             self._lc_bar.clear()
+
+    def set_expert_mode(self, enabled: bool) -> None:
+        """Pass expert mode down to the lifecycle bar."""
+        if self._lc_bar is not None:
+            self._lc_bar.set_expert_mode(enabled)
 
     def _on_lc_action(self, action: str) -> None:
         """Forward a lifecycle button click to MainWindow via signal."""

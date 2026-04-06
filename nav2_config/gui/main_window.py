@@ -21,6 +21,7 @@ from lifecycle_msgs.msg import Transition
 from PyQt6.QtCore import Qt, QSize, QTimer
 from PyQt6.QtGui import QAction, QCloseEvent, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
+    QCheckBox,
     QDialog,
     QDialogButtonBox,
     QFileDialog,
@@ -275,6 +276,8 @@ class MainWindow(QMainWindow):
         self._all_node_params: dict[str, list[ParamValue]] = {}
         self._saved_panel_sizes: list[int] = [240, 10000, 300]
         self._lifecycle_manager_present: bool = False
+        self._expert_mode: bool = False
+        self._expert_mode_warned: bool = False
         self._build_ui()
         self._connect_signals()
         self._restore_window_state()
@@ -424,6 +427,17 @@ class MainWindow(QMainWindow):
         spacer = QWidget()
         spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         tb.addWidget(spacer)
+
+        tb.addSeparator()
+
+        # Expert Mode toggle
+        self._expert_mode_cb = QCheckBox('Expert Mode')
+        self._expert_mode_cb.setToolTip(
+            'Show direct per-node lifecycle transitions even when lifecycle_manager is active'
+        )
+        self._expert_mode_cb.setStyleSheet('QCheckBox { font-size: 9pt; padding: 0 4px; }')
+        self._expert_mode_cb.toggled.connect(self._on_expert_mode_toggled)
+        tb.addWidget(self._expert_mode_cb)
 
         tb.addSeparator()
 
@@ -1090,6 +1104,26 @@ class MainWindow(QMainWindow):
             self.set_status(f'lifecycle_manager detected: /{bare} — stack-level restart enabled')
         else:
             self.set_status('lifecycle_manager not found — direct node lifecycle control enabled')
+
+    def set_expert_mode(self, enabled: bool) -> None:
+        """Propagate expert mode to both panels."""
+        self._expert_mode = enabled
+        self._node_panel.set_expert_mode(enabled)
+        self._param_panel.set_expert_mode(enabled)
+
+    def _on_expert_mode_toggled(self, checked: bool) -> None:
+        """Handle Expert Mode checkbox toggle."""
+        if checked and self._lifecycle_manager_present and not self._expert_mode_warned:
+            self._expert_mode_warned = True
+            QMessageBox.warning(
+                self,
+                'Expert Mode',
+                'Expert Mode enables direct per-node lifecycle transitions, '
+                'bypassing lifecycle_manager.\n\n'
+                'This can cause CRITICAL FAILURE and bring down the Nav2 stack.\n\n'
+                'Only use this for manual recovery of stuck nodes.',
+            )
+        self.set_expert_mode(checked)
 
     def _on_lifecycle_action_requested(self, node_path: str, action: str) -> None:
         """Dispatch lifecycle actions from the node panel (bar or context menu)."""

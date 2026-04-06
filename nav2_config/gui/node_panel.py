@@ -426,6 +426,7 @@ class NodePanel(QWidget):
         self._param_counts: dict[str, int] = {}
         self._restart_pending: set[str] = set()
         self._lifecycle_manager_present: bool = False
+        self._expert_mode: bool = False
         self._selected_node: str | None = None
         self._node_rows: dict[str, _NodeRow] = {}
         self._stack_bar: _StackControlBar | None = None
@@ -595,6 +596,10 @@ class NodePanel(QWidget):
         if self._stack_bar is not None:
             self._stack_bar.set_manager_present(present)
 
+    def set_expert_mode(self, enabled: bool) -> None:
+        """Show or hide direct per-node lifecycle transitions in the context menu."""
+        self._expert_mode = enabled
+
     # ------------------------------------------------------------------
     # Private helpers
     # ------------------------------------------------------------------
@@ -652,12 +657,15 @@ class NodePanel(QWidget):
                     self.lifecycle_action_requested.emit(n, a)
             )
 
-        if self._lifecycle_manager_present:
+        if self._lifecycle_manager_present and not self._expert_mode:
             _add('Restart Nav2 Stack', 'restart_stack', found)
             menu.addSeparator()
             state_act = menu.addAction(f'State: {state}')
             state_act.setEnabled(False)
         else:
+            if self._lifecycle_manager_present:
+                _add('Restart Nav2 Stack', 'restart_stack', found)
+                menu.addSeparator()
             _add('Activate',     'activate',   found and state == 'inactive')
             _add('Deactivate',   'deactivate', found and state == 'active')
             _add('Configure',    'configure',  found and state == 'unconfigured')
