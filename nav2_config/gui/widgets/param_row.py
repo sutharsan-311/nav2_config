@@ -48,6 +48,26 @@ _BLUE     = '#3399ff'   # Modified indicator / selection
 _AMBER    = '#ff9800'   # Warning
 
 
+def _format_array_for_display(val: Any) -> str:
+    """Return a human-readable comma-space separated string for an array value.
+
+    Both the initial render path and the watcher-driven update path must use
+    this helper so the display is always "a, b, c" — never a Python repr like
+    "['a', 'b', 'c']".
+
+    Args:
+        val: A list (array param value) or any scalar.  If *val* is not a list
+             the scalar is converted to a plain string.
+
+    Returns:
+        ``', '.join(str(item) for item in val)`` when *val* is a list,
+        otherwise ``str(val)`` (or ``''`` for ``None``).
+    """
+    if isinstance(val, list):
+        return ', '.join(str(item) for item in val)
+    return str(val) if val is not None else ''
+
+
 def _is_frame_param(param_name: str) -> bool:
     """Return True if *param_name* should use a TF frame selector."""
     lower = param_name.lower()
@@ -311,10 +331,7 @@ class ParamRow(QWidget):
         """Instantiate the appropriate input widget from the param schema."""
         defn = self._param_value.definition
         val = self._param_value.current_value
-        if isinstance(val, list):
-            current_str = ', '.join(str(v) for v in val)
-        else:
-            current_str = str(val) if val is not None else ''
+        current_str = _format_array_for_display(val)
 
         if defn.type == 'bool':
             w = ParamToggle()
@@ -573,7 +590,7 @@ class ParamRow(QWidget):
             except (TypeError, ValueError):
                 pass
         else:
-            self._input_widget.set_value(str(value) if value is not None else '')
+            self._input_widget.set_value(_format_array_for_display(value))
 
     def refresh_discovery_widget(self) -> None:
         """Refresh topic or frame dropdown if this row uses one."""
