@@ -405,10 +405,10 @@ class Nav2ConfigNode(Node):
         for key in stale_keys:
             del self._lifecycle_states[key]
 
-        if new_states != {k: v for k, v in self._lifecycle_states.items() if k in discovered}:
+        # Emit if any node was pruned or if any live state changed.
+        live_changed = new_states != {k: v for k, v in self._lifecycle_states.items() if k in discovered}
+        if stale_keys or live_changed:
             self._lifecycle_states.update(new_states)
-
-        if stale_keys or new_states != self._lifecycle_states:
             self.signals.lifecycle_states_updated.emit(dict(self._lifecycle_states))
 
     def force_discover(self) -> None:
