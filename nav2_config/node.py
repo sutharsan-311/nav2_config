@@ -400,9 +400,16 @@ class Nav2ConfigNode(Node):
             )
             new_states[path] = state
 
+        # Prune stale entries for nodes that are no longer in the discovered set.
+        stale_keys = [k for k in self._lifecycle_states if k not in discovered]
+        for key in stale_keys:
+            del self._lifecycle_states[key]
+
         if new_states != {k: v for k, v in self._lifecycle_states.items() if k in discovered}:
             self._lifecycle_states.update(new_states)
-            self.signals.lifecycle_states_updated.emit(dict(new_states))
+
+        if stale_keys or new_states != self._lifecycle_states:
+            self.signals.lifecycle_states_updated.emit(dict(self._lifecycle_states))
 
     def force_discover(self) -> None:
         """Trigger one immediate discovery pass (e.g. from Refresh button).
@@ -912,8 +919,12 @@ class Nav2ConfigNode(Node):
         result_holder: list[Any] = [None]
 
         def _on_done(fut: Any) -> None:
-            result_holder[0] = fut.result()
-            done_event.set()
+            try:
+                result_holder[0] = fut.result()
+            except Exception as e:
+                self.get_logger().error(f"load_map callback error: {e}")
+            finally:
+                done_event.set()
 
         future.add_done_callback(_on_done)
 
