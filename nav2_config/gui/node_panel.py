@@ -657,17 +657,6 @@ class NodePanel(QWidget):
             menu.addSeparator()
             state_act = menu.addAction(f'State: {state}')
             state_act.setEnabled(False)
-            menu.addSeparator()
-            warn = menu.addAction('\u26a0 Direct Control (unsafe with lifecycle_manager)')
-            warn.setEnabled(False)
-            _add('  Activate (direct — may cause CRITICAL FAILURE)',
-                 'activate', found and state == 'inactive')
-            _add('  Deactivate (direct — may cause CRITICAL FAILURE)',
-                 'deactivate', found and state == 'active')
-            _add('  Configure (direct — may cause CRITICAL FAILURE)',
-                 'configure', found and state == 'unconfigured')
-            _add('  Cleanup (direct — may cause CRITICAL FAILURE)',
-                 'cleanup', found and state == 'inactive')
         else:
             _add('Activate',     'activate',   found and state == 'inactive')
             _add('Deactivate',   'deactivate', found and state == 'active')
