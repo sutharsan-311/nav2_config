@@ -700,29 +700,36 @@ class MainWindow(QMainWindow):
             self._node.request_set_param(node_name, param_name, value, type_hint)
         else:
             # Non-hot-reload: update config in-memory then save to disk immediately.
-            if self._config_file:
-                self._config_file.set_value(node_name, ros2_name, value)
-                self._mark_dirty()
-                try:
-                    self._config_file.save()
-                except Exception as exc:
-                    logger.warning('Auto-save failed after non-hot-reload param set: %s', exc)
-                    QMessageBox.critical(
-                        self,
-                        'Save Failed',
-                        f'Could not save config to disk:\n{exc}\n\n'
-                        'The parameter change was NOT written to the file.',
-                    )
-                    return
-                self._dirty = False
-                self._update_title()
-                self._yaml_panel.set_save_button_dirty(False)
-                self._yaml_panel.set_file_content(
-                    self._config_file.to_yaml_string(), dirty=False
+            if self._config_file is None:
+                QMessageBox.warning(
+                    self,
+                    'No Config File Loaded',
+                    'Cannot apply this parameter change: no config file is loaded.\n\n'
+                    'Load a config file first via File > Open, then try again.',
                 )
-                self._node.get_logger().info(
-                    f"Config saved: {param_name} = {value}"
+                return
+            self._config_file.set_value(node_name, ros2_name, value)
+            self._mark_dirty()
+            try:
+                self._config_file.save()
+            except Exception as exc:
+                logger.warning('Auto-save failed after non-hot-reload param set: %s', exc)
+                QMessageBox.critical(
+                    self,
+                    'Save Failed',
+                    f'Could not save config to disk:\n{exc}\n\n'
+                    'The parameter change was NOT written to the file.',
                 )
+                return
+            self._dirty = False
+            self._update_title()
+            self._yaml_panel.set_save_button_dirty(False)
+            self._yaml_panel.set_file_content(
+                self._config_file.to_yaml_string(), dirty=False
+            )
+            self._node.get_logger().info(
+                f"Config saved: {param_name} = {value}"
+            )
             self._param_panel.mark_param_file_saved(param_name)
             self._node_panel.set_node_restart_pending(node_name, True)
             self.set_status(f'Config saved: {param_name}. Restart Nav2 to apply.')
