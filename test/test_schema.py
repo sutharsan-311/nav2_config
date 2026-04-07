@@ -19,7 +19,7 @@ from nav2_config.types.params import Nav2ParamDef, ParamRange, load_schema
 SCHEMA_PATH = SRC_ROOT / "nav2_config" / "schema" / "nav2_params.json"
 PLUGINS_PATH = SRC_ROOT / "nav2_config" / "schema" / "plugins.json"
 
-VALID_TYPES = {"double", "int", "bool", "string", "string_array"}
+VALID_TYPES = {"double", "int", "bool", "string", "string_array", "double_array", "int_array"}
 KNOWN_NODES = {
     "controller_server",
     "planner_server",

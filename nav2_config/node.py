@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import logging
 import queue
 from typing import Any
@@ -523,6 +524,13 @@ class Nav2ConfigNode(Node):
             value, ros2_type = entry if entry is not None else (None, None)
 
             if schema_entry:
+                detected_type = self._detect_type(value, ros2_type) if value is not None else None
+                if detected_type and detected_type != schema_entry.type:
+                    self.get_logger().warning(
+                        f"Schema type mismatch for {node_name}/{name}: schema says '{schema_entry.type}'"
+                        f" but ROS2 reports '{detected_type}'. Using ROS2 type."
+                    )
+                    schema_entry = dataclasses.replace(schema_entry, type=detected_type)
                 results.append(ParamValue(
                     definition=schema_entry,
                     current_value=value if value is not None else schema_entry.default,
