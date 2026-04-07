@@ -467,6 +467,8 @@ class NodePanel(QWidget):
         self._stack_bar.pause_requested.connect(self.pause_stack_requested)
         self._stack_bar.resume_requested.connect(self.resume_stack_requested)
         layout.addWidget(self._stack_bar)
+        self._finalized_banner = self._make_finalized_banner()
+        layout.addWidget(self._finalized_banner)
         layout.addWidget(self._make_list(), stretch=1)
 
     def _make_header(self) -> QWidget:
@@ -520,6 +522,22 @@ class NodePanel(QWidget):
             f'</span>'
             f'<span style="font-size:8pt; color:{_FG_DIM};"> connected</span>'
         )
+
+    def _make_finalized_banner(self) -> QLabel:
+        """Red warning strip shown when any node is in 'finalized' state."""
+        lbl = QLabel()
+        lbl.setWordWrap(True)
+        lbl.setStyleSheet(
+            'QLabel {'
+            '  background: #b71c1c;'
+            '  color: white;'
+            '  font-size: 8pt;'
+            '  padding: 4px 8px;'
+            '  border-bottom: 1px solid #7f0000;'
+            '}'
+        )
+        lbl.hide()
+        return lbl
 
     def _make_list(self) -> QListWidget:
         self._list = QListWidget()
@@ -583,6 +601,24 @@ class NodePanel(QWidget):
         self._lifecycle_states.update(states)
         for path in states:
             self._refresh_row(path)
+        self._update_finalized_banner()
+
+    def _update_finalized_banner(self) -> None:
+        """Show or hide the finalized-state warning banner."""
+        finalized = [
+            path for path, state in self._lifecycle_states.items()
+            if state == 'finalized'
+        ]
+        if not finalized:
+            self._finalized_banner.hide()
+            return
+        names = ', '.join(p.lstrip('/') for p in finalized)
+        self._finalized_banner.setText(
+            f'\u26a0 {names}: node in finalized state \u2014 '
+            'requires process restart to recover. '
+            'nav2_config cannot recover from this state.'
+        )
+        self._finalized_banner.show()
 
     def set_param_count(self, node_path: str, count: int) -> None:
         """Update the param count shown in the row badge."""

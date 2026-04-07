@@ -819,8 +819,8 @@ class Nav2ConfigNode(Node):
             self._do_lifecycle_restart_all()
             return
 
-        all_ok = True
-        result_lines: list[str] = []
+        succeeded: list[str] = []
+        failed: list[str] = []
         for mgr_path in sorted(self._active_lifecycle_managers):
             client = self._lifecycle_manager_clients[mgr_path]
 
@@ -828,11 +828,21 @@ class Nav2ConfigNode(Node):
                 self.signals.lifecycle_progress.emit(_mgr, step)
 
             ok, msg = client.restart_stack(progress_cb=_progress)
-            all_ok = all_ok and ok
-            result_lines.append(f'{mgr_path.lstrip("/")} → {msg}')
             self.get_logger().info(f'lifecycle_manager restart via {mgr_path}: {msg}')
+            short = mgr_path.lstrip('/')
+            if ok:
+                succeeded.append(f'{short} → ok')
+            else:
+                failed.append(f'{short} → failed ({msg})')
 
-        self.signals.lifecycle_change_result.emit('', all_ok, '; '.join(result_lines))
+        all_ok = not failed
+        if not failed:
+            summary = 'Stack restarted successfully'
+        elif not succeeded:
+            summary = 'Failed: ' + '; '.join(failed)
+        else:
+            summary = 'Partial: ' + '; '.join(succeeded + failed)
+        self.signals.lifecycle_change_result.emit('', all_ok, summary)
 
         # Re-poll all lifecycle states after the restart completes.
         discovered = self._prev_discovered or set()
@@ -861,15 +871,26 @@ class Nav2ConfigNode(Node):
             )
             return
 
-        all_ok = True
+        succeeded: list[str] = []
+        failed: list[str] = []
         for mgr_path in sorted(self._active_lifecycle_managers):
             ok = self._lifecycle_manager_clients[mgr_path].pause()
-            all_ok = all_ok and ok
+            short = mgr_path.lstrip('/')
             self.get_logger().info(
                 f'lifecycle_manager pause via {mgr_path}: {"ok" if ok else "failed"}'
             )
+            (succeeded if ok else failed).append(short)
 
-        msg = 'Stack paused (nodes inactive)' if all_ok else 'Pause failed'
+        all_ok = not failed
+        if not failed:
+            msg = 'Stack paused (nodes inactive)'
+        elif not succeeded:
+            msg = 'Pause failed: ' + '; '.join(f'{m} → failed' for m in failed)
+        else:
+            msg = ('Partial: '
+                   + '; '.join(f'{m} → ok' for m in succeeded)
+                   + '; '
+                   + '; '.join(f'{m} → failed' for m in failed))
         self.signals.lifecycle_change_result.emit('', all_ok, msg)
 
         # Re-poll states so the GUI reflects inactive immediately.
@@ -900,15 +921,26 @@ class Nav2ConfigNode(Node):
             )
             return
 
-        all_ok = True
+        succeeded: list[str] = []
+        failed: list[str] = []
         for mgr_path in sorted(self._active_lifecycle_managers):
             ok = self._lifecycle_manager_clients[mgr_path].resume()
-            all_ok = all_ok and ok
+            short = mgr_path.lstrip('/')
             self.get_logger().info(
                 f'lifecycle_manager resume via {mgr_path}: {"ok" if ok else "failed"}'
             )
+            (succeeded if ok else failed).append(short)
 
-        msg = 'Stack resumed (nodes active)' if all_ok else 'Resume failed'
+        all_ok = not failed
+        if not failed:
+            msg = 'Stack resumed (nodes active)'
+        elif not succeeded:
+            msg = 'Resume failed: ' + '; '.join(f'{m} → failed' for m in failed)
+        else:
+            msg = ('Partial: '
+                   + '; '.join(f'{m} → ok' for m in succeeded)
+                   + '; '
+                   + '; '.join(f'{m} → failed' for m in failed))
         self.signals.lifecycle_change_result.emit('', all_ok, msg)
 
         # Re-poll states so the GUI reflects active immediately.
