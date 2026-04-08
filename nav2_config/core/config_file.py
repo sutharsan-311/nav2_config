@@ -31,10 +31,13 @@ from __future__ import annotations
 import copy
 import logging
 import shutil
+from io import StringIO
 from pathlib import Path
 from typing import Any
 
-import yaml
+from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap
+from ruamel.yaml.error import YAMLError
 
 logger = logging.getLogger(__name__)
 
@@ -79,11 +82,11 @@ def _traverse_set(data: dict, key_path: list[str], param_parts: list[str], value
     d = data
     for k in key_path:
         if not isinstance(d.get(k), dict):
-            d[k] = {}
+            d[k] = CommentedMap()
         d = d[k]
     for p in param_parts[:-1]:
         if not isinstance(d.get(p), dict):
-            d[p] = {}
+            d[p] = CommentedMap()
         d = d[p]
     d[param_parts[-1]] = value
 
@@ -126,6 +129,10 @@ class ConfigFile:
         self.original_data: dict = {}
         self.modified_data: dict = {}
         self._dirty: bool = False
+        self._yaml = YAML()
+        self._yaml.preserve_quotes = True
+        self._yaml.allow_unicode = True
+        self._yaml.indent(mapping=2, sequence=4, offset=2)
 
     # ------------------------------------------------------------------
     # Load / save
@@ -147,8 +154,8 @@ class ConfigFile:
 
         try:
             with open(path, encoding='utf-8') as fh:
-                data = yaml.safe_load(fh) or {}
-        except yaml.YAMLError as exc:
+                data = self._yaml.load(fh) or CommentedMap()
+        except YAMLError as exc:
             raise ValueError(f'Failed to parse YAML: {exc}') from exc
 
         self.original_data = data
@@ -189,15 +196,8 @@ class ConfigFile:
 
     def _write_yaml(self, path: Path, data: dict) -> None:
         """Serialize *data* and write it to *path*."""
-        header = '# Nav2 parameters — modified by nav2_config\n'
-        body = yaml.dump(
-            data,
-            default_flow_style=False,
-            allow_unicode=True,
-            indent=2,
-            sort_keys=False,
-        )
-        path.write_text(header + body, encoding='utf-8')
+        with open(path, 'w', encoding='utf-8') as fh:
+            self._yaml.dump(data, fh)
 
     # ------------------------------------------------------------------
     # Per-parameter access
@@ -296,14 +296,9 @@ class ConfigFile:
 
     def to_yaml_string(self) -> str:
         """Return the current *modified_data* serialised as a YAML string."""
-        header = '# Nav2 parameters — modified by nav2_config\n'
-        return header + yaml.dump(
-            self.modified_data,
-            default_flow_style=False,
-            allow_unicode=True,
-            indent=2,
-            sort_keys=False,
-        )
+        buf = StringIO()
+        self._yaml.dump(self.modified_data, buf)
+        return buf.getvalue()
 
     @property
     def is_dirty(self) -> bool:

@@ -28,6 +28,7 @@ setup(
     install_requires=[
         'setuptools',
         'PyYAML',
+        'ruamel.yaml',
         'PyQt6',
     ],
     zip_safe=True,
