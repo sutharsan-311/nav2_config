@@ -827,7 +827,11 @@ class Nav2ConfigNode(Node):
             def _progress(step: str, _mgr: str = mgr_path) -> None:
                 self.signals.lifecycle_progress.emit(_mgr, step)
 
-            ok, msg = client.restart_stack(progress_cb=_progress)
+            ok, msg = client.restart_stack(
+                progress_cb=_progress,
+                lifecycle_client=self._lifecycle_client,
+                discovered_nodes=self._prev_discovered or set(),
+            )
             self.get_logger().info(f'lifecycle_manager restart via {mgr_path}: {msg}')
             short = mgr_path.lstrip('/')
             if ok:

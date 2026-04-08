@@ -463,6 +463,8 @@ class LifecycleManagerClient:
     def restart_stack(
         self,
         progress_cb: Callable[[str], None] | None = None,
+        lifecycle_client: 'LifecycleClient | None' = None,
+        discovered_nodes: 'set[str] | None' = None,
     ) -> tuple[bool, str]:
         """Full stack restart: RESET then STARTUP via lifecycle_manager.
 
@@ -473,6 +475,10 @@ class LifecycleManagerClient:
         Args:
             progress_cb: Optional callback invoked before each step with a
                 human-readable step description.
+            lifecycle_client: Optional :class:`LifecycleClient` used to query
+                per-node states after a RESET failure to identify finalized nodes.
+            discovered_nodes: Set of currently-running node paths; paired with
+                *lifecycle_client* to produce a diagnostic message on failure.
 
         Returns:
             ``(success, message)``
@@ -487,6 +493,16 @@ class LifecycleManagerClient:
         if progress_cb:
             progress_cb('Resetting all nodes via lifecycle_manager')
         if not self.reset():
+            if lifecycle_client is not None and discovered_nodes:
+                finalized = [
+                    n for n in discovered_nodes
+                    if lifecycle_client.get_state(
+                        n, availability_timeout=_POLL_AVAILABILITY_TIMEOUT
+                    ) == 'finalized'
+                ]
+                if finalized:
+                    names = ', '.join(n.lstrip('/') for n in sorted(finalized))
+                    return False, f'RESET failed — finalized nodes: {names}. Requires process restart.'
             return False, 'RESET command to lifecycle_manager failed'
 
         if progress_cb:
