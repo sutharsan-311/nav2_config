@@ -278,6 +278,7 @@ class MainWindow(QMainWindow):
         self._lifecycle_manager_present: bool = False
         self._expert_mode: bool = False
         self._expert_mode_warned: bool = False
+        self._connect_to_nodes: bool = True
         self._build_ui()
         self._connect_signals()
         self._restore_window_state()
@@ -604,8 +605,11 @@ class MainWindow(QMainWindow):
         logger.info('Node selected: %s', node_path)
         self._param_panel.set_node_name(node_path)
         self._yaml_panel.set_current_node(node_path)
-        self._node.watch_node(node_path)
-        self._node.request_fetch_params(node_path)
+        if self._connect_to_nodes:
+            self._node.watch_node(node_path)
+            self._node.request_fetch_params(node_path)
+        else:
+            self._node.unwatch_node()
         self._status_bar.showMessage(node_path.lstrip('/'))
         # Populate lifecycle bar immediately from cached state.
         known_state = self._node.get_lifecycle_state(node_path)
@@ -986,6 +990,9 @@ class MainWindow(QMainWindow):
         self._add_recent_file(filepath)
         self.set_status(f'Loaded config: {filepath}')
         logger.info('Config loaded: %s', filepath)
+        self._connect_to_nodes = connect_to_nodes
+        if not connect_to_nodes:
+            self._node.unwatch_node()
         watched = self._node._watcher.watched_node
         if connect_to_nodes and watched and self._node._prev_discovered:
             self._node.request_fetch_params(watched)
