@@ -363,9 +363,11 @@ class Nav2ConfigNode(Node):
         try:
             fresh = self._build_param_values(watched)
         except Exception:
-            return  # Node may have gone offline — silently skip this tick.
+            self._watcher.clear_baseline()
+            return
         if not any(pv.is_live for pv in fresh):
-            return  # All params are schema defaults — node is offline, skip diff.
+            self._watcher.clear_baseline()
+            return
         changed = self._watcher.diff(fresh)
         if changed:
             self.signals.params_externally_changed.emit(watched, changed)
@@ -488,7 +490,10 @@ class Nav2ConfigNode(Node):
         param_values = self._build_param_values(node_name)
         # Update watcher baseline so poll doesn't flag these values as external changes.
         if self._watcher.watched_node == node_name:
-            self._watcher.set_baseline(param_values)
+            if any(pv.is_live for pv in param_values):
+                self._watcher.set_baseline(param_values)
+            else:
+                self._watcher.clear_baseline()
         self.signals.params_received.emit(node_name, param_values)
         self.get_logger().debug(f"Fetched {len(param_values)} params for {node_name}")
 

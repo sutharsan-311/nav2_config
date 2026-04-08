@@ -55,7 +55,7 @@ class ParamWatcher:
     # ------------------------------------------------------------------
 
     def set_baseline(self, params: list[ParamValue]) -> None:
-        """Record the current values as the new baseline.
+        """Record the current live values as the new baseline. Non-live (offline fallback) params are excluded.
 
         Call this immediately after a GUI-triggered fetch so the watcher
         won't report these values as "external changes" on the next poll.
@@ -63,22 +63,29 @@ class ParamWatcher:
         Args:
             params: Fresh parameter list just received from ROS2.
         """
-        self._baseline = {pv.definition.param: pv.live_value for pv in params}
+        self._baseline = {
+            pv.definition.param: pv.live_value
+            for pv in params
+            if pv.is_live
+        }
+
+    def clear_baseline(self) -> None:
+        """Clear the baseline so the next diff re-establishes it from live data."""
+        self._baseline = {}
 
     # ------------------------------------------------------------------
     # Diff
     # ------------------------------------------------------------------
 
     def diff(self, fresh_params: list[ParamValue]) -> list[tuple[str, object]]:
-        """Compare *fresh_params* against the baseline.
+        """Compare fresh_params against the baseline (live params only).
 
-        Returns a list of ``(param_name, new_value)`` pairs for params whose
-        values differ from the baseline.  The baseline is then updated so
-        subsequent polls use the latest observed values.
+        Returns (param_name, new_value) pairs for externally-changed params.
+        Baseline is updated after each call.
 
-        On the first call (empty baseline), the method just records the
-        snapshot and returns an empty list — grace period to avoid spurious
-        alerts on startup.
+        - If no fresh params are live: clear baseline, return [].
+        - If baseline is empty: establish from current live params, return [].
+        - Otherwise: diff live params against baseline, update baseline.
 
         Args:
             fresh_params: Parameters just fetched from the ROS2 node.
@@ -86,17 +93,19 @@ class ParamWatcher:
         Returns:
             ``[(name, new_value), ...]`` for externally-changed params.
         """
-        if not self._baseline:
-            self._baseline = {pv.definition.param: pv.live_value for pv in fresh_params}
+        live = [pv for pv in fresh_params if pv.is_live]
+        if not live:
+            self._baseline = {}
             return []
-
+        if not self._baseline:
+            self._baseline = {pv.definition.param: pv.live_value for pv in live}
+            return []
         changed: list[tuple[str, object]] = []
-        for pv in fresh_params:
+        for pv in live:
             name = pv.definition.param
             new_val = pv.live_value
             old_val = self._baseline.get(name)
             if old_val is not None and old_val != new_val:
                 changed.append((name, new_val))
             self._baseline[name] = new_val
-
         return changed
