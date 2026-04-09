@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from rclpy.callback_groups import CallbackGroup
     from rclpy.node import Node
 
-from nav2_config.core.node_discovery import NAV2_NODES
+from nav2_config.core.node_discovery import path_basename
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +40,13 @@ _AVAILABILITY_TIMEOUT: float = 2.0
 #: Short timeout used when polling lifecycle state for all discovered nodes.
 _POLL_AVAILABILITY_TIMEOUT: float = 0.3
 
-#: Restart order derived from NAV2_NODES — single source of truth, includes costmap nodes.
-NAV2_RESTART_ORDER: list[str] = list(NAV2_NODES.keys())
+#: Restart order by basename — nodes are restarted in this sequence regardless
+#: of the namespace they were discovered under.
+RESTART_BASENAMES: list[str] = [
+    "map_server", "amcl", "controller_server", "planner_server",
+    "bt_navigator", "local_costmap", "global_costmap",
+    "smoother_server", "velocity_smoother", "behavior_server", "waypoint_follower",
+]
 
 
 class LifecycleClient:
@@ -296,9 +301,19 @@ class LifecycleClient:
 
         Returns:
             ``{node_name: (success, message)}`` for each node in *discovered_nodes*
-            that appears in :data:`NAV2_RESTART_ORDER`.
+            whose basename appears in :data:`RESTART_BASENAMES`.
         """
-        ordered = [n for n in NAV2_RESTART_ORDER if n in discovered_nodes]
+        def _sort_key(full_path: str) -> int:
+            bn = path_basename(full_path)
+            try:
+                return RESTART_BASENAMES.index(bn)
+            except ValueError:
+                return len(RESTART_BASENAMES)
+
+        ordered = sorted(
+            [n for n in discovered_nodes if path_basename(n) in RESTART_BASENAMES],
+            key=_sort_key,
+        )
         failed: set[str] = set()
         results: dict[str, tuple[bool, str]] = {}
 

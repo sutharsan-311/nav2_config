@@ -16,12 +16,13 @@ from rclpy.node import Node
 from rcl_interfaces.msg import ParameterType
 from PyQt6.QtCore import QObject, pyqtSignal
 
-from nav2_config.core.lifecycle_client import LifecycleClient, LifecycleManagerClient, NAV2_RESTART_ORDER
+from nav2_config.core.lifecycle_client import LifecycleClient, LifecycleManagerClient
 from nav2_config.core.node_discovery import (
     NAV2_NODES,
-    LIFECYCLE_MANAGERS,
+    NAV2_NODE_SPECS,
     discover_nav2_nodes,
     discover_lifecycle_managers,
+    path_basename,
 )
 from nav2_config.core.param_client import Nav2ParamClient
 from nav2_config.core.param_watcher import ParamWatcher
@@ -148,11 +149,8 @@ class Nav2ConfigNode(Node):
         self._lifecycle_client = LifecycleClient(self, self._cb_group)
 
         #: lifecycle_manager service clients keyed by manager node path.
-        #: Pre-created for all known managers; availability checked at call time.
-        self._lifecycle_manager_clients: dict[str, LifecycleManagerClient] = {
-            path: LifecycleManagerClient(self, path, self._cb_group)
-            for path in LIFECYCLE_MANAGERS
-        }
+        #: Created lazily as managers are discovered; avoids binding to hardcoded paths.
+        self._lifecycle_manager_clients: dict[str, LifecycleManagerClient] = {}
 
         #: All currently-running lifecycle_manager node paths.
         self._active_lifecycle_managers: set[str] = set()
@@ -385,21 +383,26 @@ class Nav2ConfigNode(Node):
     def _on_discovery_tick(self) -> None:
         """Periodic callback: discover Nav2 nodes, emit signal every tick, poll lifecycle."""
         nodes_and_ns = self.get_node_names_and_namespaces()
-        status = discover_nav2_nodes(self, nodes_and_ns)
+        found_nodes = discover_nav2_nodes(self, nodes_and_ns)
 
-        discovered = {path for path, found in status.items() if found}
+        # Actual full paths of running Nav2 nodes (namespace-aware).
+        discovered = {n.full_path for n in found_nodes.values()}
 
         # Log appeared / lost nodes relative to previous tick.
         if self._prev_discovered is not None:
             for path in discovered - self._prev_discovered:
-                self.get_logger().info(
-                    f"Nav2 node appeared: {path} ({NAV2_NODES.get(path, path)})"
-                )
+                spec = NAV2_NODE_SPECS.get(path_basename(path))
+                label = spec.display_name if spec else path
+                self.get_logger().info(f"Nav2 node appeared: {path} ({label})")
             for path in self._prev_discovered - discovered:
-                self.get_logger().info(
-                    f"Nav2 node lost: {path} ({NAV2_NODES.get(path, path)})"
-                )
+                spec = NAV2_NODE_SPECS.get(path_basename(path))
+                label = spec.display_name if spec else path
+                self.get_logger().info(f"Nav2 node lost: {path} ({label})")
         self._prev_discovered = discovered
+
+        # Build backward-compat status for the GUI: {root_ns_path: bool}.
+        # A node is "found" when its basename was discovered regardless of the actual namespace.
+        status = {path: (path_basename(path) in found_nodes) for path in NAV2_NODES}
 
         # Always emit — the GUI must always receive fresh discovery data.
         self.signals.nodes_discovered.emit(status)
@@ -809,7 +812,15 @@ class Nav2ConfigNode(Node):
     ) -> None:
         """Detect all running lifecycle_managers; emit signal on change."""
         mgr_status = discover_lifecycle_managers(self, nodes_and_ns)
-        active = {p for p, running in mgr_status.items() if running}
+        active = set(mgr_status.keys())
+
+        # Lazily create service clients for any newly discovered managers.
+        for full_path in active:
+            if full_path not in self._lifecycle_manager_clients:
+                self._lifecycle_manager_clients[full_path] = LifecycleManagerClient(
+                    self, full_path, self._cb_group
+                )
+
         if active != self._active_lifecycle_managers:
             self._active_lifecycle_managers = active
             present = bool(active)
