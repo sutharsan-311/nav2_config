@@ -8,6 +8,8 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING, Any
 
+from nav2_config.core.node_discovery import path_basename, infer_stack_namespace, join_ros_path
+
 if TYPE_CHECKING:
     from rclpy.node import Node
     from rclpy.callback_groups import CallbackGroup
@@ -29,60 +31,70 @@ class Nav2ServiceCaller:
     def __init__(self, node: "Node", cb_group: "CallbackGroup") -> None:
         self._node = node
         self._cb_group = cb_group
-        # Service clients created lazily on first use.
-        self._clear_global_client: Any = None
-        self._clear_local_client: Any = None
-        self._nomotion_client: Any = None
-        self._reinit_localization_client: Any = None
+        # Service clients created lazily on first use, keyed by (SrvType, service_name).
+        self._clients: dict[tuple[type, str], Any] = {}
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
-    def clear_costmaps(self) -> bool:
+    def clear_costmaps(self, node_path: str) -> bool:
         """Call clear_entirely on both global and local costmaps.
 
-        Services:
-          /global_costmap/clear_entirely_global_costmap (nav2_msgs/srv/ClearEntireCostmap)
-          /local_costmap/clear_entirely_local_costmap   (nav2_msgs/srv/ClearEntireCostmap)
+        Resolves service paths relative to the stack namespace derived from
+        *node_path*, so namespaced deployments (e.g. /robot1/...) work correctly.
+
+        Args:
+            node_path: Full ROS2 path of the node that triggered the action,
+                e.g. ``/robot1/controller_server``.
 
         Returns:
             True if both calls succeed, False otherwise.
         """
         from nav2_msgs.srv import ClearEntireCostmap
 
-        if self._clear_global_client is None:
-            self._clear_global_client = self._node.create_client(
+        stack_ns = infer_stack_namespace(node_path, path_basename(node_path))
+        global_svc = join_ros_path(stack_ns, "global_costmap/clear_entirely_global_costmap")
+        local_svc = join_ros_path(stack_ns, "local_costmap/clear_entirely_local_costmap")
+
+        key_global = (ClearEntireCostmap, global_svc)
+        if key_global not in self._clients:
+            self._clients[key_global] = self._node.create_client(
                 ClearEntireCostmap,
-                '/global_costmap/clear_entirely_global_costmap',
+                global_svc,
                 callback_group=self._cb_group,
             )
-        if self._clear_local_client is None:
-            self._clear_local_client = self._node.create_client(
+
+        key_local = (ClearEntireCostmap, local_svc)
+        if key_local not in self._clients:
+            self._clients[key_local] = self._node.create_client(
                 ClearEntireCostmap,
-                '/local_costmap/clear_entirely_local_costmap',
+                local_svc,
                 callback_group=self._cb_group,
             )
 
         ok_global = self._call_empty_like(
-            self._clear_global_client,
+            self._clients[key_global],
             ClearEntireCostmap.Request(),
-            '/global_costmap/clear_entirely_global_costmap',
+            global_svc,
         )
         ok_local = self._call_empty_like(
-            self._clear_local_client,
+            self._clients[key_local],
             ClearEntireCostmap.Request(),
-            '/local_costmap/clear_entirely_local_costmap',
+            local_svc,
         )
         return ok_global and ok_local
 
-    def load_map(self, map_url: str) -> tuple[bool, int]:
-        """Call /map_server/load_map with the given map file path.
+    def load_map(self, map_url: str, node_path: str = "/map_server") -> tuple[bool, int]:
+        """Call load_map with the given map file path.
 
-        Checks file existence before calling the service.
+        Resolves the service path relative to the stack namespace derived from
+        *node_path*.
 
         Args:
             map_url: Absolute path to the map YAML file.
+            node_path: Full ROS2 path of the node that triggered the action,
+                e.g. ``/robot1/map_server``. Defaults to ``/map_server``.
 
         Returns:
             (success, result_code).
@@ -95,72 +107,85 @@ class Nav2ServiceCaller:
             self._node.get_logger().warning(f'load_map: file not found: {map_url}')
             return False, 1  # map_does_not_exist
 
-        if not hasattr(self, '_load_map_client') or self._load_map_client is None:
-            self._load_map_client = self._node.create_client(
+        stack_ns = infer_stack_namespace(node_path, path_basename(node_path))
+        svc = join_ros_path(stack_ns, "map_server/load_map")
+
+        key = (LoadMap, svc)
+        if key not in self._clients:
+            self._clients[key] = self._node.create_client(
                 LoadMap,
-                '/map_server/load_map',
+                svc,
                 callback_group=self._cb_group,
             )
+        client = self._clients[key]
 
-        if not self._load_map_client.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
-            self._node.get_logger().warning('load_map service not available on /map_server')
+        if not client.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
+            self._node.get_logger().warning(f'load_map service not available on {svc}')
             return False, 3
 
         req = LoadMap.Request()
         req.map_url = map_url
-        response = self._call_sync(self._load_map_client, req)
+        response = self._call_sync(client, req)
         if response is None:
             return False, 3
         success = response.result == 0
         return success, int(response.result)
 
-    def nomotion_update(self) -> bool:
-        """Call /request_nomotion_update to force AMCL to update without motion.
+    def nomotion_update(self, node_path: str) -> bool:
+        """Call request_nomotion_update to force AMCL to update without motion.
 
-        Service: std_srvs/srv/Empty
+        Resolves the service path relative to the stack namespace derived from
+        *node_path*.
 
-        Returns:
-            True if the service call succeeded.
-        """
-        from std_srvs.srv import Empty
-
-        if self._nomotion_client is None:
-            self._nomotion_client = self._node.create_client(
-                Empty,
-                '/request_nomotion_update',
-                callback_group=self._cb_group,
-            )
-
-        return self._call_empty_like(
-            self._nomotion_client,
-            Empty.Request(),
-            '/request_nomotion_update',
-        )
-
-    def reinitialize_localization(self) -> bool:
-        """Call /reinitialize_global_localization to scatter AMCL particles.
-
-        Useful after changing AMCL parameters drastically.
-
-        Service: std_srvs/srv/Empty
+        Args:
+            node_path: Full ROS2 path of the node that triggered the action,
+                e.g. ``/robot1/amcl``.
 
         Returns:
             True if the service call succeeded.
         """
         from std_srvs.srv import Empty
 
-        if self._reinit_localization_client is None:
-            self._reinit_localization_client = self._node.create_client(
+        stack_ns = infer_stack_namespace(node_path, path_basename(node_path))
+        svc = join_ros_path(stack_ns, "request_nomotion_update")
+
+        key = (Empty, svc)
+        if key not in self._clients:
+            self._clients[key] = self._node.create_client(
                 Empty,
-                '/reinitialize_global_localization',
+                svc,
                 callback_group=self._cb_group,
             )
 
-        return self._call_empty_like(
-            self._reinit_localization_client,
-            Empty.Request(),
-            '/reinitialize_global_localization',
-        )
+        return self._call_empty_like(self._clients[key], Empty.Request(), svc)
+
+    def reinitialize_localization(self, node_path: str) -> bool:
+        """Call reinitialize_global_localization to scatter AMCL particles.
+
+        Useful after changing AMCL parameters drastically. Resolves the service
+        path relative to the stack namespace derived from *node_path*.
+
+        Args:
+            node_path: Full ROS2 path of the node that triggered the action,
+                e.g. ``/robot1/amcl``.
+
+        Returns:
+            True if the service call succeeded.
+        """
+        from std_srvs.srv import Empty
+
+        stack_ns = infer_stack_namespace(node_path, path_basename(node_path))
+        svc = join_ros_path(stack_ns, "reinitialize_global_localization")
+
+        key = (Empty, svc)
+        if key not in self._clients:
+            self._clients[key] = self._node.create_client(
+                Empty,
+                svc,
+                callback_group=self._cb_group,
+            )
+
+        return self._call_empty_like(self._clients[key], Empty.Request(), svc)
 
     # ------------------------------------------------------------------
     # Internal helpers
