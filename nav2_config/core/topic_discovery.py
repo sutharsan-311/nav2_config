@@ -81,5 +81,11 @@ class TopicDiscovery:
         return self.get_topics_by_type('nav_msgs/msg/OccupancyGrid')
 
     def get_twist_topics(self) -> list[str]:
-        """All ``geometry_msgs/msg/Twist`` topics."""
-        return self.get_topics_by_type('geometry_msgs/msg/Twist')
+        """All ``geometry_msgs/msg/Twist`` and ``geometry_msgs/msg/TwistStamped`` topics.
+
+        Both types are included so Jazzy users (who default to TwistStamped)
+        see their cmd_vel topic alongside Humble/Iron users on plain Twist.
+        """
+        twist = self.get_topics_by_type('geometry_msgs/msg/Twist')
+        twist_stamped = self.get_topics_by_type('geometry_msgs/msg/TwistStamped')
+        return sorted(set(twist) | set(twist_stamped))
