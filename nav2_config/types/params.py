@@ -103,6 +103,7 @@ class ParamValue:
     is_live: bool = False       # True if current_value was fetched from a running node
     confirmed_value: Any = None # Last value confirmed live on the ROS2 node
     file_value: Any = None      # Value from nav2_params.yaml; None if no config loaded
+    node_path: str = ""         # Full ROS2 node path (e.g. '/robot1/controller_server')
 
     def __post_init__(self) -> None:
         if self.confirmed_value is None:

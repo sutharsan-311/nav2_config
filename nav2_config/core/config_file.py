@@ -91,6 +91,33 @@ def _traverse_set(data: dict, key_path: list[str], param_parts: list[str], value
     d[param_parts[-1]] = value
 
 
+def _find_ros_param_paths(data: dict, prefix: list[str]) -> list[str]:
+    """Recursively collect all ROS2 node paths that have ros__parameters.
+
+    Descends *data* at any nesting depth.  When a dict value contains the
+    key ``ros__parameters``, the accumulated key path is recorded as a ROS2
+    node path (``'/' + '/'.join(path)``).  Keys whose values are dicts but
+    that do *not* directly contain ``ros__parameters`` are recursed into.
+
+    Args:
+        data: The (sub-)dict to search.
+        prefix: Key components accumulated from parent levels.
+
+    Returns:
+        Sorted list of ROS2 node paths, e.g.
+        ``['/amcl', '/local_costmap/local_costmap', '/robot1/controller_server']``.
+    """
+    paths: list[str] = []
+    for key, val in data.items():
+        if not isinstance(val, dict):
+            continue
+        if 'ros__parameters' in val:
+            paths.append('/' + '/'.join(prefix + [str(key)]))
+        else:
+            paths.extend(_find_ros_param_paths(val, prefix + [str(key)]))
+    return paths
+
+
 def _flatten_params(d: Any, prefix: str = '') -> dict[str, Any]:
     """Flatten a nested dict to dot-notation keys.
 
@@ -240,23 +267,14 @@ class ConfigFile:
     def get_node_names(self) -> list[str]:
         """Return all node names found in the YAML file as ROS2 paths.
 
-        Detects both simple nodes (``node: ros__parameters: ...``) and
-        double-nested costmap nodes (``group: node: ros__parameters: ...``).
+        Recursively searches *modified_data* at any nesting depth, so it
+        handles simple nodes, double-nested costmap nodes, and arbitrarily
+        namespaced nodes produced by the exporter.
 
         Returns:
             Sorted list of ROS2 node paths, e.g. ``['/amcl', '/controller_server']``.
         """
-        result: list[str] = []
-        for top_key, top_val in self.modified_data.items():
-            if not isinstance(top_val, dict):
-                continue
-            if 'ros__parameters' in top_val:
-                result.append(f'/{top_key}')
-            else:
-                for nested_key, nested_val in top_val.items():
-                    if isinstance(nested_val, dict) and 'ros__parameters' in nested_val:
-                        result.append(f'/{top_key}/{nested_key}')
-        return sorted(result)
+        return sorted(_find_ros_param_paths(self.modified_data, []))
 
     def get_all_params_for_node(self, node_name: str) -> dict[str, Any]:
         """Return a flat dict of ``param_name → value`` for *node_name*.

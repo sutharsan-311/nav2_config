@@ -16,6 +16,31 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
+def _find_ros_parameters(data: dict, path: list[str]) -> list[tuple[list[str], dict]]:
+    """Recursively find all ros__parameters dicts in *data*.
+
+    Descends any number of nesting levels.  When a key ``ros__parameters``
+    whose value is a dict is found, the current path and that dict are
+    collected.  Recursion continues into non-``ros__parameters`` dict values.
+
+    Args:
+        data: The (sub-)dict to search.
+        path: YAML key components accumulated so far (grows with each recursion).
+
+    Returns:
+        List of ``(path_components, params_dict)`` where *path_components* are
+        the YAML keys leading to that ``ros__parameters`` section.
+    """
+    results: list[tuple[list[str], dict]] = []
+    for key, val in data.items():
+        if key == 'ros__parameters':
+            if isinstance(val, dict):
+                results.append((list(path), val))
+        elif isinstance(val, dict):
+            results.extend(_find_ros_parameters(val, path + [str(key)]))
+    return results
+
+
 def import_yaml(filepath: str) -> dict[str, dict[str, Any]]:
     """Parse a nav2_params.yaml file into a flat nested dict.
 
@@ -62,29 +87,15 @@ def import_yaml(filepath: str) -> dict[str, dict[str, Any]]:
         return {}
 
     result: dict[str, dict[str, Any]] = {}
-    for node_name, node_data in raw.items():
-        if not isinstance(node_data, dict):
-            logger.debug("Skipping non-dict node entry: %s", node_name)
-            continue
 
-        # Unwrap ros__parameters if present; otherwise treat the dict directly.
-        ros_params = node_data.get("ros__parameters")
-        params: dict[str, Any] | None = None
-        if isinstance(ros_params, dict):
-            params = ros_params
-        elif ros_params is None:
-            # No ros__parameters key — the dict itself may be flat params.
-            params = {k: v for k, v in node_data.items() if not isinstance(v, dict)}
-        else:
-            logger.warning(
-                "Node %s has a non-dict ros__parameters value (%s) — skipping",
-                node_name,
-                type(ros_params).__name__,
-            )
-            continue
-
+    # Recursively locate all ros__parameters sections at any nesting depth.
+    found = _find_ros_parameters(raw, [])
+    for path_components, ros_params in found:
+        # Reconstruct the full ROS2 node path from the YAML key path.
+        node_path = '/' + '/'.join(path_components)
+        params = {str(k): v for k, v in ros_params.items()}
         if params:
-            result[str(node_name)] = {str(k): v for k, v in params.items()}
+            result[node_path] = params
 
     logger.debug("import_yaml(%s): found %d nodes", filepath, len(result))
     return result

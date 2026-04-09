@@ -54,6 +54,30 @@ def _format_value(value: Any) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Path helpers
+# ---------------------------------------------------------------------------
+
+def _node_path_to_yaml_keys(node_path: str) -> list[str]:
+    """Map a ROS2 node path to the YAML key list ending with 'ros__parameters'.
+
+    Examples::
+
+        '/controller_server'           -> ['controller_server', 'ros__parameters']
+        '/robot1/controller_server'    -> ['robot1', 'controller_server', 'ros__parameters']
+        '/local_costmap/local_costmap' -> ['local_costmap', 'local_costmap', 'ros__parameters']
+
+    Args:
+        node_path: Full ROS2 node path, e.g. ``'/robot1/controller_server'``.
+
+    Returns:
+        List of YAML key components ending with ``'ros__parameters'``.
+    """
+    bare = node_path.lstrip('/')
+    parts = [p for p in bare.split('/') if p]
+    return parts + ['ros__parameters']
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -102,16 +126,25 @@ def export_yaml(
         lines.append("# (no parameters to export)")
         return "\n".join(lines) + "\n"
 
-    # Group by node, preserving alphabetical node order.
+    # Group by full node path, preserving alphabetical order.
     by_node: dict[str, list[ParamValue]] = {}
     for pv in visible:
-        by_node.setdefault(pv.definition.node, []).append(pv)
+        node_key = pv.node_path if pv.node_path else f"/{pv.definition.node}"
+        by_node.setdefault(node_key, []).append(pv)
 
-    for node_name in sorted(by_node):
-        lines.append(f"{node_name}:")
-        lines.append("  ros__parameters:")
+    for node_key in sorted(by_node):
+        keys = _node_path_to_yaml_keys(node_key)
+        # Emit nested YAML structure: each key except the last on its own line.
+        for depth, key in enumerate(keys[:-1]):
+            indent = "  " * depth
+            lines.append(f"{indent}{key}:")
+        # ros__parameters line
+        ros_indent = "  " * (len(keys) - 1)
+        lines.append(f"{ros_indent}ros__parameters:")
 
-        node_params = sorted(by_node[node_name], key=lambda p: p.definition.param)
+        # Parameter indent is one level deeper than ros__parameters.
+        param_indent = "  " * len(keys)
+        node_params = sorted(by_node[node_key], key=lambda p: p.definition.param)
         for pv in node_params:
             defn = pv.definition
             if pv.is_modified and defn.description:
@@ -122,8 +155,8 @@ def export_yaml(
                 # Wrap long comments at ~100 chars using continuation lines.
                 if len(comment) > 100:
                     comment = comment[:97] + '...'
-                lines.append(f"    # {comment}")
-            value_line = f"    {defn.param}: {_format_value(pv.current_value)}"
+                lines.append(f"{param_indent}# {comment}")
+            value_line = f"{param_indent}{defn.param}: {_format_value(pv.current_value)}"
             if defn.param in pending:
                 value_line += "  # (pending)"
             lines.append(value_line)
