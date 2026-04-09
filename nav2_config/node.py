@@ -362,7 +362,10 @@ class Nav2ConfigNode(Node):
             return
         try:
             fresh = self._build_param_values(watched)
-        except Exception:
+        except Exception as exc:
+            self.get_logger().warning(
+                f"Unexpected error polling params for {watched}: {exc}"
+            )
             self._watcher.clear_baseline()
             return
         if not any(pv.is_live for pv in fresh):
@@ -412,7 +415,7 @@ class Nav2ConfigNode(Node):
         new_states: dict[str, str] = {}
         for path in discovered:
             state = self._lifecycle_client.get_state(
-                path, availability_timeout=0.3
+                path, availability_timeout=0.1
             )
             new_states[path] = state
 
@@ -511,16 +514,28 @@ class Nav2ConfigNode(Node):
         """
         bare_node = node_name.rstrip('/').rsplit('/', 1)[-1]
 
-        live_names = [
-            n for n in self._param_client.list_params(node_name)
-            if not any(f in n for f in _PARAM_FILTER_SUBSTRINGS)
-        ]
+        try:
+            live_names = [
+                n for n in self._param_client.list_params(node_name)
+                if not any(f in n for f in _PARAM_FILTER_SUBSTRINGS)
+            ]
+        except Exception as exc:
+            self.get_logger().warning(
+                f"Unexpected error listing params for {node_name}: {exc}"
+            )
+            raise
 
         if not live_names:
             # Node offline — fall back to schema defaults so the panel isn't empty.
             return self._param_client.get_all_nav2_params(node_name, self._schema)
 
-        live_typed = self._param_client.get_params(node_name, live_names)
+        try:
+            live_typed = self._param_client.get_params(node_name, live_names)
+        except Exception as exc:
+            self.get_logger().warning(
+                f"Unexpected error fetching param values for {node_name}: {exc}"
+            )
+            raise
 
         results: list[ParamValue] = []
         for name in live_names:
