@@ -801,6 +801,8 @@ class MainWindow(QMainWindow):
             staged_node, staged_ros2_name, staged_value = staged
             self._config_file.set_value(staged_node, staged_ros2_name, staged_value)
             self._mark_dirty()
+            # The live value now matches the file value — clear the amber mismatch dot.
+            self._param_panel.update_file_values({param_name: staged_value})
 
         # Refresh YAML panel
         if self._config_file:
