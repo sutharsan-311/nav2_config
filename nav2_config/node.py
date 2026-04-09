@@ -22,6 +22,7 @@ from nav2_config.core.node_discovery import (
     NAV2_NODE_SPECS,
     discover_nav2_nodes,
     discover_lifecycle_managers,
+    join_ros_path,
     path_basename,
 )
 from nav2_config.core.param_client import Nav2ParamClient
@@ -154,6 +155,12 @@ class Nav2ConfigNode(Node):
 
         #: All currently-running lifecycle_manager node paths.
         self._active_lifecycle_managers: set[str] = set()
+
+        #: Maps node_path → manager_path for each node managed by a lifecycle_manager.
+        self._node_to_manager: dict[str, str] = {}
+
+        #: Maps manager_path → set of node paths it manages.
+        self._manager_to_nodes: dict[str, set[str]] = {}
 
         #: Thread-safe queue for GUI → ROS2 parameter operation requests.
         #: Each item is a tuple: ("fetch", node_name) or ("set", ...) or lifecycle ops.
@@ -309,6 +316,24 @@ class Nav2ConfigNode(Node):
         service calls.  Returns ``'unknown'`` if the node has not been polled yet.
         """
         return self._lifecycle_states.get(node_name, 'unknown')
+
+    def get_manager_for_node(self, node_path: str) -> str | None:
+        """Return the lifecycle_manager full_path that manages *node_path*.
+
+        Safe to call from any thread — reads only the cached mapping, no ROS2
+        service calls.  The mapping is rebuilt on every discovery tick so it
+        reflects the current state of the running stack.
+
+        Args:
+            node_path: Full ROS2 node path, e.g. ``"/controller_server"`` or
+                ``"/robot1/planner_server"``.
+
+        Returns:
+            The full_path of the managing lifecycle_manager node (e.g.
+            ``"/lifecycle_manager_navigation"``), or ``None`` if no lifecycle_manager
+            currently claims this node.
+        """
+        return self._node_to_manager.get(node_path)
 
     def request_lifecycle_pause_stack(self) -> None:
         """Ask the ROS2 thread to pause all Nav2 nodes via lifecycle_manager.
@@ -820,6 +845,32 @@ class Nav2ConfigNode(Node):
                 self._lifecycle_manager_clients[full_path] = LifecycleManagerClient(
                     self, full_path, self._cb_group
                 )
+
+        # Rebuild node↔manager mappings unconditionally each tick so that they
+        # stay fresh even when the set of managers has not changed.
+        new_node_to_manager: dict[str, str] = {}
+        new_manager_to_nodes: dict[str, set[str]] = {}
+        for full_path, manager in mgr_status.items():
+            try:
+                result = self._param_client.get_params(full_path, ["node_names"])
+                relative_names = result.get("node_names", (None, None))[0]
+                if not relative_names:
+                    self.get_logger().debug(
+                        f"lifecycle_manager {full_path}: node_names param missing or empty"
+                    )
+                    continue
+                node_paths: set[str] = set()
+                for rel in relative_names:
+                    node_path = join_ros_path(manager.stack_namespace, rel)
+                    new_node_to_manager[node_path] = full_path
+                    node_paths.add(node_path)
+                new_manager_to_nodes[full_path] = node_paths
+            except Exception as exc:
+                self.get_logger().debug(
+                    f"Could not read node_names from {full_path}: {exc}"
+                )
+        self._node_to_manager = new_node_to_manager
+        self._manager_to_nodes = new_manager_to_nodes
 
         if active != self._active_lifecycle_managers:
             self._active_lifecycle_managers = active
