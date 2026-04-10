@@ -43,7 +43,11 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from nav2_config.core.node_discovery import NAV2_NODES
+from nav2_config.core.node_discovery import (
+    NAV2_NODES,
+    DiscoveredNav2Node,
+    DiscoveredLifecycleManager,
+)
 from nav2_config.gui.icons import (
     menu_about, menu_descriptions, menu_open,
     menu_quit, menu_refresh, menu_save, menu_save_as,
@@ -279,6 +283,9 @@ class MainWindow(QMainWindow):
         self._expert_mode: bool = False
         self._expert_mode_warned: bool = False
         self._connect_to_nodes: bool = True
+        self._topology_nodes: dict[str, DiscoveredNav2Node] = {}
+        self._topology_managers: dict[str, DiscoveredLifecycleManager] = {}
+        self._selected_node_path: str | None = None
         self._build_ui()
         self._connect_signals()
         self._restore_window_state()
@@ -551,8 +558,8 @@ class MainWindow(QMainWindow):
         self._node_panel.lifecycle_action_requested.connect(
             self._on_lifecycle_action_requested
         )
-        self._node_panel.pause_stack_requested.connect(self._on_pause_stack)
-        self._node_panel.resume_stack_requested.connect(self._on_resume_stack)
+        self._node_panel.stack_action_requested.connect(self._on_stack_action_requested)
+        self._node.signals.topology_updated.connect(self._on_topology_updated)
         self._param_panel.lifecycle_action_requested.connect(
             self._on_lifecycle_action_requested
         )
@@ -601,9 +608,53 @@ class MainWindow(QMainWindow):
                     self.set_status(f'Node {current.lstrip("/")} went offline')
                     break
 
+    def _on_topology_updated(self, nodes_by_path: dict, managers_by_path: dict) -> None:
+        """Store topology caches and refresh the node panel."""
+        self._topology_nodes = nodes_by_path
+        self._topology_managers = managers_by_path
+        self._node_panel.update_topology(nodes_by_path, managers_by_path)
+        if self._selected_node_path:
+            self._refresh_selected_node_context()
+
+    def _stack_has_manager(self, stack_namespace: str) -> bool:
+        """Return True if any discovered lifecycle_manager manages this stack."""
+        return any(
+            m.stack_namespace == stack_namespace
+            for m in self._topology_managers.values()
+        )
+
+    def _on_stack_action_requested(self, stack_namespace: str, action: str) -> None:
+        """Handle stack-level lifecycle actions from the node panel."""
+        if action == 'restart_stack':
+            self._on_restart_all_nav2()
+        elif action == 'pause_stack':
+            self._node.request_lifecycle_pause_stack()
+            self.set_status(f'Pausing stack {stack_namespace}...')
+        elif action == 'resume_stack':
+            self._node.request_lifecycle_resume_stack()
+            self.set_status(f'Resuming stack {stack_namespace}...')
+
+    def _refresh_selected_node_context(self) -> None:
+        """Refresh param panel lifecycle bar using per-stack manager context."""
+        if not self._selected_node_path:
+            return
+        node = self._topology_nodes.get(self._selected_node_path)
+        if node is None:
+            return
+        stack_has_manager = self._stack_has_manager(node.stack_namespace)
+        known_state = self._node.get_lifecycle_state(self._selected_node_path)
+        self._param_panel.update_lifecycle_state(
+            self._selected_node_path, known_state, stack_has_manager
+        )
+
     def _on_node_selected(self, node_path: str) -> None:
         logger.info('Node selected: %s', node_path)
-        self._param_panel.set_node_name(node_path)
+        self._selected_node_path = node_path
+        node = self._topology_nodes.get(node_path)
+        if node is not None:
+            self._param_panel.set_selected_node(node)
+        else:
+            self._param_panel.set_node_name(node_path)
         self._yaml_panel.set_current_node(node_path)
         if self._connect_to_nodes:
             self._node.watch_node(node_path)
@@ -611,11 +662,7 @@ class MainWindow(QMainWindow):
         else:
             self._node.unwatch_node()
         self._status_bar.showMessage(node_path.lstrip('/'))
-        # Populate lifecycle bar immediately from cached state.
-        known_state = self._node.get_lifecycle_state(node_path)
-        self._param_panel.update_lifecycle_state(
-            node_path, known_state, self._lifecycle_manager_present
-        )
+        self._refresh_selected_node_context()
 
     def _attach_restart_dialog(
         self,
@@ -1122,8 +1169,14 @@ class MainWindow(QMainWindow):
         """Forward lifecycle state updates to the param panel's lifecycle bar."""
         current = self._param_panel._node_name
         if current and current in states:
+            node = self._topology_nodes.get(current)
+            stack_has_manager = (
+                self._stack_has_manager(node.stack_namespace)
+                if node is not None
+                else self._lifecycle_manager_present
+            )
             self._param_panel.update_lifecycle_state(
-                current, states[current], self._lifecycle_manager_present
+                current, states[current], stack_has_manager
             )
 
     def _on_pause_stack(self) -> None:
@@ -1144,7 +1197,13 @@ class MainWindow(QMainWindow):
         current = self._param_panel._node_name
         if current:
             known_state = self._node.get_lifecycle_state(current)
-            self._param_panel.update_lifecycle_state(current, known_state, present)
+            node = self._topology_nodes.get(current)
+            stack_has_manager = (
+                self._stack_has_manager(node.stack_namespace)
+                if node is not None
+                else present
+            )
+            self._param_panel.update_lifecycle_state(current, known_state, stack_has_manager)
         if present:
             bare = manager_path.lstrip('/')
             self.set_status(f'lifecycle_manager detected: /{bare} — stack-level restart enabled')

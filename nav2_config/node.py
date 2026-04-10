@@ -106,6 +106,11 @@ class SignalBridge(QObject):
     # Carries (node_name, param_name).
     restart_suggested = pyqtSignal(str, str)
 
+    # Emitted every discovery tick with the full topology.
+    # first arg: dict[str, DiscoveredNav2Node] keyed by full_path
+    # second arg: dict[str, DiscoveredLifecycleManager] keyed by full_path
+    topology_updated = pyqtSignal(dict, dict)
+
 
 class Nav2ConfigNode(Node):
     """ROS2 node that connects to a running Nav2 stack.
@@ -180,6 +185,9 @@ class Nav2ConfigNode(Node):
 
         #: Latest known lifecycle states per node path.
         self._lifecycle_states: dict[str, str] = {}
+
+        #: Latest discovered lifecycle managers; keyed by full_path.
+        self._discovered_managers: dict = {}
 
         # ROS2 timers share the same reentrant group so that service calls
         # issued inside these callbacks can complete concurrently.
@@ -434,6 +442,10 @@ class Nav2ConfigNode(Node):
 
         # Detect which lifecycle_manager (if any) is running (reuse cached graph data).
         self._update_lifecycle_manager_status(nodes_and_ns)
+
+        # Emit full topology — used by node panel for namespace grouping.
+        nodes_by_path = {n.full_path: n for n in found_nodes.values()}
+        self.signals.topology_updated.emit(nodes_by_path, dict(self._discovered_managers))
 
         # Poll lifecycle state for all discovered nodes and emit if changed.
         self._poll_lifecycle_states(discovered)
@@ -837,6 +849,7 @@ class Nav2ConfigNode(Node):
     ) -> None:
         """Detect all running lifecycle_managers; emit signal on change."""
         mgr_status = discover_lifecycle_managers(self, nodes_and_ns)
+        self._discovered_managers = mgr_status
         active = set(mgr_status.keys())
 
         # Lazily create service clients for any newly discovered managers.

@@ -30,6 +30,7 @@ from nav2_config.gui.widgets.param_row import ParamRow
 if TYPE_CHECKING:
     from nav2_config.core.topic_discovery import TopicDiscovery
     from nav2_config.core.frame_discovery import FrameDiscovery
+    from nav2_config.core.node_discovery import DiscoveredNav2Node
 
 logger = logging.getLogger(__name__)
 
@@ -127,8 +128,10 @@ class _LifecycleBar(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._node_path: str = ''
+        self._display_name: str = ''
+        self._stack_namespace: str = '/'
         self._state: str = ''
-        self._lc_manager_present: bool = False
+        self._stack_has_manager: bool = False
         self._expert_mode: bool = False
         self._build_ui()
         self.hide()
@@ -182,17 +185,25 @@ class _LifecycleBar(QWidget):
     # Public API
     # ------------------------------------------------------------------
 
-    def set_node(self, node_path: str, state: str, lc_manager_present: bool) -> None:
+    def set_node(
+        self,
+        node_path: str,
+        display_name: str,
+        stack_namespace: str,
+        state: str,
+        stack_has_manager: bool,
+    ) -> None:
         """Update the bar for the currently selected node."""
         self._node_path = node_path
+        self._display_name = display_name
+        self._stack_namespace = stack_namespace
         self._state = state
-        self._lc_manager_present = lc_manager_present
+        self._stack_has_manager = stack_has_manager
 
-        bare = node_path.lstrip('/').rsplit('/', 1)[-1]
-        self._node_lbl.setText(bare)
+        self._node_lbl.setText(display_name)
         self._badge.set_state(state)
 
-        if lc_manager_present and not self._expert_mode:
+        if stack_has_manager and not self._expert_mode:
             self._btn_container.hide()
             self._managed_lbl.show()
         else:
@@ -208,7 +219,10 @@ class _LifecycleBar(QWidget):
         """Toggle expert mode — refresh visibility of transition buttons."""
         self._expert_mode = enabled
         if self._node_path:
-            self.set_node(self._node_path, self._state, self._lc_manager_present)
+            self.set_node(
+                self._node_path, self._display_name, self._stack_namespace,
+                self._state, self._stack_has_manager,
+            )
 
     def clear(self) -> None:
         """Hide the bar when no node is selected."""
@@ -367,6 +381,7 @@ class ParamPanel(QWidget):
     ) -> None:
         super().__init__(parent)
         self._node_name: str = ''
+        self._selected_node: 'DiscoveredNav2Node | None' = None
         self._param_values: list[ParamValue] = []
         self._sections: dict[str, _CategorySection] = {}
         self._all_rows: list[ParamRow] = []
@@ -509,13 +524,21 @@ class ParamPanel(QWidget):
     # ------------------------------------------------------------------
 
     def update_lifecycle_state(
-        self, node_path: str, state: str, lc_manager_present: bool
+        self, node_path: str, state: str, stack_has_manager: bool
     ) -> None:
         """Refresh the lifecycle bar for *node_path* if it is currently shown."""
         if self._lc_bar is None:
             return
         if node_path and node_path == self._node_name:
-            self._lc_bar.set_node(node_path, state, lc_manager_present)
+            if self._selected_node is not None:
+                display_name = self._selected_node.display_name
+                stack_namespace = self._selected_node.stack_namespace
+            else:
+                display_name = node_path.lstrip('/').rsplit('/', 1)[-1].replace('_', ' ').title()
+                stack_namespace = '/'
+            self._lc_bar.set_node(
+                node_path, display_name, stack_namespace, state, stack_has_manager
+            )
 
     def clear_lifecycle_bar(self) -> None:
         """Hide the lifecycle bar (called when no node is selected)."""
@@ -641,9 +664,19 @@ class ParamPanel(QWidget):
     # Public slots
     # ------------------------------------------------------------------
 
+    def set_selected_node(self, node: 'DiscoveredNav2Node') -> None:
+        """Update the panel title and lifecycle bar context for the selected node."""
+        self._node_name = node.full_path
+        self._selected_node = node
+        self._title_label.setText(f'Parameters  —  {node.display_name}')
+        self._count_label.setText(
+            f'<span style="color:#999; font-size:8pt;">{node.full_path}</span>'
+        )
+
     def set_node_name(self, node_name: str) -> None:
         """Update the panel title to reflect the selected node."""
         self._node_name = node_name
+        self._selected_node = None
         bare = node_name.lstrip('/')
         display = bare.replace('_', ' ').title()
         self._title_label.setText(f'Parameters  —  {display}')
