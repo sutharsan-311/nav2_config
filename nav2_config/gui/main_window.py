@@ -825,7 +825,15 @@ class MainWindow(QMainWindow):
                 self.set_status('Restarting Nav2 via lifecycle_manager...', timeout_ms=0)
                 dialog = _RestartAllProgressDialog(1, signals=self._node.signals, parent=self)
                 self._attach_restart_dialog(dialog, clear_node=node_name)
-                self._node.request_nav2_stack_restart()
+                _node_info = self._topology_nodes.get(node_name)
+                if _node_info is not None:
+                    self._node.request_lifecycle_restart_stack_ns(_node_info.stack_namespace)
+                else:
+                    logger.warning(
+                        'Could not find topology entry for %s; falling back to global restart',
+                        node_name,
+                    )
+                    self._node.request_nav2_stack_restart()
                 dialog.show()
 
             def _on_save_only() -> None:
@@ -962,7 +970,15 @@ class MainWindow(QMainWindow):
             dialog = _RestartAllProgressDialog(1, signals=self._node.signals, parent=self)
             self._node.signals.lifecycle_progress.connect(dialog.on_progress)
             self._node.signals.lifecycle_change_result.connect(dialog.on_result)
-            self._node.request_nav2_stack_restart()
+            _node_info = self._topology_nodes.get(node_name)
+            if _node_info is not None:
+                self._node.request_lifecycle_restart_stack_ns(_node_info.stack_namespace)
+            else:
+                logger.warning(
+                    'Could not find topology entry for %s; falling back to global restart',
+                    node_name,
+                )
+                self._node.request_nav2_stack_restart()
             dialog.show()
 
         def _on_save_only() -> None:
@@ -1315,7 +1331,15 @@ class MainWindow(QMainWindow):
             )
             dialog = _RestartAllProgressDialog(1, signals=self._node.signals, parent=self)
             self._attach_restart_dialog(dialog, clear_node=node_path)
-            self._node.request_nav2_stack_restart()
+            _node_info = self._topology_nodes.get(node_path)
+            if _node_info is not None:
+                self._node.request_lifecycle_restart_stack_ns(_node_info.stack_namespace)
+            else:
+                logger.warning(
+                    'Could not find topology entry for %s; falling back to global restart',
+                    node_path,
+                )
+                self._node.request_nav2_stack_restart()
             dialog.show()
             return
 
