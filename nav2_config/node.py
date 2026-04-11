@@ -540,18 +540,52 @@ class Nav2ConfigNode(Node):
         self._poll_lifecycle_states(discovered)
 
     def _poll_lifecycle_states(self, discovered: set[str]) -> None:
-        """Query lifecycle state for all *discovered* nodes; emit if any changed."""
+        """Query lifecycle state for all *discovered* nodes; emit if any changed.
+
+        Performance guards for multi-robot setups:
+        - Per-node poll timeout capped at 0.05 s (fast-fail, never blocks the tick).
+        - Nodes polled within the last 6 s whose state is already known are skipped,
+          unless they just appeared or are the currently-selected node.
+        - When more than 15 nodes are discovered, non-selected nodes are polled on
+          alternating ticks to spread the load.
+        """
+        self._poll_tick_count += 1
+        now = time.monotonic()
+        large_fleet = len(discovered) > 15
+        even_tick = (self._poll_tick_count % 2) == 0
+
         new_states: dict[str, str] = {}
         for path in discovered:
+            is_selected = path == self._selected_node_path
+            just_appeared = path not in self._last_confirmed_poll
+            recently_polled = (now - self._last_confirmed_poll.get(path, 0.0)) < 6.0
+            known_state = self._lifecycle_states.get(path)
+
+            # Skip if: not new, not selected, state already known, polled recently.
+            if not just_appeared and not is_selected and known_state and recently_polled:
+                new_states[path] = known_state
+                continue
+
+            # Large-fleet even/odd throttle for non-selected, non-new nodes.
+            if large_fleet and not is_selected and not just_appeared and even_tick:
+                if known_state:
+                    new_states[path] = known_state
+                    continue
+
             state = self._lifecycle_client.get_state(
-                path, availability_timeout=0.1
+                path, availability_timeout=0.05
             )
             new_states[path] = state
+            self._last_confirmed_poll[path] = now
 
         # Prune stale entries for nodes that are no longer in the discovered set.
         stale_keys = [k for k in self._lifecycle_states if k not in discovered]
         for key in stale_keys:
             del self._lifecycle_states[key]
+        # Also prune poll timestamps for departed nodes.
+        for key in list(self._last_confirmed_poll):
+            if key not in discovered:
+                del self._last_confirmed_poll[key]
 
         # Emit if any node was pruned or if any live state changed.
         live_changed = new_states != {k: v for k, v in self._lifecycle_states.items() if k in discovered}
@@ -981,9 +1015,24 @@ class Nav2ConfigNode(Node):
         # picked up without waiting for the manager set itself to change.
         # Per-manager we skip the write if the resolved node set is identical
         # to what we already have, avoiding unnecessary churn.
+        # First-tick guard: increment seen count per manager; skip node_names read
+        # on the very first appearance to avoid a thundering herd on stack startup.
+        for full_path in active:
+            self._manager_first_seen[full_path] = self._manager_first_seen.get(full_path, 0) + 1
+        # Prune seen counts for managers that have vanished.
+        for full_path in list(self._manager_first_seen):
+            if full_path not in active:
+                del self._manager_first_seen[full_path]
+
         new_node_to_manager: dict[str, str] = {}
         new_manager_to_nodes: dict[str, set[str]] = {}
         for full_path, manager in mgr_status.items():
+            # Skip reading node_names on the very first tick for this manager.
+            if self._manager_first_seen.get(full_path, 0) <= 1:
+                self.get_logger().debug(
+                    f"lifecycle_manager {full_path}: first-tick skip of node_names read"
+                )
+                continue
             try:
                 result = self._param_client.get_params(full_path, ["node_names"])
                 relative_names = result.get("node_names", (None, None))[0]
