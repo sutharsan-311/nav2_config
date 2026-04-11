@@ -44,7 +44,7 @@ from PyQt6.QtWidgets import (
 )
 
 from nav2_config.core.node_discovery import (
-    NAV2_NODES,
+    NAV2_NODE_SPECS,
     DiscoveredNav2Node,
     DiscoveredLifecycleManager,
 )
@@ -580,7 +580,7 @@ class MainWindow(QMainWindow):
 
     def _on_nodes_discovered(self, status: dict[str, bool]) -> None:
         found = sum(1 for v in status.values() if v)
-        total = len(NAV2_NODES)
+        total = len(NAV2_NODE_SPECS)
         total_params = sum(len(p) for p in self._all_node_params.values())
 
         if found == 0:

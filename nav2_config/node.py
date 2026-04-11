@@ -18,7 +18,6 @@ from PyQt6.QtCore import QObject, pyqtSignal
 
 from nav2_config.core.lifecycle_client import LifecycleClient, LifecycleManagerClient
 from nav2_config.core.node_discovery import (
-    NAV2_NODES,
     NAV2_NODE_SPECS,
     discover_nav2_nodes,
     discover_lifecycle_managers,
@@ -476,9 +475,12 @@ class Nav2ConfigNode(Node):
                 self.get_logger().info(f"Nav2 node lost: {path} ({label})")
         self._prev_discovered = discovered
 
-        # Build backward-compat status for the GUI: {root_ns_path: bool}.
+        # Build status for the GUI: {root_ns_path: bool}.
         # A node is "found" when its basename was discovered regardless of the actual namespace.
-        status = {path: (path_basename(path) in found_nodes) for path in NAV2_NODES}
+        status = {
+            (f"/{bn}/{bn}" if spec.self_namespaced else f"/{bn}"): (bn in found_nodes)
+            for bn, spec in NAV2_NODE_SPECS.items()
+        }
 
         # Always emit — the GUI must always receive fresh discovery data.
         self.signals.nodes_discovered.emit(status)

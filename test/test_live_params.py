@@ -32,19 +32,15 @@ from typing import Any
 REPO_ROOT = Path(__file__).parent.parent
 SCHEMA_PATH = REPO_ROOT / "nav2_config" / "schema" / "nav2_params.json"
 
-# Nav2 node paths we care about (matches node_discovery.py)
+# Import the authoritative node spec registry so this file stays in sync automatically.
+sys.path.insert(0, str(REPO_ROOT))
+from nav2_config.core.node_discovery import NAV2_NODE_SPECS  # noqa: E402
+
+# Build a root-namespace path → display name mapping from NAV2_NODE_SPECS.
+# Self-namespaced nodes (costmaps) use the /<bn>/<bn> path form.
 NAV2_NODES: dict[str, str] = {
-    "/amcl": "AMCL",
-    "/controller_server": "Controller Server",
-    "/planner_server": "Planner Server",
-    "/bt_navigator": "BT Navigator",
-    "/local_costmap/local_costmap": "Local Costmap",
-    "/global_costmap/global_costmap": "Global Costmap",
-    "/smoother_server": "Smoother Server",
-    "/velocity_smoother": "Velocity Smoother",
-    "/behavior_server": "Behavior Server",
-    "/waypoint_follower": "Waypoint Follower",
-    "/map_server": "Map Server",
+    (f"/{bn}/{bn}" if spec.self_namespaced else f"/{bn}"): spec.display_name
+    for bn, spec in NAV2_NODE_SPECS.items()
 }
 
 # Skip these meta-params that every node has — not Nav2-specific, not in schema

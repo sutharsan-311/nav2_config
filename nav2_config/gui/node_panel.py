@@ -26,7 +26,7 @@ from PyQt6.QtWidgets import (
 )
 
 from nav2_config.core.node_discovery import (
-    NAV2_NODES,
+    NAV2_NODE_SPECS,
     DiscoveredNav2Node,
     DiscoveredLifecycleManager,
 )
@@ -789,7 +789,7 @@ class NodePanel(QWidget):
         return bar
 
     def _update_count_header(self, found: int) -> None:
-        total = len(NAV2_NODES)
+        total = len(NAV2_NODE_SPECS)
         if found == total:
             count_color = _GREEN
         elif found == 0:
@@ -843,7 +843,9 @@ class NodePanel(QWidget):
             f'}}'
         )
 
-        for i, (path, display_name) in enumerate(NAV2_NODES.items()):
+        for i, (bn, spec) in enumerate(NAV2_NODE_SPECS.items()):
+            path = f"/{bn}/{bn}" if spec.self_namespaced else f"/{bn}"
+            display_name = spec.display_name
             item = QListWidgetItem()
             item.setData(Qt.ItemDataRole.UserRole, path)
             item.setSizeHint(QSize(0, _ROW_HEIGHT))
@@ -873,7 +875,7 @@ class NodePanel(QWidget):
         self._update_count_header(len(self._found_nodes))
         logger.debug(
             'Node panel: %d/%d nodes discovered',
-            len(self._found_nodes), len(NAV2_NODES),
+            len(self._found_nodes), len(NAV2_NODE_SPECS),
         )
 
     def update_lifecycle_states(self, states: dict[str, str]) -> None:

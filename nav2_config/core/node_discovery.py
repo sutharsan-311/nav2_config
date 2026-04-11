@@ -65,14 +65,6 @@ NAV2_NODE_SPECS: OrderedDict[str, Nav2NodeSpec] = OrderedDict([
 ])
 
 
-# Backward-compat alias: maps root-namespace full path → display name.
-# GUI code that iterates NAV2_NODES.items() for (path, display_name) continues to work.
-NAV2_NODES: dict[str, str] = {
-    (f"/{bn}/{bn}" if spec.self_namespaced else f"/{bn}"): spec.display_name
-    for bn, spec in NAV2_NODE_SPECS.items()
-}
-
-
 # ---------------------------------------------------------------------------
 # Path helpers
 # ---------------------------------------------------------------------------
