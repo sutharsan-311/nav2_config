@@ -275,7 +275,7 @@ class MainWindow(QMainWindow):
         self._node = node
         self._config_file: 'ConfigFile | None' = config_file
         self._dirty: bool = False
-        self._pending_config_set: dict[str, tuple] = {}
+        self._pending_config_set: dict[tuple[str, str], tuple] = {}
         self._current_params: list[ParamValue] = []
         self._all_node_params: dict[str, list[ParamValue]] = {}
         self._saved_panel_sizes: list[int] = [240, 10000, 300]
@@ -778,7 +778,7 @@ class MainWindow(QMainWindow):
             # This prevents the in-memory config from diverging when the set
             # call times out or is rejected by the node.
             if self._config_file:
-                self._pending_config_set[param_name] = (node_name, ros2_name, value)
+                self._pending_config_set[(node_name, param_name)] = (node_name, ros2_name, value)
             # Immediate live effect via ROS2 service.
             # Any follow-up action (clear_costmaps, load_map, nomotion_update)
             # is handled automatically by _after_param_set in the ROS2 thread.
@@ -840,11 +840,22 @@ class MainWindow(QMainWindow):
     def _on_param_set_result(
         self, node_name: str, param_name: str, success: bool
     ) -> None:
-        # Route result to the matching row's Set button (updates confirmed_value).
-        self._param_panel.update_set_result(param_name, success)
+        # Only update the panel rows if the result belongs to the currently
+        # selected node.  If the user switched nodes before the service call
+        # returned, the rows shown no longer correspond to this result, so
+        # routing it would update the wrong widget.
+        if node_name == self._selected_node_path:
+            # Route result to the matching row's Set button (updates confirmed_value).
+            self._param_panel.update_set_result(param_name, success)
+        else:
+            logging.debug(
+                'Discarding stale param-set result for %s/%s '
+                '(current node is %s)',
+                node_name, param_name, self._selected_node_path,
+            )
 
         # Apply or discard the staged config change for hot-reload params.
-        staged = self._pending_config_set.pop(param_name, None)
+        staged = self._pending_config_set.pop((node_name, param_name), None)
         if staged is not None and success and self._config_file:
             staged_node, staged_ros2_name, staged_value = staged
             self._config_file.set_value(staged_node, staged_ros2_name, staged_value)
