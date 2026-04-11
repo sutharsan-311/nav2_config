@@ -77,10 +77,10 @@ class ParamWatcher:
     # Diff
     # ------------------------------------------------------------------
 
-    def diff(self, fresh_params: list[ParamValue]) -> list[tuple[str, object]]:
+    def diff(self, fresh_params: list[ParamValue]) -> list[tuple[str, object, object]]:
         """Compare fresh_params against the baseline (live params only).
 
-        Returns (param_name, new_value) pairs for externally-changed params.
+        Returns (param_name, old_value, new_value) triples for externally-changed params.
         Baseline is updated after each call.
 
         - If no fresh params are live: clear baseline, return [].
@@ -91,7 +91,7 @@ class ParamWatcher:
             fresh_params: Parameters just fetched from the ROS2 node.
 
         Returns:
-            ``[(name, new_value), ...]`` for externally-changed params.
+            ``[(name, old_value, new_value), ...]`` for externally-changed params.
         """
         live = [pv for pv in fresh_params if pv.is_live]
         if not live:
@@ -100,12 +100,12 @@ class ParamWatcher:
         if not self._baseline:
             self._baseline = {pv.definition.param: pv.live_value for pv in live}
             return []
-        changed: list[tuple[str, object]] = []
+        changed: list[tuple[str, object, object]] = []
         for pv in live:
             name = pv.definition.param
             new_val = pv.live_value
             old_val = self._baseline.get(name)
             if old_val is not None and old_val != new_val:
-                changed.append((name, new_val))
+                changed.append((name, old_val, new_val))
             self._baseline[name] = new_val
         return changed

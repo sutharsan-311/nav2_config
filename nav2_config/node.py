@@ -462,7 +462,7 @@ class Nav2ConfigNode(Node):
         if changed:
             self.signals.params_externally_changed.emit(watched, changed)
             self.get_logger().info(
-                f"External param changes on {watched}: {', '.join(f'{n}={v}' for n, v in changed)}"
+                f"External param changes on {watched}: {', '.join(f'{n}={new}' for n, _old, new in changed)}"
             )
 
     # ------------------------------------------------------------------
