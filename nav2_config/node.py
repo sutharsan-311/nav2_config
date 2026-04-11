@@ -742,7 +742,7 @@ class Nav2ConfigNode(Node):
         action = schema_entry.post_set_action if schema_entry else None
 
         if action == 'clear_costmaps':
-            success = self._service_caller.clear_costmaps()
+            success = self._service_caller.clear_costmaps(node_name)
             if success:
                 self.get_logger().info(
                     f"Costmaps cleared after setting {param_name}"
@@ -760,7 +760,7 @@ class Nav2ConfigNode(Node):
 
         elif action == 'load_map':
             map_url = str(value)
-            success, code = self._service_caller.load_map(map_url)
+            success, code = self._service_caller.load_map(map_url, node_name)
             if success:
                 self.get_logger().info(f"Map reloaded: {map_url}")
                 self.signals.load_map_result.emit(True, f'Map loaded: {map_url}')
@@ -775,7 +775,7 @@ class Nav2ConfigNode(Node):
                 self.signals.load_map_result.emit(False, f'Failed to load map: {detail}')
 
         elif action == 'nomotion_update':
-            success = self._service_caller.nomotion_update()
+            success = self._service_caller.nomotion_update(node_name)
             if success:
                 self.get_logger().info(
                     f"AMCL nomotion update triggered after setting {param_name}"
