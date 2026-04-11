@@ -17,7 +17,7 @@ nav2_config cuts that loop. Change a param, see the effect, adjust again — all
 
 ## Screenshot
 
-![nav2_config](screenshot.png)
+![nav2_config](Screenshot.png)
 
 ## Demo
 
@@ -31,9 +31,9 @@ nav2_config cuts that loop. Change a param, see the effect, adjust again — all
 - **Real-time parameter tuning** — change a parameter via `ros2 param set`, the effect is immediate on the running robot
 - **Auto-discovery** — continuously polls for running Nav2 nodes via ROS2 node graph
 - **Works with ANY Nav2 plugin** — reads live parameters directly, not just hardcoded schema entries
-- **278 parameters** with descriptions, ranges, and tuning advice
+- **362 parameters** with descriptions, ranges, and tuning advice
 - **Per-param Set button** — visual feedback cycle: idle → ready → pending → success / failed
-- **Config file as source of truth** — load/save `nav2_params.yaml`; startup dialog lets you pick a config file
+- **Config file as source of truth** — load/save `nav2_params.yaml` via File > Load Config
 - **RViz2-native light theme** — looks at home alongside RViz2, rqt, and Foxglove
 - **Topic and TF frame dropdowns** — auto-populated from the live ROS2 graph
 - **YAML preview** — live-generated YAML with syntax highlighting
@@ -46,16 +46,21 @@ nav2_config cuts that loop. Change a param, see the effect, adjust again — all
 - **Automatic post-set service calls** — clears costmaps, reloads map, triggers AMCL nomotion update after relevant param changes
 - **External change detection** — detects params changed outside nav2_config (via `ros2 param set` or another tool) and syncs the UI automatically
 - **Config staged until set succeeds** — changes are only committed to the config file after ROS2 confirms the set succeeded; no silent corruption
+- **Expert Mode** — enables direct per-node lifecycle transitions (Configure/Activate/Deactivate/Cleanup) for manual recovery. Bypasses lifecycle_manager — use only for stuck node recovery, not routine ops.
+- **Resume Stack** — resumes a paused Nav2 stack without full restart
+- **Namespaced stack discovery** — discovers Nav2 nodes by basename, works with `/robot1/controller_server` style namespaces
+- **Round-trip YAML preservation** — comments, blank lines, and inline arrays survive load/save unchanged (via ruamel.yaml)
+- **Live ROS2 type validation** — detects schema/type mismatches at runtime, uses the correct ROS2 type automatically
 
 ## Supported ROS2 Distros
 
 | Distro | Ubuntu | Status |
 |--------|--------|--------|
-| Humble Hawksbill | 22.04 LTS | Tested |
-| Iron Irwini | 22.04 LTS | Should work (untested) |
-| Jazzy Jalisco | 24.04 LTS | Should work (untested) |
+| Humble Hawksbill | 22.04 LTS | Tested (community reports) |
+| Iron Irwini | 22.04 LTS | EOL — not actively supported |
+| Jazzy Jalisco | 24.04 LTS | Tested (community verified on Turtlebot4 + Raspberry Pi 5) |
 
-nav2_config uses standard rclpy APIs (param services, lifecycle services) that are identical across Humble, Iron, and Jazzy. If you test on Iron or Jazzy, please report any issues.
+nav2_config uses standard rclpy APIs (param services, lifecycle services) that are consistent across distros. Humble and Jazzy are the actively supported targets. Iron reached EOL in December 2024 — it may still work but isn't tested.
 
 ## Installation
 
@@ -66,8 +71,8 @@ nav2_config uses standard rclpy APIs (param services, lifecycle services) that a
 cd ~/ros2_ws/src
 git clone https://github.com/sutharsan-311/nav2_config.git
 
-# Install system dependency
-sudo apt install python3-pyqt6
+# Install all ROS dependencies automatically
+rosdep install --from-paths src --ignore-src -r -y
 
 # Build
 cd ~/ros2_ws
@@ -92,7 +97,16 @@ source ~/ros2_ws/install/setup.bash
 ros2 run nav2_config gui
 ```
 
-On startup, a dialog asks you to select a `nav2_params.yaml` config file. This file is the source of truth for parameter values. Click any node in the left panel to view and edit its parameters.
+Launch nav2_config, then use File > Load Config to load your nav2_params.yaml. This file is the source of truth for parameter values. Click any node in the left panel to view and edit its parameters.
+
+## Basic Workflow
+
+1. Load your config: File > Load Config → select nav2_params.yaml
+2. Click a node in the left panel
+3. Edit a parameter value and click Set
+4. Parameters that support hot-reload apply immediately
+5. Parameters marked with a restart icon require stack restart — use Restart Stack when done
+6. Save your changes: `Ctrl+S`
 
 ## Keyboard Shortcuts
 
@@ -102,6 +116,18 @@ On startup, a dialog asks you to select a `nav2_params.yaml` config file. This f
 | `Ctrl+S` | Save YAML |
 | `Ctrl+O` | Load YAML |
 | `Escape` | Clear search |
+
+## Lifecycle Management
+
+Use the stack controls at the top of the node panel:
+
+- **Restart Stack** — full deactivate → cleanup → configure → activate cycle
+- **Pause Stack** — deactivates all nodes without cleanup
+- **Resume Stack** — reactivates a paused stack
+
+All stack operations go through lifecycle_manager when present.
+
+**Expert Mode** (toolbar toggle) exposes direct per-node transitions for manual recovery of stuck nodes. Direct transitions bypass lifecycle_manager and can cause CRITICAL FAILURE on an active stack — only use for recovery.
 
 ## vs rqt_reconfigure
 
@@ -115,9 +141,14 @@ On startup, a dialog asks you to select a `nav2_params.yaml` config file. This f
 | Lifecycle management | ✗ | ✓ |
 | Array parameter editing (plugins, observation sources) | ✗ | ✓ |
 | Lifecycle control panel | ✗ | ✓ |
-| Multi lifecycle_manager support | ✗ | ✓ |
+| Namespaced stack discovery | ✗ | ✓ |
 | External change detection | ✗ | ✓ |
 | RViz2 light theme | ✗ | ✓ |
+| Expert Mode for node recovery | ✗ | ✓ |
+| Resume Stack | ✗ | ✓ |
+| Round-trip YAML preservation | ✗ | ✓ |
+| Live ROS2 type validation | ✗ | ✓ |
+| File-vs-live mismatch indicators | ✗ | ✓ |
 
 ## How It Works
 
