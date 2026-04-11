@@ -922,10 +922,11 @@ class Nav2ConfigNode(Node):
                     self, full_path, self._cb_group
                 )
 
-        # Rebuild node↔manager mappings only when the manager set changes.
-        # node_names is a static launch param — no need to re-read it every tick.
-        if active == self._active_lifecycle_managers:
-            return
+        # Rebuild node↔manager mappings on every tick so that changes to
+        # node_names (e.g. dynamic plugin loads or namespace remaps) are
+        # picked up without waiting for the manager set itself to change.
+        # Per-manager we skip the write if the resolved node set is identical
+        # to what we already have, avoiding unnecessary churn.
         new_node_to_manager: dict[str, str] = {}
         new_manager_to_nodes: dict[str, set[str]] = {}
         for full_path, manager in mgr_status.items():
@@ -942,13 +943,20 @@ class Nav2ConfigNode(Node):
                     node_path = join_ros_path(manager.stack_namespace, rel)
                     new_node_to_manager[node_path] = full_path
                     node_paths.add(node_path)
-                new_manager_to_nodes[full_path] = node_paths
+                # Only update this manager's entry when the node set has changed.
+                if node_paths != self._manager_to_nodes.get(full_path):
+                    new_manager_to_nodes[full_path] = node_paths
+                else:
+                    new_manager_to_nodes[full_path] = self._manager_to_nodes[full_path]
             except Exception as exc:
                 self.get_logger().debug(
                     f"Could not read node_names from {full_path}: {exc}"
                 )
         self._node_to_manager = new_node_to_manager
         self._manager_to_nodes = new_manager_to_nodes
+
+        if active == self._active_lifecycle_managers:
+            return
 
         self._active_lifecycle_managers = active
         present = bool(active)
