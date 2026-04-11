@@ -626,12 +626,13 @@ class MainWindow(QMainWindow):
     def _on_stack_action_requested(self, stack_namespace: str, action: str) -> None:
         """Handle stack-level lifecycle actions from the node panel."""
         if action == 'restart_stack':
-            self._on_restart_all_nav2()
+            self._node.request_lifecycle_restart_stack(stack_namespace)
+            self.set_status(f'Restarting stack {stack_namespace}...')
         elif action == 'pause_stack':
-            self._node.request_lifecycle_pause_stack()
+            self._node.request_lifecycle_pause_stack_ns(stack_namespace)
             self.set_status(f'Pausing stack {stack_namespace}...')
         elif action == 'resume_stack':
-            self._node.request_lifecycle_resume_stack()
+            self._node.request_lifecycle_resume_stack_ns(stack_namespace)
             self.set_status(f'Resuming stack {stack_namespace}...')
 
     def _refresh_selected_node_context(self) -> None:

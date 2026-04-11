@@ -373,6 +373,44 @@ class Nav2ConfigNode(Node):
         """
         self._request_queue.put(('lifecycle_manager_resume',))
 
+    def request_lifecycle_restart_stack(self, stack_namespace: str) -> None:
+        """Ask the ROS2 thread to restart only the managers in *stack_namespace*.
+
+        Like :meth:`request_nav2_stack_restart` but scoped to a single
+        namespace — only lifecycle_managers whose ``stack_namespace`` matches
+        are restarted.  Falls back to direct per-node restart if no matching
+        manager is found.
+
+        Args:
+            stack_namespace: The stack root namespace to target, e.g. ``'/'``
+                or ``'/robot1'``.
+        """
+        self._request_queue.put(('lifecycle_manager_restart_ns', stack_namespace))
+
+    def request_lifecycle_pause_stack_ns(self, stack_namespace: str) -> None:
+        """Ask the ROS2 thread to pause only the managers in *stack_namespace*.
+
+        Sends the PAUSE command to every lifecycle_manager whose
+        ``stack_namespace`` matches *stack_namespace*.  If no matching manager
+        is found the request emits a failure via ``signals.lifecycle_change_result``.
+
+        Args:
+            stack_namespace: The stack root namespace to target.
+        """
+        self._request_queue.put(('lifecycle_manager_pause_ns', stack_namespace))
+
+    def request_lifecycle_resume_stack_ns(self, stack_namespace: str) -> None:
+        """Ask the ROS2 thread to resume only the managers in *stack_namespace*.
+
+        Sends the RESUME command to every lifecycle_manager whose
+        ``stack_namespace`` matches *stack_namespace*.  If no matching manager
+        is found the request emits a failure via ``signals.lifecycle_change_result``.
+
+        Args:
+            stack_namespace: The stack root namespace to target.
+        """
+        self._request_queue.put(('lifecycle_manager_resume_ns', stack_namespace))
+
     # ------------------------------------------------------------------
     # ROS2 timer callbacks
     # ------------------------------------------------------------------
@@ -526,6 +564,15 @@ class Nav2ConfigNode(Node):
             self._do_lifecycle_manager_pause()
         elif op == 'lifecycle_manager_resume':
             self._do_lifecycle_manager_resume()
+        elif op == 'lifecycle_manager_restart_ns':
+            _, stack_namespace = item
+            self._do_lifecycle_manager_restart_ns(stack_namespace)
+        elif op == 'lifecycle_manager_pause_ns':
+            _, stack_namespace = item
+            self._do_lifecycle_manager_pause_ns(stack_namespace)
+        elif op == 'lifecycle_manager_resume_ns':
+            _, stack_namespace = item
+            self._do_lifecycle_manager_resume_ns(stack_namespace)
         elif op == 'lifecycle_shutdown':
             _, node_name = item
             self._do_lifecycle_shutdown(node_name)
@@ -1058,6 +1105,166 @@ class Nav2ConfigNode(Node):
         self.signals.lifecycle_change_result.emit('', all_ok, msg)
 
         # Re-poll states so the GUI reflects active immediately.
+        discovered = self._prev_discovered or set()
+        new_states: dict[str, str] = {}
+        for path in discovered:
+            new_states[path] = self._lifecycle_client.get_state(
+                path, availability_timeout=0.5
+            )
+        self._lifecycle_states.update(new_states)
+        if new_states:
+            self.signals.lifecycle_states_updated.emit(new_states)
+
+    def _managers_for_namespace(self, stack_namespace: str) -> list[str]:
+        """Return sorted full_paths of active managers whose stack_namespace matches.
+
+        Args:
+            stack_namespace: The stack root namespace to filter by.
+
+        Returns:
+            Sorted list of lifecycle_manager full_paths in the target namespace.
+        """
+        return sorted(
+            mgr_path
+            for mgr_path, mgr in self._discovered_managers.items()
+            if mgr.stack_namespace == stack_namespace
+            and mgr_path in self._active_lifecycle_managers
+        )
+
+    def _do_lifecycle_manager_restart_ns(self, stack_namespace: str) -> None:
+        """Restart Nav2 nodes via lifecycle_managers in *stack_namespace* only.
+
+        Falls back to :meth:`_do_lifecycle_restart_all` if no matching manager
+        is found.
+        """
+        targets = self._managers_for_namespace(stack_namespace)
+        if not targets:
+            self.get_logger().warning(
+                f'request_lifecycle_restart_stack: no lifecycle_manager found for '
+                f'namespace {stack_namespace!r}, falling back to direct per-node restart'
+            )
+            self._do_lifecycle_restart_all()
+            return
+
+        succeeded: list[str] = []
+        failed: list[str] = []
+        for mgr_path in targets:
+            client = self._lifecycle_manager_clients[mgr_path]
+
+            def _progress(step: str, _mgr: str = mgr_path) -> None:
+                self.signals.lifecycle_progress.emit(_mgr, step)
+
+            ok, msg = client.restart_stack(
+                progress_cb=_progress,
+                lifecycle_client=self._lifecycle_client,
+                discovered_nodes=self._prev_discovered or set(),
+            )
+            self.get_logger().info(f'lifecycle_manager restart via {mgr_path}: {msg}')
+            short = mgr_path.lstrip('/')
+            if ok:
+                succeeded.append(f'{short} → ok')
+            else:
+                failed.append(f'{short} → failed ({msg})')
+
+        all_ok = not failed
+        if not failed:
+            summary = 'Stack restarted successfully'
+        elif not succeeded:
+            summary = 'Failed: ' + '; '.join(failed)
+        else:
+            summary = 'Partial: ' + '; '.join(succeeded + failed)
+        self.signals.lifecycle_change_result.emit('', all_ok, summary)
+
+        discovered = self._prev_discovered or set()
+        new_states: dict[str, str] = {}
+        for path in discovered:
+            new_states[path] = self._lifecycle_client.get_state(
+                path, availability_timeout=0.5
+            )
+        self._lifecycle_states.update(new_states)
+        if new_states:
+            self.signals.lifecycle_states_updated.emit(new_states)
+
+    def _do_lifecycle_manager_pause_ns(self, stack_namespace: str) -> None:
+        """Pause Nav2 nodes via lifecycle_managers in *stack_namespace* only."""
+        targets = self._managers_for_namespace(stack_namespace)
+        if not targets:
+            self.get_logger().warning(
+                f'request_lifecycle_pause_stack_ns: no lifecycle_manager found for '
+                f'namespace {stack_namespace!r} — cannot pause'
+            )
+            self.signals.lifecycle_change_result.emit(
+                '', False, f'Pause failed: no lifecycle_manager for {stack_namespace!r}'
+            )
+            return
+
+        succeeded: list[str] = []
+        failed: list[str] = []
+        for mgr_path in targets:
+            ok = self._lifecycle_manager_clients[mgr_path].pause()
+            short = mgr_path.lstrip('/')
+            self.get_logger().info(
+                f'lifecycle_manager pause via {mgr_path}: {"ok" if ok else "failed"}'
+            )
+            (succeeded if ok else failed).append(short)
+
+        all_ok = not failed
+        if not failed:
+            msg = 'Stack paused (nodes inactive)'
+        elif not succeeded:
+            msg = 'Pause failed: ' + '; '.join(f'{m} → failed' for m in failed)
+        else:
+            msg = ('Partial: '
+                   + '; '.join(f'{m} → ok' for m in succeeded)
+                   + '; '
+                   + '; '.join(f'{m} → failed' for m in failed))
+        self.signals.lifecycle_change_result.emit('', all_ok, msg)
+
+        discovered = self._prev_discovered or set()
+        new_states: dict[str, str] = {}
+        for path in discovered:
+            new_states[path] = self._lifecycle_client.get_state(
+                path, availability_timeout=0.5
+            )
+        self._lifecycle_states.update(new_states)
+        if new_states:
+            self.signals.lifecycle_states_updated.emit(new_states)
+
+    def _do_lifecycle_manager_resume_ns(self, stack_namespace: str) -> None:
+        """Resume Nav2 nodes via lifecycle_managers in *stack_namespace* only."""
+        targets = self._managers_for_namespace(stack_namespace)
+        if not targets:
+            self.get_logger().warning(
+                f'request_lifecycle_resume_stack_ns: no lifecycle_manager found for '
+                f'namespace {stack_namespace!r} — cannot resume'
+            )
+            self.signals.lifecycle_change_result.emit(
+                '', False, f'Resume failed: no lifecycle_manager for {stack_namespace!r}'
+            )
+            return
+
+        succeeded: list[str] = []
+        failed: list[str] = []
+        for mgr_path in targets:
+            ok = self._lifecycle_manager_clients[mgr_path].resume()
+            short = mgr_path.lstrip('/')
+            self.get_logger().info(
+                f'lifecycle_manager resume via {mgr_path}: {"ok" if ok else "failed"}'
+            )
+            (succeeded if ok else failed).append(short)
+
+        all_ok = not failed
+        if not failed:
+            msg = 'Stack resumed (nodes active)'
+        elif not succeeded:
+            msg = 'Resume failed: ' + '; '.join(f'{m} → failed' for m in failed)
+        else:
+            msg = ('Partial: '
+                   + '; '.join(f'{m} → ok' for m in succeeded)
+                   + '; '
+                   + '; '.join(f'{m} → failed' for m in failed))
+        self.signals.lifecycle_change_result.emit('', all_ok, msg)
+
         discovered = self._prev_discovered or set()
         new_states: dict[str, str] = {}
         for path in discovered:
