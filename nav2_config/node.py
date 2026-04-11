@@ -603,6 +603,7 @@ class Nav2ConfigNode(Node):
                     current_value=value if value is not None else schema_entry.default,
                     is_modified=False,
                     is_live=(value is not None),
+                    node_path=node_name,
                 ))
             else:
                 param_type = self._detect_type(value, ros2_type)
@@ -629,6 +630,7 @@ class Nav2ConfigNode(Node):
                     current_value=value,
                     is_modified=False,
                     is_live=True,
+                    node_path=node_name,
                 ))
 
         return results
