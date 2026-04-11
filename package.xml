@@ -5,6 +5,7 @@
   <version>0.1.0</version>
   <description>Real-time visual parameter tuning GUI for Nav2</description>
   <maintainer email="sutharsanmail311@gmail.com">Sutharsan</maintainer>
+  <author email="sutharsanmail311@gmail.com">Sutharsan</author>
   <license>Apache-2.0</license>
 
   <buildtool_depend>ament_python</buildtool_depend>
@@ -14,7 +15,7 @@
   <exec_depend>lifecycle_msgs</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
   <exec_depend>std_srvs</exec_depend>
-  <exec_depend>python3-pyqt6</exec_depend>
+  <exec_depend condition="$ROS_DISTRO == 'jazzy'">python3-pyqt6</exec_depend>
   <exec_depend>python3-yaml</exec_depend>
   <exec_depend>python3-ruamel.yaml</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
