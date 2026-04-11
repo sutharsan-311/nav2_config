@@ -100,13 +100,12 @@ class Nav2ServiceCaller:
             (success, result_code).
             Result codes: 0=success, 1=map_does_not_exist, 2=invalid_map, 3=undefined.
         """
-        import os
         from nav2_msgs.srv import LoadMap
 
-        if not os.path.exists(map_url):
-            self._node.get_logger().warning(f'load_map: file not found: {map_url}')
-            return False, 1  # map_does_not_exist
-
+        # Do not check os.path.exists(map_url) here. When connected to a remote
+        # robot the map file lives on the robot's filesystem, not the GUI laptop.
+        # The ROS service will return result_code=1 (map_does_not_exist) if the
+        # path cannot be resolved on the robot side.
         stack_ns = infer_stack_namespace(node_path, path_basename(node_path))
         svc = join_ros_path(stack_ns, "map_server/load_map")
 
