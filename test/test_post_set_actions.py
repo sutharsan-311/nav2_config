@@ -1,15 +1,16 @@
 # Copyright 2025-2026 Sutharsan
 # SPDX-License-Identifier: Apache-2.0
 
-"""Comprehensive test of post_set_action service calls against live TurtleBot3 sim."""
+"""Post-set action tests: namespace-aware service path resolution (mock-based) +
+integration tests against live TurtleBot3 sim (skipped without live Nav2 stack)."""
 
 import os
 import subprocess
 import time
 import sys
+from unittest.mock import MagicMock
 
 import pytest
-pytestmark = pytest.mark.skip(reason="requires live Nav2 stack")
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -28,9 +29,200 @@ def restore(cmd, timeout=30):
 
 
 # ---------------------------------------------------------------------------
-# CLI-level tests
+# Mock-based unit tests: namespace-aware service path resolution
+# No live Nav2 stack required.
 # ---------------------------------------------------------------------------
 
+class TestNamespaceServicePathResolution:
+    """Verify that Nav2ServiceCaller resolves service paths using the correct
+    namespace prefix derived from the node_path argument."""
+
+    def _make_caller(self):
+        """Return a Nav2ServiceCaller with a fully-mocked rclpy node."""
+        mock_node = MagicMock()
+        mock_node.get_logger.return_value = MagicMock()
+        mock_cb_group = MagicMock()
+
+        # create_client returns a mock client that always reports service available
+        mock_client = MagicMock()
+        mock_client.wait_for_service.return_value = True
+
+        # call_async returns a future; add_done_callback fires immediately with result
+        def _call_async_side_effect(request):
+            fut = MagicMock()
+            fut.result.return_value = MagicMock()  # non-None = success
+
+            def _add_done_cb(cb):
+                cb(fut)
+
+            fut.add_done_callback.side_effect = _add_done_cb
+            return fut
+
+        mock_client.call_async.side_effect = _call_async_side_effect
+        mock_node.create_client.return_value = mock_client
+
+        from nav2_config.core.service_caller import Nav2ServiceCaller
+        sc = Nav2ServiceCaller(mock_node, mock_cb_group)
+        return sc, mock_node, mock_client
+
+    # ------------------------------------------------------------------
+    # clear_costmaps: root namespace
+    # ------------------------------------------------------------------
+
+    def test_clear_costmaps_root_namespace_service_paths(self):
+        """clear_costmaps('/controller_server') resolves to root-namespace paths."""
+        sc, mock_node, _ = self._make_caller()
+
+        try:
+            sc.clear_costmaps("/controller_server")
+        except Exception:
+            pass  # we only care about which services were created
+
+        created_names = [
+            call.args[1] if len(call.args) >= 2 else call.kwargs.get("srv_name", "")
+            for call in mock_node.create_client.call_args_list
+        ]
+        # Root namespace: no /robot1/ prefix
+        assert any("/global_costmap/clear_entirely_global_costmap" == n for n in created_names), \
+            f"Expected root-namespace global costmap service, got: {created_names}"
+        assert any("/local_costmap/clear_entirely_local_costmap" == n for n in created_names), \
+            f"Expected root-namespace local costmap service, got: {created_names}"
+
+    # ------------------------------------------------------------------
+    # clear_costmaps: /robot1 namespace
+    # ------------------------------------------------------------------
+
+    def test_clear_costmaps_robot1_namespace_service_paths(self):
+        """clear_costmaps('/robot1/controller_server') resolves paths under /robot1/."""
+        sc, mock_node, _ = self._make_caller()
+
+        try:
+            sc.clear_costmaps("/robot1/controller_server")
+        except Exception:
+            pass
+
+        created_names = [
+            call.args[1] if len(call.args) >= 2 else call.kwargs.get("srv_name", "")
+            for call in mock_node.create_client.call_args_list
+        ]
+        assert any("/robot1/global_costmap/clear_entirely_global_costmap" == n for n in created_names), \
+            f"Expected /robot1/-prefixed global costmap service, got: {created_names}"
+        assert any("/robot1/local_costmap/clear_entirely_local_costmap" == n for n in created_names), \
+            f"Expected /robot1/-prefixed local costmap service, got: {created_names}"
+
+    # ------------------------------------------------------------------
+    # nomotion_update: root namespace
+    # ------------------------------------------------------------------
+
+    def test_nomotion_update_root_namespace_service_path(self):
+        """nomotion_update('/amcl') resolves to /request_nomotion_update."""
+        sc, mock_node, _ = self._make_caller()
+
+        try:
+            sc.nomotion_update("/amcl")
+        except Exception:
+            pass
+
+        created_names = [
+            call.args[1] if len(call.args) >= 2 else call.kwargs.get("srv_name", "")
+            for call in mock_node.create_client.call_args_list
+        ]
+        assert any("/request_nomotion_update" == n for n in created_names), \
+            f"Expected /request_nomotion_update, got: {created_names}"
+        # Must NOT have a robot namespace prefix
+        assert not any(n.startswith("/robot") for n in created_names), \
+            f"Root-namespace call should not have /robotN prefix: {created_names}"
+
+    # ------------------------------------------------------------------
+    # nomotion_update: /robot1 namespace
+    # ------------------------------------------------------------------
+
+    def test_nomotion_update_robot1_namespace_service_path(self):
+        """nomotion_update('/robot1/amcl') resolves to /robot1/request_nomotion_update."""
+        sc, mock_node, _ = self._make_caller()
+
+        try:
+            sc.nomotion_update("/robot1/amcl")
+        except Exception:
+            pass
+
+        created_names = [
+            call.args[1] if len(call.args) >= 2 else call.kwargs.get("srv_name", "")
+            for call in mock_node.create_client.call_args_list
+        ]
+        assert any("/robot1/request_nomotion_update" == n for n in created_names), \
+            f"Expected /robot1/request_nomotion_update, got: {created_names}"
+
+    # ------------------------------------------------------------------
+    # clear_costmaps: /robot2 namespace (different robot)
+    # ------------------------------------------------------------------
+
+    def test_clear_costmaps_robot2_namespace_service_paths(self):
+        """clear_costmaps('/robot2/planner_server') resolves paths under /robot2/."""
+        sc, mock_node, _ = self._make_caller()
+
+        try:
+            sc.clear_costmaps("/robot2/planner_server")
+        except Exception:
+            pass
+
+        created_names = [
+            call.args[1] if len(call.args) >= 2 else call.kwargs.get("srv_name", "")
+            for call in mock_node.create_client.call_args_list
+        ]
+        assert any("/robot2/" in n for n in created_names), \
+            f"Expected /robot2/-prefixed services, got: {created_names}"
+        assert not any("/robot1/" in n for n in created_names), \
+            f"robot2 call must not touch robot1 services: {created_names}"
+
+
+# ---------------------------------------------------------------------------
+# Mock-based unit test: schema entry post_set_action lookup
+# No live Nav2 stack required.
+# ---------------------------------------------------------------------------
+
+class TestFindSchemaEntry:
+    """Verify _find_schema_entry returns the correct post_set_action values
+    from the schema for known Nav2 nodes/params."""
+
+    def _make_schema_node(self):
+        from nav2_config.types.params import load_schema
+        from nav2_config.node import Nav2ConfigNode
+        schema = load_schema()
+        obj = Nav2ConfigNode.__new__(Nav2ConfigNode)
+        obj._schema = schema
+        return obj
+
+    def test_inflation_radius_post_set_action(self):
+        obj = self._make_schema_node()
+        entry = obj._find_schema_entry(
+            "/local_costmap/local_costmap",
+            "inflation_layer.inflation_radius",
+        )
+        assert entry is not None, "_find_schema_entry returned None for inflation_radius"
+        assert entry.post_set_action == "clear_costmaps", \
+            f"Expected 'clear_costmaps', got {entry.post_set_action!r}"
+
+    def test_amcl_max_particles_post_set_action(self):
+        obj = self._make_schema_node()
+        entry = obj._find_schema_entry("/amcl", "max_particles")
+        assert entry is not None, "_find_schema_entry returned None for amcl/max_particles"
+        assert entry.post_set_action == "nomotion_update", \
+            f"Expected 'nomotion_update', got {entry.post_set_action!r}"
+
+    def test_controller_frequency_no_post_set_action(self):
+        obj = self._make_schema_node()
+        entry = obj._find_schema_entry("/controller_server", "controller_frequency")
+        assert entry is not None, "_find_schema_entry returned None for controller_frequency"
+        assert entry.post_set_action is None, \
+            f"Expected None post_set_action, got {entry.post_set_action!r}"
+
+
+# ---------------------------------------------------------------------------
+# CLI-level integration tests — require a live Nav2 stack
+# ---------------------------------------------------------------------------
+
+@pytest.mark.skip(reason="requires live Nav2 stack")
 def test_clear_costmaps():
     """Test: change inflation_radius → costmaps auto-clear."""
     print("=== TEST: clear_costmaps (inflation_radius) ===")
@@ -70,6 +262,7 @@ def test_clear_costmaps():
     print()
 
 
+@pytest.mark.skip(reason="requires live Nav2 stack")
 def test_clear_costmaps_cost_scaling():
     """Test: change cost_scaling_factor → costmaps auto-clear."""
     print("=== TEST: clear_costmaps (cost_scaling_factor) ===")
@@ -101,6 +294,7 @@ def test_clear_costmaps_cost_scaling():
     print()
 
 
+@pytest.mark.skip(reason="requires live Nav2 stack")
 def test_load_map():
     """Test: load_map service fires with a valid map file."""
     print("=== TEST: load_map (yaml_filename) ===")
@@ -125,6 +319,7 @@ def test_load_map():
     print()
 
 
+@pytest.mark.skip(reason="requires live Nav2 stack")
 def test_nomotion_update():
     """Test: change AMCL param → nomotion_update fires."""
     print("=== TEST: nomotion_update (AMCL max_particles) ===")
@@ -149,6 +344,7 @@ def test_nomotion_update():
     print()
 
 
+@pytest.mark.skip(reason="requires live Nav2 stack")
 def test_nomotion_alpha():
     """Test: change AMCL alpha1 → nomotion_update fires."""
     print("=== TEST: nomotion_update (AMCL alpha1) ===")
@@ -173,6 +369,7 @@ def test_nomotion_alpha():
     print()
 
 
+@pytest.mark.skip(reason="requires live Nav2 stack")
 def test_no_action_needed():
     """Test: change controller_frequency → no service needed, immediate effect."""
     print("=== TEST: no action (controller_frequency) ===")
@@ -194,9 +391,10 @@ def test_no_action_needed():
 
 
 # ---------------------------------------------------------------------------
-# Python code integration test
+# Python code integration test — requires live Nav2 stack
 # ---------------------------------------------------------------------------
 
+@pytest.mark.skip(reason="requires live Nav2 stack")
 def test_nav2_param_client_with_actions():
     """Test the full flow through Nav2ParamClient + Nav2ServiceCaller."""
     print("=== TEST: Full flow via nav2_config code ===")
@@ -232,11 +430,11 @@ def test_nav2_param_client_with_actions():
     success, reason = pc.set_param(
         '/local_costmap/local_costmap', 'inflation_layer.inflation_radius', 0.8, 'double'
     )
-    print(f"    Set to 0.8: {'✓' if success else f'✗ ({reason})'}")
+    print(f"    Set to 0.8: {'OK' if success else f'FAIL ({reason})'}")
     assert success, f"set_param failed: {reason}"
 
-    clear_ok = sc.clear_costmaps()
-    print(f"    Clear costmaps: {'✓' if clear_ok else '✗'}")
+    clear_ok = sc.clear_costmaps("/local_costmap/local_costmap")
+    print(f"    Clear costmaps: {'OK' if clear_ok else 'FAIL'}")
     assert clear_ok, "clear_costmaps() returned False"
 
     verify = pc.get_params('/local_costmap/local_costmap', ['inflation_layer.inflation_radius'])
@@ -245,7 +443,7 @@ def test_nav2_param_client_with_actions():
         f"inflation_radius not updated: {verify}"
 
     pc.set_param('/local_costmap/local_costmap', 'inflation_layer.inflation_radius', 0.55, 'double')
-    sc.clear_costmaps()
+    sc.clear_costmaps("/local_costmap/local_costmap")
     print("    Restored ✓")
 
     # ------------------------------------------------------------------
@@ -253,11 +451,11 @@ def test_nav2_param_client_with_actions():
     # ------------------------------------------------------------------
     print("\n  Test 2: max_particles + nomotion_update")
     success, reason = pc.set_param('/amcl', 'max_particles', 3000, 'int')
-    print(f"    Set to 3000: {'✓' if success else f'✗ ({reason})'}")
+    print(f"    Set to 3000: {'OK' if success else f'FAIL ({reason})'}")
     assert success, f"set_param failed: {reason}"
 
-    nomotion_ok = sc.nomotion_update()
-    print(f"    Nomotion update: {'✓' if nomotion_ok else '✗'}")
+    nomotion_ok = sc.nomotion_update("/amcl")
+    print(f"    Nomotion update: {'OK' if nomotion_ok else 'FAIL'}")
     assert nomotion_ok, "nomotion_update() returned False"
 
     verify = pc.get_params('/amcl', ['max_particles'])
@@ -273,55 +471,9 @@ def test_nav2_param_client_with_actions():
     print("\n  Test 3: load_map")
     map_path = '/opt/ros/humble/share/nav2_bringup/maps/turtlebot3_world.yaml'
     sc.CALL_TIMEOUT = 20.0  # load_map can take a moment
-    map_ok, code = sc.load_map(map_path)
-    print(f"    Load map: {'✓' if map_ok else '✗'} (code={code})")
+    map_ok, code = sc.load_map(map_path, "/map_server")
+    print(f"    Load map: {'OK' if map_ok else 'FAIL'} (code={code})")
     assert map_ok, f"load_map() returned False with code {code}"
-
-    # ------------------------------------------------------------------
-    # Test 4: _find_schema_entry fix — post_set_action dispatch
-    # ------------------------------------------------------------------
-    print("\n  Test 4: _find_schema_entry bare_node fix")
-    from nav2_config.types.params import load_schema
-    from nav2_config.node import Nav2ConfigNode
-
-    # Instantiate a real Nav2ConfigNode with schema to test _find_schema_entry
-    schema = load_schema()
-    # Manually test the private method logic (don't spin this node)
-    test_node_obj = Nav2ConfigNode.__new__(Nav2ConfigNode)
-    test_node_obj._schema = schema
-
-    # For /local_costmap/local_costmap — should find local_costmap entries
-    entry = Nav2ConfigNode._find_schema_entry(
-        test_node_obj,
-        '/local_costmap/local_costmap',
-        'inflation_layer.inflation_radius',
-    )
-    print(f"    Schema entry for /local_costmap/local_costmap inflation_layer.inflation_radius: "
-          f"{entry.param if entry else None} (post_set_action={entry.post_set_action if entry else None})")
-    assert entry is not None, "_find_schema_entry returned None for local_costmap inflation_radius"
-    assert entry.post_set_action == 'clear_costmaps', \
-        f"Expected 'clear_costmaps', got {entry.post_set_action!r}"
-    print("    post_set_action=clear_costmaps ✓")
-
-    # For /amcl max_particles
-    entry = Nav2ConfigNode._find_schema_entry(test_node_obj, '/amcl', 'max_particles')
-    print(f"    Schema entry for /amcl max_particles: "
-          f"{entry.param if entry else None} (post_set_action={entry.post_set_action if entry else None})")
-    assert entry is not None, "_find_schema_entry returned None for amcl max_particles"
-    assert entry.post_set_action == 'nomotion_update', \
-        f"Expected 'nomotion_update', got {entry.post_set_action!r}"
-    print("    post_set_action=nomotion_update ✓")
-
-    # For /controller_server controller_frequency — should have no action
-    entry = Nav2ConfigNode._find_schema_entry(
-        test_node_obj, '/controller_server', 'controller_frequency'
-    )
-    print(f"    Schema entry for /controller_server controller_frequency: "
-          f"{entry.param if entry else None} (post_set_action={entry.post_set_action if entry else None})")
-    assert entry is not None, "_find_schema_entry returned None for controller_server"
-    assert entry.post_set_action is None, \
-        f"Expected None, got {entry.post_set_action!r}"
-    print("    post_set_action=None ✓")
 
     node.destroy_node()
     rclpy.shutdown()
