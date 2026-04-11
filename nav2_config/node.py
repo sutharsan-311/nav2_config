@@ -298,15 +298,17 @@ class Nav2ConfigNode(Node):
         """
         self._request_queue.put(('lifecycle_shutdown', node_name))
 
-    def request_load_map(self, map_url: str) -> None:
-        """Ask the ROS2 thread to call /map_server/load_map with *map_url*.
+    def request_load_map(self, map_url: str, node_name: str = "/map_server") -> None:
+        """Ask the ROS2 thread to call the load_map service for *node_name*.
 
         Non-blocking.  Result is emitted via ``signals.load_map_result``.
 
         Args:
             map_url: Absolute path to the map YAML file to load.
+            node_name: Full ROS2 path of the map_server node, e.g.
+                ``/robot1/map_server``.  Defaults to ``/map_server``.
         """
-        self._request_queue.put(('load_map', map_url))
+        self._request_queue.put(('load_map', map_url, node_name))
 
     def request_nav2_stack_restart(self) -> None:
         """Ask the ROS2 thread to restart all Nav2 nodes via lifecycle_manager.
@@ -528,8 +530,8 @@ class Nav2ConfigNode(Node):
             _, node_name = item
             self._do_lifecycle_shutdown(node_name)
         elif op == 'load_map':
-            _, map_url = item
-            self._do_load_map(map_url)
+            _, map_url, node_name = item
+            self._do_load_map(map_url, node_name)
         elif op == 'discover':
             self._on_discovery_tick()
         else:
@@ -1095,59 +1097,30 @@ class Nav2ConfigNode(Node):
         if new_states:
             self.signals.lifecycle_states_updated.emit(new_states)
 
-    def _do_load_map(self, map_url: str) -> None:
-        """Call /map_server/load_map to reload the map without restarting Nav2.
+    def _do_load_map(self, map_url: str, node_name: str = "/map_server") -> None:
+        """Call the load_map service for *node_name* to reload the map at runtime.
+
+        Delegates to :class:`Nav2ServiceCaller` so that namespace resolution is
+        handled consistently (e.g. ``/robot1/map_server`` → ``/robot1/map_server/load_map``).
 
         Called on the ROS2 thread.  Emits ``signals.load_map_result``.
 
         Args:
             map_url: Absolute path to the map YAML file to load.
+            node_name: Full ROS2 path of the map_server node, e.g.
+                ``/robot1/map_server``.  Defaults to ``/map_server``.
         """
-        from nav2_msgs.srv import LoadMap
-
-        if not hasattr(self, '_load_map_client'):
-            self._load_map_client = self.create_client(
-                LoadMap, '/map_server/load_map', callback_group=self._cb_group
-            )
-
-        if not self._load_map_client.wait_for_service(timeout_sec=2.0):
-            msg = 'load_map service not available on /map_server'
-            self.get_logger().warning(msg)
-            self.signals.load_map_result.emit(False, msg)
-            return
-
-        import threading
-        req = LoadMap.Request()
-        req.map_url = map_url
-        future = self._load_map_client.call_async(req)
-
-        done_event = threading.Event()
-        result_holder: list[Any] = [None]
-
-        def _on_done(fut: Any) -> None:
-            try:
-                result_holder[0] = fut.result()
-            except Exception as e:
-                self.get_logger().error(f"load_map callback error: {e}")
-            finally:
-                done_event.set()
-
-        future.add_done_callback(_on_done)
-
-        if not done_event.wait(timeout=10.0):
-            msg = 'load_map service call timed out'
-            self.get_logger().warning(msg)
-            self.signals.load_map_result.emit(False, msg)
-            return
-
-        response = result_holder[0]
-        # LoadMap response: result field is a uint8 (0 = success)
-        success = (response is not None and response.result == 0)
+        success, code = self._service_caller.load_map(map_url, node_name)
         if success:
             msg = f'Map loaded: {map_url}'
             self.get_logger().info(msg)
         else:
-            result_code = response.result if response is not None else -1
-            msg = f'load_map failed (result={result_code})'
+            _code_msgs = {
+                1: 'map file not found',
+                2: 'invalid map',
+                3: 'load_map service unavailable',
+            }
+            detail = _code_msgs.get(code, f'result code {code}')
+            msg = f'load_map failed: {detail}'
             self.get_logger().warning(msg)
         self.signals.load_map_result.emit(success, msg)
