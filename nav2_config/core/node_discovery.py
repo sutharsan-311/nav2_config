@@ -140,8 +140,8 @@ def discover_nav2_nodes(
     end with the basename so that an unrelated node named ``local_costmap`` in
     a non-matching namespace is not mistakenly included.
 
-    When multiple nodes share the same basename (e.g. multi-robot), the first
-    one encountered is returned.  Multi-robot support is a later stage.
+    When multiple nodes share the same basename (e.g. multi-robot),
+    all of them are returned, keyed by their full path.
 
     Args:
         node: The rclpy Node used to call the ROS2 graph API.
@@ -149,7 +149,7 @@ def discover_nav2_nodes(
             Pass a cached result to avoid a redundant graph query.
 
     Returns:
-        dict mapping basename → :class:`DiscoveredNav2Node` for each found node.
+        dict mapping full_path → :class:`DiscoveredNav2Node` for each found node.
         Only nodes that are actually running are included (no False entries).
     """
     if nodes_and_ns is None:
@@ -160,7 +160,7 @@ def discover_nav2_nodes(
         full_path = '/' + name if ns == '/' else ns + '/' + name
         basename = path_basename(full_path)
 
-        if basename not in NAV2_NODE_SPECS or basename in result:
+        if basename not in NAV2_NODE_SPECS:
             continue
 
         spec = NAV2_NODE_SPECS[basename]
@@ -169,7 +169,7 @@ def discover_nav2_nodes(
             if not (ns == f'/{basename}' or ns.endswith(f'/{basename}')):
                 continue
 
-        result[basename] = DiscoveredNav2Node(
+        result[full_path] = DiscoveredNav2Node(
             full_path=full_path,
             basename=basename,
             ros_namespace=ns,
