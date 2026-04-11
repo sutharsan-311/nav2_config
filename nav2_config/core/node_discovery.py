@@ -177,15 +177,6 @@ def discover_nav2_nodes(
 # ---------------------------------------------------------------------------
 
 
-#: Known Nav2 lifecycle manager node paths → human-readable scope names.
-#: Kept for backward compatibility with code that pre-creates LifecycleManagerClient
-#: instances for well-known paths.
-LIFECYCLE_MANAGERS: dict[str, str] = {
-    '/lifecycle_manager_navigation': 'Navigation',
-    '/lifecycle_manager_localization': 'Localization',
-}
-
-
 def discover_lifecycle_managers(
     node: Node,
     nodes_and_ns: list[tuple[str, str]] | None = None,
