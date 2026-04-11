@@ -4,5 +4,8 @@ install/
 log/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 *.egg-info/
 .pytest_cache/
+graphify-out/
