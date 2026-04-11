@@ -129,6 +129,14 @@ All stack operations go through lifecycle_manager when present.
 
 **Expert Mode** (toolbar toggle) exposes direct per-node transitions for manual recovery of stuck nodes. Direct transitions bypass lifecycle_manager and can cause CRITICAL FAILURE on an active stack — only use for recovery.
 
+## Documentation
+
+- [Installation Guide](docs/installation.md)
+- [Remote Robot Setup](docs/remote-robot.md)
+- [Lifecycle Management](docs/lifecycle-management.md)
+- [YAML Round-Trip Behavior](docs/yaml-round-trip.md)
+- [Troubleshooting](docs/troubleshooting.md)
+
 ## vs rqt_reconfigure
 
 | Feature | rqt_reconfigure | nav2_config |
