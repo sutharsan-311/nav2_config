@@ -37,12 +37,25 @@ nav2_config calls the `list_parameters` service on each node to check if it's al
 
 This happens most often with remote robots on higher-latency networks (Wi-Fi, especially 5 GHz with interference, or robots on a separate subnet).
 
-The default service timeout is 2 seconds. You can increase it:
-```bash
-ros2 run nav2_config gui --ros-args -p service_timeout:=5.0
-```
+The timeouts are hardcoded in `nav2_config/core/param_client.py` — there is no `service_timeout` ROS parameter. nav2_config waits up to 2 seconds for a service to appear, then up to 5 seconds for the service call to complete. These values cannot be changed at runtime.
 
-If increasing the timeout doesn't help, the problem is usually DDS discovery — the services are visible but responses are getting dropped. Check your DDS configuration and firewall rules.
+If nodes are showing gray despite being up, the problem is usually one of:
+
+- **Wrong `ROS_DOMAIN_ID`:** nav2_config and Nav2 must use the same domain ID. Confirm with:
+  ```bash
+  echo $ROS_DOMAIN_ID
+  ```
+  Then set it to match your robot before launching:
+  ```bash
+  export ROS_DOMAIN_ID=42
+  ros2 run nav2_config gui
+  ```
+
+- **DDS discovery not working:** Run `ros2 node list` on the machine running nav2_config — if Nav2 nodes don't appear there, nav2_config won't see them either. Fix DDS discovery first; see [remote-robot.md](remote-robot.md) for multicast and unicast peer configuration.
+
+- **Firewall blocking DDS traffic:** DDS uses UDP multicast on port 7400 by default. Check that firewall rules aren't dropping this traffic between machines.
+
+Once `ros2 node list` shows the expected Nav2 nodes, nav2_config should discover them successfully.
 
 ---
 
