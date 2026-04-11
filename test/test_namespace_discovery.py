@@ -20,6 +20,7 @@ SRC_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(SRC_ROOT))
 
 from nav2_config.core.node_discovery import (
+    NAV2_NODE_SPECS,
     DiscoveredLifecycleManager,
     DiscoveredNav2Node,
     discover_lifecycle_managers,
@@ -346,3 +347,51 @@ def test_discover_lifecycle_managers_calls_node_when_no_list() -> None:
 
     mock.get_node_names_and_namespaces.assert_called_once()
     assert "/lifecycle_manager_navigation" in result
+
+
+# ---------------------------------------------------------------------------
+# Discovery status dict — regression test for full-path vs. basename comparison
+# ---------------------------------------------------------------------------
+
+
+def test_discovery_status_namespaced_node_is_true() -> None:
+    """Namespaced nodes must appear as True in the discovery status dict.
+
+    Regression test for the bug where ``bn in found_nodes`` always returned
+    False because ``found_nodes`` is keyed by full path (e.g.
+    ``/robot1/controller_server``), not by basename (``controller_server``).
+
+    The fix builds a ``found_basenames`` set from ``found_nodes.values()``
+    and checks against that instead.
+    """
+    nodes = [("controller_server", "/robot1")]
+    found_nodes = discover_nav2_nodes(_mock_node(), nodes_and_ns=nodes)
+
+    # Replicate the corrected status-building logic from _on_discovery_tick.
+    found_basenames = {n.basename for n in found_nodes.values()}
+    status = {
+        (f"/{bn}/{bn}" if spec.self_namespaced else f"/{bn}"): (bn in found_basenames)
+        for bn, spec in NAV2_NODE_SPECS.items()
+    }
+
+    # /robot1/controller_server was discovered, so the root-path key for
+    # controller_server must map to True.
+    assert status["/controller_server"] is True, (
+        "controller_server discovered under /robot1 should show True in status dict; "
+        "checking 'bn in found_nodes' (full-path keys) always returns False"
+    )
+
+
+def test_discovery_status_absent_node_is_false() -> None:
+    """A node that was not discovered must map to False in the status dict."""
+    nodes = [("controller_server", "/robot1")]
+    found_nodes = discover_nav2_nodes(_mock_node(), nodes_and_ns=nodes)
+
+    found_basenames = {n.basename for n in found_nodes.values()}
+    status = {
+        (f"/{bn}/{bn}" if spec.self_namespaced else f"/{bn}"): (bn in found_basenames)
+        for bn, spec in NAV2_NODE_SPECS.items()
+    }
+
+    # planner_server was not in the discovered list.
+    assert status["/planner_server"] is False

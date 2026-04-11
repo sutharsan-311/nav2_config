@@ -477,8 +477,11 @@ class Nav2ConfigNode(Node):
 
         # Build status for the GUI: {root_ns_path: bool}.
         # A node is "found" when its basename was discovered regardless of the actual namespace.
+        # found_nodes is keyed by full_path (e.g. "/robot1/controller_server"), so we must
+        # compare against basenames extracted from the discovered values, not the dict keys.
+        found_basenames = {n.basename for n in found_nodes.values()}
         status = {
-            (f"/{bn}/{bn}" if spec.self_namespaced else f"/{bn}"): (bn in found_nodes)
+            (f"/{bn}/{bn}" if spec.self_namespaced else f"/{bn}"): (bn in found_basenames)
             for bn, spec in NAV2_NODE_SPECS.items()
         }
 
@@ -552,6 +555,7 @@ class Nav2ConfigNode(Node):
                 self._set_param(node_name, param_name, value, type_hint)
             except ValueError as e:
                 self.get_logger().error(f"Invalid value for {node_name}/{param_name}: {e}")
+                self.signals.param_set_result.emit(node_name, param_name, False)
         elif op == 'lifecycle_change':
             _, node_name, transition_id = item
             self._do_lifecycle_change(node_name, transition_id)
@@ -938,8 +942,23 @@ class Nav2ConfigNode(Node):
                         f"lifecycle_manager {full_path}: node_names param missing or empty"
                     )
                     continue
+                if not isinstance(relative_names, list):
+                    self.get_logger().warning(
+                        f"lifecycle_manager {full_path} node_names is not a list "
+                        f"(got {type(relative_names).__name__}), skipping"
+                    )
+                    continue
+                valid_names: list[str] = []
+                for item in relative_names:
+                    if not isinstance(item, str):
+                        self.get_logger().warning(
+                            f"lifecycle_manager {full_path} node_names contains "
+                            f"non-string entry: {item}, skipping"
+                        )
+                    elif item:
+                        valid_names.append(item)
                 node_paths: set[str] = set()
-                for rel in relative_names:
+                for rel in valid_names:
                     node_path = join_ros_path(manager.stack_namespace, rel)
                     new_node_to_manager[node_path] = full_path
                     node_paths.add(node_path)
@@ -1144,16 +1163,50 @@ class Nav2ConfigNode(Node):
     def _do_lifecycle_manager_restart_ns(self, stack_namespace: str) -> None:
         """Restart Nav2 nodes via lifecycle_managers in *stack_namespace* only.
 
-        Falls back to :meth:`_do_lifecycle_restart_all` if no matching manager
-        is found.
+        Falls back to direct per-node restart scoped to *stack_namespace* if no
+        matching lifecycle_manager is found.  Never touches nodes outside the
+        requested namespace.
         """
         targets = self._managers_for_namespace(stack_namespace)
         if not targets:
             self.get_logger().warning(
-                f'request_lifecycle_restart_stack: no lifecycle_manager found for '
-                f'namespace {stack_namespace!r}, falling back to direct per-node restart'
+                f'No nodes found for namespace {stack_namespace}'
             )
-            self._do_lifecycle_restart_all()
+            ns_nodes = {
+                node.full_path
+                for node in self._discovered_nodes.values()
+                if node.stack_namespace == stack_namespace
+            }
+            if not ns_nodes:
+                self.get_logger().warning(
+                    f'No nodes found for namespace {stack_namespace}'
+                )
+                self.signals.lifecycle_change_result.emit(
+                    '',
+                    False,
+                    f'Restart failed: no nodes found for namespace {stack_namespace!r}',
+                )
+                return
+
+            def _progress(node_name: str, step: str) -> None:
+                self.signals.lifecycle_progress.emit(node_name, step)
+
+            results = self._lifecycle_client.restart_all_nav2(
+                ns_nodes, progress_cb=_progress
+            )
+
+            for node_name, (success, msg) in results.items():
+                self.signals.lifecycle_change_result.emit(node_name, success, msg)
+                self.get_logger().info(f'restart_ns_fallback {node_name}: {msg}')
+
+            new_states: dict[str, str] = {}
+            for path in ns_nodes:
+                new_states[path] = self._lifecycle_client.get_state(
+                    path, availability_timeout=0.5
+                )
+            self._lifecycle_states.update(new_states)
+            if new_states:
+                self.signals.lifecycle_states_updated.emit(new_states)
             return
 
         succeeded: list[str] = []
