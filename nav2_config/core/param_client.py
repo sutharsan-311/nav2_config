@@ -71,10 +71,16 @@ def _make_parameter_value(value: Any, type_hint: str) -> ParameterValue:
         pv.bool_value = bool(value)
     elif type_hint == "int":
         pv.type = ParameterType.PARAMETER_INTEGER
-        pv.integer_value = int(value)
+        try:
+            pv.integer_value = int(value)
+        except ValueError as e:
+            raise ValueError(f"Cannot convert '{value}' to int: {e}") from e
     elif type_hint == "double":
         pv.type = ParameterType.PARAMETER_DOUBLE
-        pv.double_value = float(value)
+        try:
+            pv.double_value = float(value)
+        except ValueError as e:
+            raise ValueError(f"Cannot convert '{value}' to double: {e}") from e
     elif type_hint == "string":
         pv.type = ParameterType.PARAMETER_STRING
         pv.string_value = str(value)

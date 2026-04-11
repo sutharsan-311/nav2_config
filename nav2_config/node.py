@@ -506,7 +506,10 @@ class Nav2ConfigNode(Node):
             self._fetch_params_for_node(node_name)
         elif op == 'set':
             _, node_name, param_name, value, type_hint = item
-            self._set_param(node_name, param_name, value, type_hint)
+            try:
+                self._set_param(node_name, param_name, value, type_hint)
+            except ValueError as e:
+                self.get_logger().error(f"Invalid value for {node_name}/{param_name}: {e}")
         elif op == 'lifecycle_change':
             _, node_name, transition_id = item
             self._do_lifecycle_change(node_name, transition_id)
