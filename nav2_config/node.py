@@ -8,6 +8,7 @@ from __future__ import annotations
 import dataclasses
 import logging
 import queue
+import time
 from typing import Any
 
 import rclpy
@@ -191,6 +192,18 @@ class Nav2ConfigNode(Node):
         # None sentinel means "first tick — always emit".
         self._prev_topology_key: tuple | None = None
 
+        #: monotonic timestamp of the last lifecycle poll per node path.
+        self._last_confirmed_poll: dict[str, float] = {}
+
+        #: number of ticks each manager has been seen (keyed by full_path).
+        self._manager_first_seen: dict[str, int] = {}
+
+        #: increments every _poll_lifecycle_states call; used for even/odd throttle.
+        self._poll_tick_count: int = 0
+
+        #: full_path of the node currently selected in the GUI (always polled).
+        self._selected_node_path: str | None = None
+
         # ROS2 timers share the same reentrant group so that service calls
         # issued inside these callbacks can complete concurrently.
         self.create_timer(self.DISCOVERY_INTERVAL, self._on_timer_tick,
@@ -223,6 +236,7 @@ class Nav2ConfigNode(Node):
         Args:
             node_name: Full ROS2 node path, e.g. ``"/controller_server"``.
         """
+        self._selected_node_path = node_name
         self._request_queue.put(("fetch", node_name))
 
     def request_set_param(
@@ -469,10 +483,33 @@ class Nav2ConfigNode(Node):
                 spec = NAV2_NODE_SPECS.get(path_basename(path))
                 label = spec.display_name if spec else path
                 self.get_logger().info(f"Nav2 node appeared: {path} ({label})")
-            for path in self._prev_discovered - discovered:
+
+            disappeared = self._prev_discovered - discovered
+            for path in disappeared:
                 spec = NAV2_NODE_SPECS.get(path_basename(path))
                 label = spec.display_name if spec else path
                 self.get_logger().info(f"Nav2 node lost: {path} ({label})")
+
+            # Prune stale param clients for each disappeared node.
+            for path in disappeared:
+                self._param_client.prune_node(path)
+
+            # Prune stale service clients for each stack namespace that has no
+            # remaining nodes after this tick. Deduplicate so each namespace is
+            # only pruned once.
+            if disappeared:
+                from nav2_config.core.node_discovery import infer_stack_namespace as _infer_ns
+                remaining_namespaces = {
+                    n.stack_namespace for n in found_nodes.values()
+                }
+                gone_namespaces: set[str] = set()
+                for path in disappeared:
+                    ns = _infer_ns(path, path_basename(path))
+                    if ns not in remaining_namespaces and ns not in gone_namespaces:
+                        gone_namespaces.add(ns)
+                        self._service_caller.prune_namespace(ns)
+        else:
+            disappeared = set()
         self._prev_discovered = discovered
 
         # Build status for the GUI: {root_ns_path: bool}.
@@ -925,6 +962,19 @@ class Nav2ConfigNode(Node):
                 self._lifecycle_manager_clients[full_path] = LifecycleManagerClient(
                     self, full_path, self._cb_group
                 )
+
+        # Prune clients for managers that have disappeared from the graph.
+        vanished_managers = set(self._lifecycle_manager_clients) - active
+        for full_path in vanished_managers:
+            mgr_client = self._lifecycle_manager_clients.pop(full_path)
+            if mgr_client._client is not None:
+                try:
+                    self.destroy_client(mgr_client._client)
+                except Exception as exc:
+                    self.get_logger().debug(
+                        f'Error destroying lifecycle_manager client for {full_path}: {exc}'
+                    )
+            self.get_logger().debug(f'Pruned lifecycle_manager client for {full_path}')
 
         # Rebuild node↔manager mappings on every tick so that changes to
         # node_names (e.g. dynamic plugin loads or namespace remaps) are

@@ -310,6 +310,25 @@ class Nav2ParamClient:
             )
         return result.successful, result.reason if not result.successful else ""
 
+    def prune_node(self, node_path: str) -> None:
+        """Destroy and remove all cached service clients for *node_path*.
+
+        Called when a node disappears from the ROS2 graph so that stale
+        clients do not accumulate across long sessions with changing namespaces.
+
+        Args:
+            node_path: Full ROS2 node path, e.g. ``"/robot1/controller_server"``.
+        """
+        stale_keys = [key for key in self._clients if key[0] == node_path]
+        for key in stale_keys:
+            try:
+                self._node.destroy_client(self._clients[key])
+            except Exception as exc:
+                logger.debug("Error destroying param client for %s: %s", key, exc)
+            del self._clients[key]
+        if stale_keys:
+            logger.debug("Pruned %d param service client(s) for %s", len(stale_keys), node_path)
+
     def get_all_nav2_params(
         self,
         node_name: str,

@@ -186,6 +186,36 @@ class Nav2ServiceCaller:
 
         return self._call_empty_like(self._clients[key], Empty.Request(), svc)
 
+    def prune_namespace(self, stack_namespace: str) -> None:
+        """Destroy and remove all cached service clients whose path is under *stack_namespace*.
+
+        Called when an entire Nav2 stack namespace disappears so that stale
+        clients do not accumulate across long sessions with changing namespaces.
+
+        Args:
+            stack_namespace: Stack root namespace, e.g. ``"/"`` or ``"/robot1"``.
+        """
+        # A service path belongs to this namespace when it starts with
+        # "<stack_namespace>/" (non-root) or "/" (root namespace catches all
+        # absolute service paths that have no deeper namespace prefix).
+        prefix = stack_namespace.rstrip('/') + '/'
+        stale_keys = [
+            key for key in self._clients
+            if key[1].startswith(prefix)
+        ]
+        for key in stale_keys:
+            try:
+                self._node.destroy_client(self._clients[key])
+            except Exception as exc:
+                self._node.get_logger().debug(
+                    f'Error destroying service client for {key[1]}: {exc}'
+                )
+            del self._clients[key]
+        if stale_keys:
+            self._node.get_logger().debug(
+                f'Pruned {len(stale_keys)} service client(s) for namespace {stack_namespace}'
+            )
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
