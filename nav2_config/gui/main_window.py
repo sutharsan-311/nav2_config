@@ -11,8 +11,11 @@ import json
 import logging
 import os
 import sys
+import uuid
+from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from nav2_config.core.config_file import ConfigFile
@@ -59,6 +62,48 @@ from nav2_config.gui.param_panel import ParamPanel
 from nav2_config.gui.yaml_panel import YamlPanel
 from nav2_config.node import Nav2ConfigNode
 from nav2_config.types.params import ParamValue
+
+# --- History/compare feature imports (graceful fallback if not yet built) ---
+try:
+    from nav2_config.core.history_manager import HistoryManager
+    from nav2_config.types.history import (
+        ChangeSource,
+        ParamHistoryEntry,
+        ParamRef,
+    )
+    _HISTORY_AVAILABLE = True
+except ImportError:
+    HistoryManager = None  # type: ignore[assignment,misc]
+    ChangeSource = None  # type: ignore[assignment,misc]
+    ParamHistoryEntry = None  # type: ignore[assignment,misc]
+    ParamRef = None  # type: ignore[assignment,misc]
+    _HISTORY_AVAILABLE = False
+
+try:
+    from nav2_config.gui.history_panel import HistoryPanel
+    from nav2_config.gui.compare_panel import ComparePanel
+    from nav2_config.gui.inspector_panel import InspectorPanel
+    _INSPECTOR_AVAILABLE = True
+except ImportError:
+    HistoryPanel = None  # type: ignore[assignment,misc]
+    ComparePanel = None  # type: ignore[assignment,misc]
+    InspectorPanel = None  # type: ignore[assignment,misc]
+    _INSPECTOR_AVAILABLE = False
+
+
+@dataclass
+class ApplyParamRequest:
+    """Request to apply a single parameter change, with history metadata."""
+
+    node_path: str
+    param_name: str
+    value: Any
+    ros2_name: str
+    type_hint: str
+    hot_reload: bool
+    source: Any  # ChangeSource enum value (or None when history unavailable)
+    batch_id: Optional[str] = None
+    history_entry_id: Optional[str] = None
 
 _CONFIG_PATH = Path.home() / '.config' / 'nav2_config' / 'settings.json'
 
@@ -286,6 +331,12 @@ class MainWindow(QMainWindow):
         self._topology_nodes: dict[str, DiscoveredNav2Node] = {}
         self._topology_managers: dict[str, DiscoveredLifecycleManager] = {}
         self._selected_node_path: str | None = None
+
+        # History/compare feature — guarded in case modules aren't built yet
+        self._history: Optional[Any] = HistoryManager() if _HISTORY_AVAILABLE else None
+        # Maps (node_path, param_name) -> entry_id for in-flight set calls
+        self._pending_history: dict[tuple[str, str], str] = {}
+
         self._build_ui()
         self._connect_signals()
         self._restore_window_state()
@@ -476,9 +527,23 @@ class MainWindow(QMainWindow):
         )
         self._yaml_panel = YamlPanel()
 
+        # Wrap YamlPanel in InspectorPanel when the history/compare modules are available.
+        if _INSPECTOR_AVAILABLE:
+            self._history_panel = HistoryPanel()
+            self._compare_panel = ComparePanel()
+            self._inspector = InspectorPanel(
+                self._yaml_panel, self._history_panel, self._compare_panel
+            )
+            right_widget = self._inspector
+        else:
+            self._history_panel = None
+            self._compare_panel = None
+            self._inspector = None
+            right_widget = self._yaml_panel
+
         splitter.addWidget(self._node_panel)
         splitter.addWidget(self._param_panel)
-        splitter.addWidget(self._yaml_panel)
+        splitter.addWidget(right_widget)
         splitter.setSizes([240, 10000, 300])
 
         # Wrap splitter in a container so the notification bar can sit above it.
@@ -573,6 +638,28 @@ class MainWindow(QMainWindow):
         self._node.signals.load_map_result.connect(self._on_load_map_result)
         self._node.signals.post_action_result.connect(self._on_post_action_result)
         self._node.signals.restart_suggested.connect(self._on_restart_suggested)
+
+        # History/compare feature signal wiring
+        if _HISTORY_AVAILABLE and self._history is not None:
+            self._history.history_entry_added.connect(
+                self._history_panel.add_entry
+                if self._history_panel is not None
+                else lambda _e: None
+            )
+            self._history.history_entry_updated.connect(
+                self._history_panel.update_entry
+                if self._history_panel is not None
+                else lambda _e: None
+            )
+            self._history.history_reset.connect(
+                self._history_panel.clear
+                if self._history_panel is not None
+                else lambda: None
+            )
+        if self._history_panel is not None:
+            self._history_panel.undo_requested.connect(self._on_undo_requested)
+        if self._compare_panel is not None:
+            self._compare_panel.apply_selected_requested.connect(self._on_compare_apply)
 
     # ------------------------------------------------------------------
     # Private slots
@@ -861,6 +948,14 @@ class MainWindow(QMainWindow):
                 '(current node is %s)',
                 node_name, param_name, self._selected_node_path,
             )
+
+        # Update history entry status for this in-flight set call
+        if _HISTORY_AVAILABLE and self._history is not None:
+            pending_id = self._pending_history.pop((node_name, param_name), None)
+            if pending_id is not None:
+                self._history.update_entry_status(
+                    pending_id, 'applied' if success else 'failed'
+                )
 
         # Apply or discard the staged config change for hot-reload params.
         staged = self._pending_config_set.pop((node_name, param_name), None)
@@ -1175,17 +1270,143 @@ class MainWindow(QMainWindow):
         self.set_status(f'Loaded config: {filepath}')
 
     def _on_params_externally_changed(self, node_name: str, changed: list) -> None:
-        for param_name, new_value in changed:
+        # changed is a list of (param_name, old_value, new_value) 3-tuples
+        for item in changed:
+            if len(item) == 3:
+                param_name, old_value, new_value = item
+            else:
+                # Backwards-compat: 2-tuple (param_name, new_value)
+                param_name, new_value = item
+                old_value = None
             self._param_panel.update_param_value(param_name, new_value)
             self._param_panel.highlight_external_change(param_name)
+            # Record to history
+            if _HISTORY_AVAILABLE and self._history is not None:
+                entry_id = str(uuid.uuid4())
+                entry = ParamHistoryEntry(
+                    entry_id=entry_id,
+                    timestamp=datetime.now(),
+                    ref=ParamRef(node_path=node_name, param_name=param_name),
+                    old_value=old_value,
+                    new_value=new_value,
+                    source=ChangeSource.EXTERNAL_CHANGE,
+                    batch_id=None,
+                    ros2_name=param_name,
+                    type_hint="string",
+                    hot_reload=True,
+                    status="applied",
+                )
+                self._history.record_change(entry)
         if len(changed) == 1:
-            name, val = changed[0]
+            item = changed[0]
+            name = item[0]
+            val = item[2] if len(item) == 3 else item[1]
             self.set_status(f'External change: {name} = {val}')
         else:
             self.set_status(
                 f'{len(changed)} params changed externally on {node_name.lstrip("/")}'
             )
         logger.info('External changes on %s: %s', node_name, changed)
+
+    # ------------------------------------------------------------------
+    # History/compare integration
+    # ------------------------------------------------------------------
+
+    def _apply_param_change(self, req: 'ApplyParamRequest') -> None:
+        """Apply a parameter change and record it in the history.
+
+        Records the change before dispatching it to the ROS2 node.  The history
+        entry status is updated to 'applied' or 'failed' when the ROS2 result
+        arrives via ``_on_param_set_result``.
+
+        Args:
+            req: The parameter change to apply.
+        """
+        if _HISTORY_AVAILABLE and self._history is not None:
+            entry_id = str(uuid.uuid4())
+            old_value = self._history.get_latest_value(
+                ParamRef(node_path=req.node_path, param_name=req.param_name)
+            )
+            entry = ParamHistoryEntry(
+                entry_id=entry_id,
+                timestamp=datetime.now(),
+                ref=ParamRef(node_path=req.node_path, param_name=req.param_name),
+                old_value=old_value,
+                new_value=req.value,
+                source=req.source,
+                batch_id=req.batch_id,
+                ros2_name=req.ros2_name,
+                type_hint=req.type_hint,
+                hot_reload=req.hot_reload,
+                status="pending",
+            )
+            self._history.record_change(entry)
+            # Track entry so _on_param_set_result can update its status
+            self._pending_history[(req.node_path, req.param_name)] = entry_id
+
+        if req.hot_reload:
+            self._node.request_set_param(
+                req.node_path, req.ros2_name, req.value, req.type_hint
+            )
+
+    def _on_undo_requested(self, entry_id: str) -> None:
+        """Undo a previously-recorded parameter change.
+
+        Looks up the original entry, creates a reverse entry, and re-applies
+        the old value to the live ROS2 node.
+
+        Args:
+            entry_id: UUID string of the history entry to undo.
+        """
+        if not _HISTORY_AVAILABLE or self._history is None:
+            return
+        undo_entry = self._history.undo_entry(entry_id)
+        if undo_entry is None:
+            logger.warning('_on_undo_requested: entry_id %r not found', entry_id)
+            return
+        req = ApplyParamRequest(
+            node_path=undo_entry.ref.node_path,
+            param_name=undo_entry.ref.param_name,
+            value=undo_entry.new_value,
+            ros2_name=undo_entry.ros2_name,
+            type_hint=undo_entry.type_hint,
+            hot_reload=undo_entry.hot_reload,
+            source=ChangeSource.UNDO,
+            history_entry_id=undo_entry.entry_id,
+        )
+        self._apply_param_change(req)
+
+    def _on_compare_apply(self, diffs: list) -> None:
+        """Apply a batch of diff entries from the compare panel.
+
+        All entries are applied as a single batch (shared batch_id) so they
+        appear grouped in the history panel.
+
+        Args:
+            diffs: List of ParamDiffEntry objects selected in the compare panel.
+        """
+        if not diffs:
+            return
+        batch_id = str(uuid.uuid4())
+        for diff_entry in diffs:
+            right = getattr(diff_entry, 'right', None)
+            right_value = getattr(right, 'value', None) if right else None
+            right_type = getattr(right, 'type_hint', 'string') if right else 'string'
+            right_hot = getattr(right, 'hot_reload', True) if right else True
+            ref = getattr(diff_entry, 'ref', None)
+            if ref is None:
+                continue
+            req = ApplyParamRequest(
+                node_path=ref.node_path,
+                param_name=ref.param_name,
+                value=right_value,
+                ros2_name=ref.param_name,  # best-effort fallback
+                type_hint=right_type,
+                hot_reload=right_hot,
+                source=ChangeSource.COMPARE_APPLY if _HISTORY_AVAILABLE else None,
+                batch_id=batch_id,
+            )
+            self._apply_param_change(req)
 
     # ------------------------------------------------------------------
     # Lifecycle action slots
