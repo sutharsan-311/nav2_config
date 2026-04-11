@@ -132,6 +132,18 @@ def test_extract_not_set_returns_none() -> None:
     assert _extract_value(pv) is None
 
 
+def test_make_parameter_value_invalid_int_raises_valueerror() -> None:
+    """Non-numeric string for an int param raises ValueError, not an unhandled crash."""
+    with pytest.raises(ValueError, match="Cannot convert"):
+        _make_parameter_value("abc", "int")
+
+
+def test_make_parameter_value_invalid_float_raises_valueerror() -> None:
+    """Non-numeric string for a double param raises ValueError, not an unhandled crash."""
+    with pytest.raises(ValueError, match="Cannot convert"):
+        _make_parameter_value("xyz", "double")
+
+
 # ---------------------------------------------------------------------------
 # list_params
 # ---------------------------------------------------------------------------
