@@ -34,6 +34,7 @@ from nav2_config.gui import icons as _icons
 
 from nav2_config.types.params import ParamValue
 from nav2_config.core.yaml_exporter import export_yaml
+from nav2_config.core.node_discovery import path_basename
 
 logger = logging.getLogger(__name__)
 
@@ -275,7 +276,7 @@ class YamlPanel(QWidget):
             self._update_title(1)
             return
 
-        bare = self._current_node.lstrip('/').split('/')[0]
+        bare = path_basename(self._current_node)
         section = self._extract_node_section(self._full_yaml_str or '', bare)
 
         if section is None:
