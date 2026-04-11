@@ -34,7 +34,7 @@ from nav2_config.gui import icons as _icons
 
 from nav2_config.types.params import ParamValue
 from nav2_config.core.yaml_exporter import export_yaml
-from nav2_config.core.node_discovery import path_basename
+from nav2_config.core.node_discovery import path_basename, infer_stack_namespace
 
 logger = logging.getLogger(__name__)
 
@@ -247,23 +247,71 @@ class YamlPanel(QWidget):
 
     _TOP_KEY_RE = re.compile(r'^[\w./\-]+\s*:')
 
-    def _extract_node_section(self, yaml_str: str, bare_node: str) -> str | None:
-        """Extract the top-level section for *bare_node* from a full YAML string.
+    def _extract_node_section(
+        self, yaml_str: str, bare_node: str, stack_namespace: str = '/'
+    ) -> str | None:
+        """Extract the section for *bare_node* from a full YAML string.
 
-        Returns the section lines as a string (trailing blank lines stripped),
-        or ``None`` if the key is not found.
+        For root-namespace nodes the section is a top-level key
+        (``controller_server:``).  For namespaced nodes the section is nested
+        one level deeper under the namespace key (``robot1:`` →
+        ``controller_server:``), so we must descend into that block first.
+
+        Args:
+            yaml_str: Full YAML file content as a string.
+            bare_node: The node basename, e.g. ``controller_server``.
+            stack_namespace: The stack namespace, e.g. ``/robot1`` or ``/``.
+
+        Returns:
+            The node's YAML section as a string (trailing blank lines
+            stripped), or ``None`` if the key cannot be found.
         """
         lines = yaml_str.splitlines()
+
+        if stack_namespace == '/':
+            # Root namespace: the bare_node key is at the top level (indent 0).
+            key_indent = ''
+        else:
+            # Namespaced: first locate the namespace block, then find bare_node
+            # as an indented child key within it.
+            ns_key = stack_namespace.lstrip('/')
+            ns_start: int | None = None
+            ns_end = len(lines)
+            for i, line in enumerate(lines):
+                if line == f'{ns_key}:' or line.startswith(f'{ns_key}: '):
+                    ns_start = i
+                elif ns_start is not None and self._TOP_KEY_RE.match(line):
+                    ns_end = i
+                    break
+            if ns_start is None:
+                return None
+            # Restrict search to inside the namespace block.
+            lines = lines[ns_start:ns_end]
+            # The bare_node key is indented by 2 spaces inside the namespace block.
+            key_indent = '  '
+
+        # Now find the bare_node key within the (possibly narrowed) lines.
+        node_key_bare = f'{key_indent}{bare_node}:'
+        node_key_inline = f'{key_indent}{bare_node}: '
+        # A top-level key (at indent 0) signals the end of the current node section.
+        # For namespaced search, we stop at the same indent level (2-space keys).
+        peer_re = (
+            re.compile(r'^[\w./\-]+\s*:')
+            if key_indent == ''
+            else re.compile(r'^  [\w./\-]+\s*:')
+        )
+
         start: int | None = None
         end = len(lines)
         for i, line in enumerate(lines):
-            if line == f'{bare_node}:' or line.startswith(f'{bare_node}: '):
+            if line == node_key_bare or line.startswith(node_key_inline):
                 start = i
-            elif start is not None and self._TOP_KEY_RE.match(line):
+            elif start is not None and peer_re.match(line):
                 end = i
                 break
         if start is None:
             return None
+
         section = lines[start:end]
         while section and not section[-1].strip():
             section.pop()
@@ -277,7 +325,8 @@ class YamlPanel(QWidget):
             return
 
         bare = path_basename(self._current_node)
-        section = self._extract_node_section(self._full_yaml_str or '', bare)
+        stack_ns = infer_stack_namespace(self._current_node, bare)
+        section = self._extract_node_section(self._full_yaml_str or '', bare, stack_ns)
 
         if section is None:
             self._editor.setPlainText(f'# {bare}: not found in config file')
