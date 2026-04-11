@@ -343,6 +343,10 @@ class _NamespaceHeader(QWidget):
             btn.setEnabled(present)
             btn.setToolTip(tip)
 
+    @property
+    def is_expanded(self) -> bool:
+        return self._expanded
+
 
 class _NamespaceSection(QWidget):
     """A collapsible section grouping nodes from one stack_namespace."""
@@ -471,6 +475,10 @@ class _NamespaceSection(QWidget):
         state   = self._lifecycle_states.get(node_path, 'unknown')
         pending = node_path in self._restart_pending
         row.update_state(found, state, pending)
+
+    @property
+    def is_expanded(self) -> bool:
+        return self._header.is_expanded
 
     @property
     def node_paths(self) -> list[str]:
@@ -902,8 +910,11 @@ class NodePanel(QWidget):
         row = self._node_rows.get(node_path)
         if row:
             row.update_count(count)
-        for section in self._namespace_sections.values():
-            section.set_param_count(node_path, count)
+        node = self._topology_nodes.get(node_path)
+        if node:
+            section = self._namespace_sections.get(node.stack_namespace)
+            if section:
+                section.set_param_count(node_path, count)
 
     def set_node_restart_pending(self, node_path: str, pending: bool) -> None:
         """Show / clear a restart-pending indicator on a node row."""
@@ -912,8 +923,11 @@ class NodePanel(QWidget):
         else:
             self._restart_pending.discard(node_path)
         self._refresh_row(node_path)
-        for section in self._namespace_sections.values():
-            section.set_node_restart_pending(node_path, pending)
+        node = self._topology_nodes.get(node_path)
+        if node:
+            section = self._namespace_sections.get(node.stack_namespace)
+            if section:
+                section.set_node_restart_pending(node_path, pending)
 
     def set_lifecycle_manager_present(self, present: bool) -> None:
         """Record lifecycle_manager presence (used by context menu and stack bar)."""
@@ -960,9 +974,8 @@ class NodePanel(QWidget):
         managers_by_path: dict[str, DiscoveredLifecycleManager],
     ) -> None:
         """Rebuild the grouped scroll area, preserving per-namespace collapse state."""
-        # Save collapse state from existing sections before clearing
         for ns, section in self._namespace_sections.items():
-            self._collapse_state[ns] = section._header._expanded
+            self._collapse_state[ns] = section.is_expanded
 
         # Clear grouped layout (remove all items except the trailing stretch)
         while self._grouped_layout.count() > 1:
@@ -1033,10 +1046,9 @@ class NodePanel(QWidget):
 
     def _on_grouped_node_selected(self, node_path: str) -> None:
         """Handle node click in grouped mode — deselect previous, emit signal."""
-        if self._selected_node and self._selected_node != node_path:
-            for section in self._namespace_sections.values():
-                section.set_selected(self._selected_node, False)
+        self._set_row_selected(self._selected_node, False)
         self._selected_node = node_path
+        self._set_row_selected(node_path, True)
         self.node_selected.emit(node_path)
         logger.debug('Node selected (grouped): %s', node_path)
 

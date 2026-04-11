@@ -189,6 +189,9 @@ class Nav2ConfigNode(Node):
         #: Latest discovered lifecycle managers; keyed by full_path.
         self._discovered_managers: dict = {}
 
+        # None sentinel means "first tick — always emit".
+        self._prev_topology_key: tuple | None = None
+
         # ROS2 timers share the same reentrant group so that service calls
         # issued inside these callbacks can complete concurrently.
         self.create_timer(self.DISCOVERY_INTERVAL, self._on_timer_tick,
@@ -444,8 +447,12 @@ class Nav2ConfigNode(Node):
         self._update_lifecycle_manager_status(nodes_and_ns)
 
         # Emit full topology — used by node panel for namespace grouping.
+        # Guard: skip emit when neither the node set nor the manager set changed.
         nodes_by_path = {n.full_path: n for n in found_nodes.values()}
-        self.signals.topology_updated.emit(nodes_by_path, dict(self._discovered_managers))
+        new_topology_key = (frozenset(nodes_by_path), frozenset(self._discovered_managers))
+        if new_topology_key != self._prev_topology_key:
+            self._prev_topology_key = new_topology_key
+            self.signals.topology_updated.emit(nodes_by_path, dict(self._discovered_managers))
 
         # Poll lifecycle state for all discovered nodes and emit if changed.
         self._poll_lifecycle_states(discovered)
@@ -859,8 +866,10 @@ class Nav2ConfigNode(Node):
                     self, full_path, self._cb_group
                 )
 
-        # Rebuild node↔manager mappings unconditionally each tick so that they
-        # stay fresh even when the set of managers has not changed.
+        # Rebuild node↔manager mappings only when the manager set changes.
+        # node_names is a static launch param — no need to re-read it every tick.
+        if active == self._active_lifecycle_managers:
+            return
         new_node_to_manager: dict[str, str] = {}
         new_manager_to_nodes: dict[str, set[str]] = {}
         for full_path, manager in mgr_status.items():
@@ -885,19 +894,18 @@ class Nav2ConfigNode(Node):
         self._node_to_manager = new_node_to_manager
         self._manager_to_nodes = new_manager_to_nodes
 
-        if active != self._active_lifecycle_managers:
-            self._active_lifecycle_managers = active
-            present = bool(active)
-            primary = next(iter(sorted(active))) if active else ''
-            self.signals.lifecycle_manager_status.emit(present, primary)
-            if active:
-                self.get_logger().info(
-                    f'lifecycle_managers detected: {sorted(active)}'
-                )
-            else:
-                self.get_logger().info(
-                    'lifecycle_manager not found — direct lifecycle transitions enabled'
-                )
+        self._active_lifecycle_managers = active
+        present = bool(active)
+        primary = next(iter(sorted(active))) if active else ''
+        self.signals.lifecycle_manager_status.emit(present, primary)
+        if active:
+            self.get_logger().info(
+                f'lifecycle_managers detected: {sorted(active)}'
+            )
+        else:
+            self.get_logger().info(
+                'lifecycle_manager not found — direct lifecycle transitions enabled'
+            )
 
     def _do_lifecycle_manager_restart(self) -> None:
         """Restart all Nav2 nodes via all active lifecycle_managers.

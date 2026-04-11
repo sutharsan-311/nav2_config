@@ -26,6 +26,7 @@ from PyQt6.QtWidgets import (
 
 from nav2_config.types.params import ParamValue
 from nav2_config.gui.widgets.param_row import ParamRow
+from nav2_config.core.node_discovery import path_basename
 
 if TYPE_CHECKING:
     from nav2_config.core.topic_discovery import TopicDiscovery
@@ -534,7 +535,7 @@ class ParamPanel(QWidget):
                 display_name = self._selected_node.display_name
                 stack_namespace = self._selected_node.stack_namespace
             else:
-                display_name = node_path.lstrip('/').rsplit('/', 1)[-1].replace('_', ' ').title()
+                display_name = path_basename(node_path).replace('_', ' ').title()
                 stack_namespace = '/'
             self._lc_bar.set_node(
                 node_path, display_name, stack_namespace, state, stack_has_manager
@@ -677,8 +678,7 @@ class ParamPanel(QWidget):
         """Update the panel title to reflect the selected node."""
         self._node_name = node_name
         self._selected_node = None
-        bare = node_name.lstrip('/')
-        display = bare.replace('_', ' ').title()
+        display = path_basename(node_name).replace('_', ' ').title()
         self._title_label.setText(f'Parameters  —  {display}')
 
     def load_params(self, params: list[ParamValue]) -> None:
