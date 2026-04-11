@@ -962,9 +962,26 @@ class NodePanel(QWidget):
         self._update_count_header(len(nodes_by_path))
 
     def _rebuild_flat_view(self, nodes_by_path: dict[str, DiscoveredNav2Node]) -> None:
-        """Refresh found-node state in the flat list rows."""
+        """Rebuild flat list rows from topology paths, then refresh found-node state."""
         found = {n.full_path for n in nodes_by_path.values()}
         self._found_nodes = found
+
+        # If the set of node paths has changed (e.g. namespaced stack), rebuild the
+        # list widget so rows reflect actual full_paths rather than hardcoded NAV2_NODES.
+        if set(self._node_rows.keys()) != set(nodes_by_path.keys()):
+            self._list.clear()
+            self._node_rows.clear()
+            for i, node in enumerate(nodes_by_path.values()):
+                item = QListWidgetItem()
+                item.setData(Qt.ItemDataRole.UserRole, node.full_path)
+                item.setSizeHint(QSize(0, _ROW_HEIGHT))
+                item.setFlags(Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable)
+                item.setBackground(QColor(_BG_ROW2 if i % 2 else _BG_PANEL))
+                self._list.addItem(item)
+                row = _NodeRow(node.full_path, node.display_name)
+                self._list.setItemWidget(item, row)
+                self._node_rows[node.full_path] = row
+
         for path in self._node_rows:
             self._refresh_row(path)
 
