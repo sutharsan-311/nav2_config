@@ -51,6 +51,12 @@ from nav2_config.core.node_discovery import (
     DiscoveredNav2Node,
     DiscoveredLifecycleManager,
 )
+try:
+    from nav2_config.core.robot_mode_detector import RobotMode
+    _ROBOT_MODE_AVAILABLE = True
+except ImportError:
+    RobotMode = None  # type: ignore[assignment,misc]
+    _ROBOT_MODE_AVAILABLE = False
 from nav2_config.gui.icons import (
     menu_about, menu_descriptions, menu_open,
     menu_quit, menu_refresh, menu_save, menu_save_as,
@@ -71,12 +77,24 @@ try:
         ParamHistoryEntry,
         ParamRef,
     )
+    from nav2_config.core.config_diff import (
+        diff_snapshots,
+        snapshot_from_param_values,
+        ParamSnapshot,
+        ParamSnapshotEntry,
+    )
+    from nav2_config.core.yaml_importer import import_yaml as _import_yaml_for_compare
     _HISTORY_AVAILABLE = True
 except ImportError:
     HistoryManager = None  # type: ignore[assignment,misc]
     ChangeSource = None  # type: ignore[assignment,misc]
     ParamHistoryEntry = None  # type: ignore[assignment,misc]
     ParamRef = None  # type: ignore[assignment,misc]
+    diff_snapshots = None  # type: ignore[assignment,misc]
+    snapshot_from_param_values = None  # type: ignore[assignment,misc]
+    ParamSnapshot = None  # type: ignore[assignment,misc]
+    ParamSnapshotEntry = None  # type: ignore[assignment,misc]
+    _import_yaml_for_compare = None  # type: ignore[assignment,misc]
     _HISTORY_AVAILABLE = False
 
 try:
@@ -139,6 +157,51 @@ _RED      = '#e53935'
 logger = logging.getLogger(__name__)
 
 _ROS_DISTRO: str = os.environ.get('ROS_DISTRO', 'unknown').capitalize()
+
+
+class _RobotModePill(QLabel):
+    """Status bar pill showing detected simulation / real-robot mode.
+
+    Always visible on the right side of the status bar.  Colors match the
+    RViz2 light theme:
+
+    - SIMULATION → blue pill  (``#1565c0`` on ``#e3f2fd``)
+    - REAL ROBOT → green pill (``#2e7d32`` on ``#e8f5e9``)
+    - UNKNOWN    → gray pill  (``#757575`` on ``#f5f5f5``)
+    """
+
+    _STYLES: dict = {
+        'SIMULATION': ('SIMULATION', '#1565c0', '#bbdefb', '#1565c0'),
+        'REAL':       ('REAL ROBOT', '#1b5e20', '#c8e6c9', '#2e7d32'),
+        'UNKNOWN':    ('DETECTING...', '#424242', '#eeeeee', '#9e9e9e'),
+    }
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._apply_style('UNKNOWN')
+
+    def set_mode(self, mode: object) -> None:
+        """Update pill appearance for *mode* (a :class:`~nav2_config.core.robot_mode_detector.RobotMode`)."""
+        if mode is None or not _ROBOT_MODE_AVAILABLE:
+            self._apply_style('UNKNOWN')
+            return
+        self._apply_style(mode.name)
+
+    def _apply_style(self, mode_name: str) -> None:
+        label, fg, bg, border = self._STYLES.get(mode_name, self._STYLES['UNKNOWN'])
+        self.setText(label)
+        self.setStyleSheet(
+            f'QLabel {{'
+            f'  background: {bg};'
+            f'  color: {fg};'
+            f'  font-size: 11px;'
+            f'  font-weight: bold;'
+            f'  border-radius: 8px;'
+            f'  border: 1px solid {border};'
+            f'  padding: 2px 8px;'
+            f'}}'
+        )
 
 
 class _RestartNotificationBar(QWidget):
@@ -336,6 +399,9 @@ class MainWindow(QMainWindow):
         self._history: Optional[Any] = HistoryManager() if _HISTORY_AVAILABLE else None
         # Maps (node_path, param_name) -> entry_id for in-flight set calls
         self._pending_history: dict[tuple[str, str], str] = {}
+        # Maps (node_path, param_name) -> new_value for in-flight set calls,
+        # consumed in _on_param_set_result to update the watcher baseline.
+        self._pending_set_values: dict[tuple[str, str], Any] = {}
 
         self._build_ui()
         self._connect_signals()
@@ -584,6 +650,9 @@ class MainWindow(QMainWindow):
         )
         status.addPermanentWidget(self._status_last_set)
 
+        self._robot_mode_pill = _RobotModePill()
+        status.addPermanentWidget(self._robot_mode_pill)
+
         self._last_set_timer = QTimer(self)
         self._last_set_timer.setSingleShot(True)
         self._last_set_timer.timeout.connect(
@@ -638,6 +707,9 @@ class MainWindow(QMainWindow):
         self._node.signals.load_map_result.connect(self._on_load_map_result)
         self._node.signals.post_action_result.connect(self._on_post_action_result)
         self._node.signals.restart_suggested.connect(self._on_restart_suggested)
+        self._node.signals.amcl_pose_status.connect(self._on_amcl_pose_status)
+        if _ROBOT_MODE_AVAILABLE:
+            self._node.signals.robot_mode_changed.connect(self._on_robot_mode_changed)
 
         # History/compare feature signal wiring
         if _HISTORY_AVAILABLE and self._history is not None:
@@ -659,11 +731,17 @@ class MainWindow(QMainWindow):
         if self._history_panel is not None:
             self._history_panel.undo_requested.connect(self._on_undo_requested)
         if self._compare_panel is not None:
+            self._compare_panel.compare_requested.connect(self._on_compare_requested)
             self._compare_panel.apply_selected_requested.connect(self._on_compare_apply)
 
     # ------------------------------------------------------------------
     # Private slots
     # ------------------------------------------------------------------
+
+    def _on_robot_mode_changed(self, mode: object) -> None:
+        """Update status bar pill and param panel banner when robot mode changes."""
+        self._robot_mode_pill.set_mode(mode)
+        self._param_panel.set_robot_mode(mode)
 
     def _on_nodes_discovered(self, status: dict[str, bool]) -> None:
         found = sum(1 for v in status.values() if v)
@@ -871,6 +949,30 @@ class MainWindow(QMainWindow):
             # is handled automatically by _after_param_set in the ROS2 thread.
             if post_set_action == 'load_map':
                 self.set_status('Loading map...', timeout_ms=0)
+            # Record to history before dispatching; status updated in _on_param_set_result.
+            # Keyed by (node_name, param_name) — matches what param_set_result signal carries.
+            if _HISTORY_AVAILABLE and self._history is not None:
+                _entry_id = str(uuid.uuid4())
+                _old_value: Any = None
+                for _pv in self._current_params:
+                    if _pv.definition.param == param_name:
+                        _old_value = _pv.confirmed_value
+                        break
+                self._history.record_change(ParamHistoryEntry(
+                    entry_id=_entry_id,
+                    timestamp=datetime.now(),
+                    ref=ParamRef(node_path=node_name, param_name=param_name),
+                    old_value=_old_value,
+                    new_value=value,
+                    source=ChangeSource.LIVE_SET,
+                    batch_id=None,
+                    ros2_name=ros2_name,
+                    type_hint=type_hint,
+                    hot_reload=True,
+                    status="pending",
+                ))
+                self._pending_history[(node_name, param_name)] = _entry_id
+            self._pending_set_values[(node_name, param_name)] = value
             self._node.request_set_param(node_name, param_name, value, type_hint)
         else:
             # Non-hot-reload: update config in-memory then save to disk immediately.
@@ -956,6 +1058,11 @@ class MainWindow(QMainWindow):
                 self._history.update_entry_status(
                     pending_id, 'applied' if success else 'failed'
                 )
+
+        # Update watcher baseline so the next poll doesn't re-report this as external.
+        set_value = self._pending_set_values.pop((node_name, param_name), None)
+        if set_value is not None and success:
+            self._node.update_watcher_baseline_entry(param_name, set_value)
 
         # Apply or discard the staged config change for hot-reload params.
         staged = self._pending_config_set.pop((node_name, param_name), None)
@@ -1161,7 +1268,31 @@ class MainWindow(QMainWindow):
         self._yaml_panel.set_file_content(cfg.to_yaml_string(), dirty=False)
         self._add_recent_file(filepath)
         self.set_status(f'Loaded config: {filepath}')
-        logger.info('Config loaded: %s', filepath)
+        logger.info('Config loaded from recent: %s', filepath)
+        # Record FILE_LOAD history entries for params that differ from current live values.
+        if _HISTORY_AVAILABLE and self._history is not None and self._current_params:
+            _batch_id = str(uuid.uuid4())
+            _now = datetime.now()
+            for _pv in self._current_params:
+                _node_path = _pv.node_path or f'/{_pv.definition.node}'
+                _file_val = cfg.get_value(_node_path, _pv.definition.ros2_name)
+                if _file_val is None:
+                    continue
+                if str(_file_val) == str(_pv.confirmed_value):
+                    continue
+                self._history.record_change(ParamHistoryEntry(
+                    entry_id=str(uuid.uuid4()),
+                    timestamp=_now,
+                    ref=ParamRef(node_path=_node_path, param_name=_pv.definition.param),
+                    old_value=_pv.confirmed_value,
+                    new_value=_file_val,
+                    source=ChangeSource.FILE_LOAD,
+                    batch_id=_batch_id,
+                    ros2_name=_pv.definition.ros2_name,
+                    type_hint=_pv.definition.type,
+                    hot_reload=_pv.definition.hot_reload,
+                    status="applied",
+                ))
         self._connect_to_nodes = connect_to_nodes
         if not connect_to_nodes:
             self._node.unwatch_node()
@@ -1323,28 +1454,32 @@ class MainWindow(QMainWindow):
             req: The parameter change to apply.
         """
         if _HISTORY_AVAILABLE and self._history is not None:
-            entry_id = str(uuid.uuid4())
-            old_value = self._history.get_latest_value(
-                ParamRef(node_path=req.node_path, param_name=req.param_name)
-            )
-            entry = ParamHistoryEntry(
-                entry_id=entry_id,
-                timestamp=datetime.now(),
-                ref=ParamRef(node_path=req.node_path, param_name=req.param_name),
-                old_value=old_value,
-                new_value=req.value,
-                source=req.source,
-                batch_id=req.batch_id,
-                ros2_name=req.ros2_name,
-                type_hint=req.type_hint,
-                hot_reload=req.hot_reload,
-                status="pending",
-            )
-            self._history.record_change(entry)
+            entry_id = req.history_entry_id or str(uuid.uuid4())
+
+            if req.history_entry_id is None:
+                old_value = self._history.get_latest_value(
+                    ParamRef(node_path=req.node_path, param_name=req.param_name)
+                )
+                entry = ParamHistoryEntry(
+                    entry_id=entry_id,
+                    timestamp=datetime.now(),
+                    ref=ParamRef(node_path=req.node_path, param_name=req.param_name),
+                    old_value=old_value,
+                    new_value=req.value,
+                    source=req.source,
+                    batch_id=req.batch_id,
+                    ros2_name=req.ros2_name,
+                    type_hint=req.type_hint,
+                    hot_reload=req.hot_reload,
+                    status="pending",
+                )
+                self._history.record_change(entry)
+
             # Track entry so _on_param_set_result can update its status
             self._pending_history[(req.node_path, req.param_name)] = entry_id
 
         if req.hot_reload:
+            self._pending_set_values[(req.node_path, req.param_name)] = req.value
             self._node.request_set_param(
                 req.node_path, req.ros2_name, req.value, req.type_hint
             )
@@ -1376,6 +1511,116 @@ class MainWindow(QMainWindow):
         )
         self._apply_param_change(req)
 
+    def _on_compare_requested(self, left_id: str, right_id: str) -> None:
+        """Build snapshots from the two selected sources and populate the compare table.
+
+        Node paths are normalized to a canonical form (leading slash, no trailing
+        slash, whitespace stripped) so that ROS2 live paths and YAML-derived paths
+        match regardless of whether the YAML omits the leading slash.
+
+        Args:
+            left_id: Source identifier for the left (base) snapshot.
+            right_id: Source identifier for the right (target) snapshot.
+        """
+        if self._compare_panel is None or not _HISTORY_AVAILABLE:
+            return
+
+        node_path = self._selected_node_path
+        if not node_path:
+            self.set_status("Select a node first before comparing")
+            return
+
+        left_snap = self._build_compare_snapshot(left_id, node_path, "left")
+        right_snap = self._build_compare_snapshot(right_id, node_path, "right")
+
+        if left_snap is None:
+            self.set_status(f"Cannot build left snapshot from '{left_id}'")
+            return
+        if right_snap is None:
+            self.set_status(f"Cannot build right snapshot from '{right_id}'")
+            return
+
+        diffs = diff_snapshots(left_snap, right_snap)
+        self._compare_panel.show_diff(diffs)
+        count = len(diffs)
+        self.set_status(
+            f"Compare: {count} difference(s) found" if count else "Compare: no differences found"
+        )
+
+    def _build_compare_snapshot(
+        self, source_id: str, node_path: str, label: str
+    ) -> "ParamSnapshot | None":
+        """Return a ParamSnapshot for *source_id*, or None if unavailable.
+
+        Normalizes the node path to canonical form ('/' + stripped segments) so
+        that live paths ('/local_costmap/local_costmap') and YAML-derived paths
+        ('local_costmap/local_costmap') map to the same ParamRef keys.
+
+        Args:
+            source_id: One of the built-in labels or a full filepath for Browse sources.
+            node_path: The currently-selected ROS2 node path.
+            label: Human-readable label for the resulting snapshot.
+        """
+        norm_path = "/" + node_path.strip("/").strip()
+
+        if source_id == "Live (current node)":
+            # Use _all_node_params so we always get the params for the requested node,
+            # not whatever _current_params happens to hold (which may be a different
+            # node if the user switched selection before params arrived).
+            bare = node_path.lstrip("/")
+            node_params = self._all_node_params.get(bare) or self._current_params
+            if not node_params:
+                return None
+            return snapshot_from_param_values(norm_path, node_params, label)
+
+        if source_id in ("Loaded YAML (current)", "Loaded YAML (original)"):
+            if self._config_file is None:
+                return None
+            if source_id == "Loaded YAML (current)":
+                params_dict = self._config_file.get_all_params_for_node(node_path)
+            else:
+                params_dict = self._config_file.get_all_params_for_node_original(node_path)
+            if not params_dict:
+                return None
+            return self._yaml_dict_to_snapshot(norm_path, params_dict, label)
+
+        # Any other string is a filepath from "Browse YAML file..."
+        if _import_yaml_for_compare is None:
+            return None
+        imported = _import_yaml_for_compare(source_id)
+        for raw_path, params_dict in imported.items():
+            if "/" + raw_path.strip("/").strip() == norm_path:
+                return self._yaml_dict_to_snapshot(norm_path, params_dict, label)
+        return None
+
+    @staticmethod
+    def _yaml_dict_to_snapshot(
+        node_path: str,
+        params_dict: dict[str, Any],
+        label: str,
+    ) -> "ParamSnapshot":
+        """Build a ParamSnapshot from a flat {param_name: value} dict.
+
+        Args:
+            node_path: Normalized ROS2 node path (used as ParamRef.node_path).
+            params_dict: Flat mapping of dot-notation param names to values.
+            label: Human-readable label for the snapshot.
+        """
+        snap = ParamSnapshot(
+            snapshot_id=str(uuid.uuid4()),
+            label=label,
+            captured_at=datetime.now(),
+        )
+        for param_name, value in params_dict.items():
+            ref = ParamRef(node_path=node_path, param_name=param_name)
+            snap.entries[ref] = ParamSnapshotEntry(
+                ref=ref,
+                value=value,
+                type_hint="string",
+                ros2_name=param_name,
+            )
+        return snap
+
     def _on_compare_apply(self, diffs: list) -> None:
         """Apply a batch of diff entries from the compare panel.
 
@@ -1389,18 +1634,25 @@ class MainWindow(QMainWindow):
             return
         batch_id = str(uuid.uuid4())
         for diff_entry in diffs:
-            right = getattr(diff_entry, 'right', None)
-            right_value = getattr(right, 'value', None) if right else None
-            right_type = getattr(right, 'type_hint', 'string') if right else 'string'
-            right_hot = getattr(right, 'hot_reload', True) if right else True
             ref = getattr(diff_entry, 'ref', None)
             if ref is None:
                 continue
+            # ParamDiffEntry stores right_value directly (not as a nested object).
+            right_value = getattr(diff_entry, 'right_value', None)
+            right_type = getattr(diff_entry, 'type_hint', 'string')
+            right_ros2_name = getattr(diff_entry, 'ros2_name', ref.param_name)
+            # Look up hot_reload from current params; default True if not found.
+            right_hot = True
+            for _pv in self._current_params:
+                if (_pv.definition.ros2_name == right_ros2_name
+                        and _pv.node_path == ref.node_path):
+                    right_hot = _pv.definition.hot_reload
+                    break
             req = ApplyParamRequest(
                 node_path=ref.node_path,
                 param_name=ref.param_name,
                 value=right_value,
-                ros2_name=ref.param_name,  # best-effort fallback
+                ros2_name=right_ros2_name,
                 type_hint=right_type,
                 hot_reload=right_hot,
                 source=ChangeSource.COMPARE_APPLY if _HISTORY_AVAILABLE else None,
@@ -1589,6 +1841,10 @@ class MainWindow(QMainWindow):
                     self._node_panel.set_node_restart_pending(node_path, False)
 
         self._node.signals.lifecycle_change_result.connect(_on_result)
+
+    def _on_amcl_pose_status(self, message: str) -> None:
+        """Update the status bar with AMCL pose preservation progress."""
+        self.set_status(message, 10000)
 
     def _on_lifecycle_change_result(
         self, node_path: str, success: bool, message: str

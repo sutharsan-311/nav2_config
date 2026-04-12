@@ -73,6 +73,18 @@ class ParamWatcher:
         """Clear the baseline so the next diff re-establishes it from live data."""
         self._baseline = {}
 
+    def update_baseline_entry(self, param_name: str, value: object) -> None:
+        """Update a single baseline entry after a confirmed GUI-initiated set.
+
+        Call this after set_parameters succeeds so the next poll does not
+        re-report the change as an external modification.
+
+        Args:
+            param_name: The ROS2 parameter name (dot-notation).
+            value: The confirmed new value.
+        """
+        self._baseline[param_name] = value
+
     # ------------------------------------------------------------------
     # Diff
     # ------------------------------------------------------------------

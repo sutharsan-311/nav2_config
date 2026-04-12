@@ -292,6 +292,22 @@ class ConfigFile:
             d = d[k]
         return _flatten_params(d) if isinstance(d, dict) else {}
 
+    def get_all_params_for_node_original(self, node_name: str) -> dict[str, Any]:
+        """Return a flat dict of ``param_name → value`` for *node_name* from the original data.
+
+        Uses the data as it was when the file was first loaded (before any in-memory edits).
+
+        Returns:
+            Empty dict if the node is not present in the original file.
+        """
+        key_path = _node_name_to_yaml_keys(node_name)
+        d: Any = self.original_data
+        for k in key_path:
+            if not isinstance(d, dict) or k not in d:
+                return {}
+            d = d[k]
+        return _flatten_params(d) if isinstance(d, dict) else {}
+
     def get_modified_params(self) -> list[tuple[str, str, Any]]:
         """Return all parameters that differ from the originally-loaded values.
 

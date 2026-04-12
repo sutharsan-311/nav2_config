@@ -5,9 +5,11 @@
 
 from __future__ import annotations
 
+import copy
 import dataclasses
 import logging
 import queue
+import threading
 import time
 from typing import Any
 
@@ -27,6 +29,7 @@ from nav2_config.core.node_discovery import (
 )
 from nav2_config.core.param_client import Nav2ParamClient
 from nav2_config.core.param_watcher import ParamWatcher
+from nav2_config.core.robot_mode_detector import RobotMode, RobotModeDetector
 from nav2_config.core.service_caller import Nav2ServiceCaller
 from nav2_config.core.topic_discovery import TopicDiscovery
 from nav2_config.core.frame_discovery import FrameDiscovery
@@ -111,6 +114,14 @@ class SignalBridge(QObject):
     # second arg: dict[str, DiscoveredLifecycleManager] keyed by full_path
     topology_updated = pyqtSignal(dict, dict)
 
+    # Emitted when the detected robot mode changes.
+    # Carries a RobotMode enum value (object type so PyQt6 accepts the enum).
+    robot_mode_changed = pyqtSignal(object)
+
+    # Emitted during AMCL pose preservation around a restart.
+    # Carries a human-readable status string for the status bar.
+    amcl_pose_status = pyqtSignal(str)
+
 
 class Nav2ConfigNode(Node):
     """ROS2 node that connects to a running Nav2 stack.
@@ -180,6 +191,12 @@ class Nav2ConfigNode(Node):
         #: TF frame discovery helper — wraps tf2_ros Buffer.
         self.frame_discovery = FrameDiscovery(self)
 
+        #: Simulation-vs-real-robot detector.
+        self._robot_mode_detector = RobotModeDetector(self, self._param_client)
+
+        #: Most recently emitted robot mode.
+        self._current_robot_mode: RobotMode = RobotMode.UNKNOWN
+
         # None sentinel means "first tick — always emit".
         self._prev_discovered: set[str] | None = None
 
@@ -201,6 +218,10 @@ class Nav2ConfigNode(Node):
         #: increments every _poll_lifecycle_states call; used for even/odd throttle.
         self._poll_tick_count: int = 0
 
+        #: Cached publishers for /initialpose topics, keyed by topic name.
+        #: Created lazily in _publish_initial_pose; one publisher per AMCL namespace.
+        self._initialpose_pubs: dict[str, object] = {}
+
         #: full_path of the node currently selected in the GUI (always polled).
         self._selected_node_path: str | None = None
 
@@ -211,6 +232,8 @@ class Nav2ConfigNode(Node):
         self.create_timer(self.POLL_INTERVAL, self._on_poll_tick,
                           callback_group=self._cb_group)
         self.create_timer(self.TOPIC_FRAME_INTERVAL, self._on_topic_frame_tick,
+                          callback_group=self._cb_group)
+        self.create_timer(5.0, self._on_robot_mode_tick,
                           callback_group=self._cb_group)
 
         self.get_logger().info('Nav2 Config GUI started')
@@ -273,6 +296,18 @@ class Nav2ConfigNode(Node):
     def unwatch_node(self) -> None:
         """Stop polling for external parameter changes."""
         self._watcher.unwatch()
+
+    def update_watcher_baseline_entry(self, param_name: str, value: object) -> None:
+        """Update the watcher baseline for one param after a confirmed live set.
+
+        Prevents the next 2-second poll from re-reporting the GUI-initiated
+        change as an external modification.
+
+        Args:
+            param_name: The parameter name (dot-notation).
+            value: The confirmed new value.
+        """
+        self._watcher.update_baseline_entry(param_name, value)
 
     def request_lifecycle_change(self, node_name: str, transition_id: int) -> None:
         """Ask the ROS2 thread to trigger a single lifecycle transition.
@@ -440,6 +475,24 @@ class Nav2ConfigNode(Node):
     def _on_topic_frame_tick(self) -> None:
         """5-second timer callback: signal the GUI to refresh topic/frame dropdowns."""
         self.signals.discovery_refreshed.emit()
+
+    def _on_robot_mode_tick(self) -> None:
+        """5-second timer callback: detect simulation vs real robot mode.
+
+        Runs on the ROS2 spin thread.  Emits ``signals.robot_mode_changed``
+        only when the detected mode differs from the last emitted value so
+        that the GUI is not spammed with no-op updates.
+
+        Failures are caught and logged at DEBUG level; the method never raises.
+        """
+        try:
+            mode = self._robot_mode_detector.detect(list(self._prev_discovered or set()))
+        except Exception as exc:
+            self.get_logger().debug(f"Robot mode detection error: {exc}")
+            return
+        if mode != self._current_robot_mode:
+            self._current_robot_mode = mode
+            self.signals.robot_mode_changed.emit(mode)
 
     def _on_poll_tick(self) -> None:
         """2-second timer callback: drain request queue, then re-fetch watched node params."""
@@ -1089,19 +1142,163 @@ class Nav2ConfigNode(Node):
                 'lifecycle_manager not found — direct lifecycle transitions enabled'
             )
 
+    # ------------------------------------------------------------------
+    # AMCL pose preservation helpers (ROS2 thread only)
+    # ------------------------------------------------------------------
+
+    def _find_amcl_nodes(self) -> list[str]:
+        """Return sorted full paths of currently discovered AMCL nodes."""
+        return sorted(
+            p for p in (self._prev_discovered or set())
+            if path_basename(p) == 'amcl'
+        )
+
+    def _amcl_pose_topic(self, amcl_path: str) -> str:
+        """Return the /amcl_pose topic for *amcl_path*.
+
+        Examples::
+            '/amcl'         -> '/amcl_pose'
+            '/robot1/amcl'  -> '/robot1/amcl_pose'
+        """
+        ns = amcl_path.rsplit('/', 1)[0] or '/'
+        return '/amcl_pose' if ns == '/' else f'{ns}/amcl_pose'
+
+    def _initialpose_topic(self, amcl_path: str) -> str:
+        """Return the /initialpose topic for *amcl_path*.
+
+        Examples::
+            '/amcl'         -> '/initialpose'
+            '/robot1/amcl'  -> '/robot1/initialpose'
+        """
+        ns = amcl_path.rsplit('/', 1)[0] or '/'
+        return '/initialpose' if ns == '/' else f'{ns}/initialpose'
+
+    def _capture_amcl_pose(self, amcl_path: str) -> object | None:
+        """Subscribe to the amcl_pose topic and return the first message within 1 s.
+
+        Creates a transient subscription on the ROS2 node, waits for one
+        message using a ``threading.Event``, then destroys the subscription.
+        The ``MultiThreadedExecutor`` with ``ReentrantCallbackGroup`` delivers
+        the subscription callback on a different thread while this one blocks.
+
+        Returns:
+            A deep copy of the ``PoseWithCovarianceStamped`` message, or
+            ``None`` if no message arrives within 1 second (topic not
+            published, or AMCL not yet localised).
+        """
+        from geometry_msgs.msg import PoseWithCovarianceStamped
+        topic = self._amcl_pose_topic(amcl_path)
+        captured: list[object] = [None]
+        event = threading.Event()
+
+        def _cb(msg: 'PoseWithCovarianceStamped') -> None:
+            captured[0] = copy.deepcopy(msg)
+            event.set()
+
+        sub = self.create_subscription(
+            PoseWithCovarianceStamped, topic, _cb, 10,
+            callback_group=self._cb_group,
+        )
+        try:
+            event.wait(timeout=1.0)
+        finally:
+            self.destroy_subscription(sub)
+        return captured[0]
+
+    def _wait_for_amcl_active(self, amcl_path: str, timeout_sec: float = 15.0) -> bool:
+        """Poll *amcl_path* lifecycle state every 500 ms until active or timeout.
+
+        Blocks the calling (ROS2) thread without touching the Qt main thread.
+
+        Returns:
+            ``True`` if AMCL reaches ``active`` within *timeout_sec*.
+        """
+        deadline = time.monotonic() + timeout_sec
+        while time.monotonic() < deadline:
+            state = self._lifecycle_client.get_state(amcl_path, availability_timeout=0.5)
+            if state == 'active':
+                return True
+            time.sleep(0.5)
+        return False
+
+    def _publish_initial_pose(self, amcl_path: str, pose_msg: object) -> None:
+        """Publish *pose_msg* to /initialpose with a fresh header timestamp.
+
+        Creates and caches a publisher per topic so repeated restarts do not
+        leak publishers.  Sets ``header.frame_id = 'map'`` and stamps to the
+        current ROS2 clock so AMCL accepts the message.
+
+        Args:
+            amcl_path: Full ROS2 path of the AMCL node (derives topic name).
+            pose_msg: A captured ``PoseWithCovarianceStamped`` to republish.
+        """
+        from geometry_msgs.msg import PoseWithCovarianceStamped
+        topic = self._initialpose_topic(amcl_path)
+        if topic not in self._initialpose_pubs:
+            self._initialpose_pubs[topic] = self.create_publisher(
+                PoseWithCovarianceStamped, topic, 10
+            )
+        pub = self._initialpose_pubs[topic]
+        msg = copy.deepcopy(pose_msg)
+        msg.header.frame_id = 'map'
+        msg.header.stamp = self.get_clock().now().to_msg()
+        pub.publish(msg)
+
+    def _restore_amcl_poses(self, captured_poses: dict[str, object]) -> None:
+        """Wait for each captured AMCL to become active, then republish its pose.
+
+        Args:
+            captured_poses: Mapping of amcl_path → captured PoseWithCovarianceStamped.
+                Only paths present in this dict are processed.
+        """
+        if not captured_poses:
+            return
+        self.signals.amcl_pose_status.emit('Waiting for AMCL...')
+        for amcl_path, pose in captured_poses.items():
+            if self._wait_for_amcl_active(amcl_path):
+                self._publish_initial_pose(amcl_path, pose)
+                self.get_logger().info(f'AMCL pose restored for {amcl_path}')
+                self.signals.amcl_pose_status.emit('Pose restored')
+            else:
+                self.get_logger().warning(
+                    f'AMCL {amcl_path} did not become active within 15 s — '
+                    'pose restoration skipped'
+                )
+                self.signals.amcl_pose_status.emit('Pose restoration skipped')
+
     def _do_lifecycle_manager_restart(self) -> None:
         """Restart all Nav2 nodes via all active lifecycle_managers.
 
         If no lifecycle_manager is detected, falls back to the direct
         per-node restart sequence.  Emits ``lifecycle_progress`` and
         a single aggregated ``lifecycle_change_result``.
+
+        Preserves AMCL localisation pose across the restart: captures the
+        last published /amcl_pose before RESET, waits for AMCL to return to
+        ``active``, then republishes to /initialpose.
         """
+        # Capture AMCL pose(s) before the restart tears down the node state.
+        amcl_nodes = self._find_amcl_nodes()
+        captured_poses: dict[str, object] = {}
+        if amcl_nodes:
+            self.signals.amcl_pose_status.emit('Restarting Nav2... capturing pose')
+            for amcl_path in amcl_nodes:
+                pose = self._capture_amcl_pose(amcl_path)
+                if pose is not None:
+                    captured_poses[amcl_path] = pose
+                    self.get_logger().info(f'AMCL pose captured for {amcl_path}')
+                else:
+                    self.get_logger().warning(
+                        f'No AMCL pose within 1 s for {amcl_path} — restoration skipped'
+                    )
+
         if not self._active_lifecycle_managers:
             self.get_logger().warning(
                 'request_nav2_stack_restart: no lifecycle_manager detected, '
                 'falling back to direct per-node restart'
             )
-            self._do_lifecycle_restart_all()
+            self._do_lifecycle_restart_all_impl()
+            self._restore_amcl_poses(captured_poses)
             return
 
         succeeded: list[str] = []
@@ -1143,6 +1340,9 @@ class Nav2ConfigNode(Node):
         self._lifecycle_states.update(new_states)
         if new_states:
             self.signals.lifecycle_states_updated.emit(new_states)
+
+        # Restore AMCL pose(s) once nodes are active again.
+        self._restore_amcl_poses(captured_poses)
 
     def _do_lifecycle_manager_pause(self) -> None:
         """Pause all Nav2 nodes via all active lifecycle_managers.
@@ -1438,10 +1638,35 @@ class Nav2ConfigNode(Node):
             self.signals.lifecycle_states_updated.emit(new_states)
 
     def _do_lifecycle_restart_all(self) -> None:
-        """Restart all discovered Nav2 nodes in lifecycle order.
+        """Restart all discovered Nav2 nodes in lifecycle order, with pose preservation.
+
+        Public entry point called when the user triggers a direct per-node
+        restart (no lifecycle_manager).  Captures AMCL pose(s) before the
+        restart, runs the bare restart, then restores the pose(s).
+        """
+        amcl_nodes = self._find_amcl_nodes()
+        captured_poses: dict[str, object] = {}
+        if amcl_nodes:
+            self.signals.amcl_pose_status.emit('Restarting Nav2... capturing pose')
+            for amcl_path in amcl_nodes:
+                pose = self._capture_amcl_pose(amcl_path)
+                if pose is not None:
+                    captured_poses[amcl_path] = pose
+                    self.get_logger().info(f'AMCL pose captured for {amcl_path}')
+                else:
+                    self.get_logger().warning(
+                        f'No AMCL pose within 1 s for {amcl_path} — restoration skipped'
+                    )
+
+        self._do_lifecycle_restart_all_impl()
+        self._restore_amcl_poses(captured_poses)
+
+    def _do_lifecycle_restart_all_impl(self) -> None:
+        """Bare restart of all discovered Nav2 nodes in lifecycle order.
 
         Emits ``lifecycle_progress`` per step, ``lifecycle_change_result`` per
-        node, and ``lifecycle_states_updated`` when finished.
+        node, and ``lifecycle_states_updated`` when finished.  Does not touch
+        AMCL pose — callers are responsible for pose capture/restore.
         """
         discovered = self._prev_discovered or set()
 

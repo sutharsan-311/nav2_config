@@ -209,11 +209,13 @@ class HistoryPanel(QWidget):
             except AttributeError:
                 time_str = str(ts)
 
-        # Node display: basename + full path as tooltip
-        node_path = getattr(entry, "node_path", "") or ""
+        # Node display: basename + full path as tooltip.
+        # node_path and param_name live on entry.ref (a ParamRef), not on the entry itself.
+        ref = getattr(entry, "ref", None)
+        node_path = (ref.node_path if ref is not None else "") or ""
         node_display = node_path.rstrip("/").rsplit("/", 1)[-1] if node_path else "—"
 
-        param_name = getattr(entry, "param_name", "") or "—"
+        param_name = (ref.param_name if ref is not None else "") or "—"
         old_value = entry.old_value if entry.old_value is not None else "—"
         new_value = getattr(entry, "new_value", "—")
         if new_value is None:

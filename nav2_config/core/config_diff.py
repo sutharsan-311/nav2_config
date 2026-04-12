@@ -77,6 +77,16 @@ class ParamDiffEntry:
     type_hint: str
     ros2_name: str
 
+    @property
+    def node_path(self) -> str:
+        """Full ROS2 node path from the ref."""
+        return self.ref.node_path
+
+    @property
+    def param_name(self) -> str:
+        """Dot-notation parameter name from the ref."""
+        return self.ref.param_name
+
 
 def snapshot_from_param_values(
     node_path: str,

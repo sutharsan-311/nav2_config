@@ -54,6 +54,13 @@ _SOURCE_OPTIONS = [
     "Browse YAML file...",
 ]
 
+# Human-readable labels for DiffKind values (DO NOT rename the DiffKind enum itself)
+_CHANGE_LABELS: dict[str, str] = {
+    "changed": "value differs",
+    "removed": "only in baseline",
+    "added":   "only in compare",
+}
+
 # Column indices
 _COL_CHECK  = 0
 _COL_NODE   = 1
@@ -62,7 +69,7 @@ _COL_CHANGE = 3
 _COL_LEFT   = 4
 _COL_RIGHT  = 5
 
-_COLUMNS = ["☐", "Node", "Param", "Change", "Left value", "Right value"]
+_COLUMNS = ["☐", "Node", "Param", "Difference", "Baseline value", "Compare value"]
 
 
 class ComparePanel(QWidget):
@@ -94,6 +101,8 @@ class ComparePanel(QWidget):
 
         layout.addWidget(self._make_title_bar())
         layout.addWidget(self._make_source_bar())
+        layout.addWidget(self._make_legend_bar())
+        layout.addWidget(self._make_summary_bar())
         layout.addWidget(self._make_table(), stretch=1)
         layout.addWidget(self._make_footer_bar())
 
@@ -126,35 +135,74 @@ class ComparePanel(QWidget):
         layout.setContentsMargins(8, 4, 8, 4)
         layout.setSpacing(6)
 
+        baseline_lbl = QLabel("Baseline:")
+        baseline_lbl.setStyleSheet(f"color: {_FG}; font-size: 9pt; background: transparent;")
+        baseline_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(baseline_lbl)
+
         self._left_combo = QComboBox()
         self._left_combo.addItems(_SOURCE_OPTIONS)
-        self._left_combo.setToolTip("Left (base) source for comparison")
+        self._left_combo.setToolTip("Baseline source for comparison")
         self._left_combo.currentIndexChanged.connect(
             lambda idx: self._on_source_changed(self._left_combo, idx)
         )
         layout.addWidget(self._left_combo, stretch=2)
 
-        vs_label = QLabel("vs")
-        vs_label.setStyleSheet(f"color: {_FG_DIM}; font-size: 9pt; background: transparent;")
-        vs_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(vs_label)
+        compare_to_lbl = QLabel("Compare to:")
+        compare_to_lbl.setStyleSheet(f"color: {_FG}; font-size: 9pt; background: transparent;")
+        compare_to_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(compare_to_lbl)
 
         self._right_combo = QComboBox()
         self._right_combo.addItems(_SOURCE_OPTIONS)
         self._right_combo.setCurrentIndex(1)  # Default to "Loaded YAML (current)"
-        self._right_combo.setToolTip("Right (target) source for comparison")
+        self._right_combo.setToolTip("Compare target source")
         self._right_combo.currentIndexChanged.connect(
             lambda idx: self._on_source_changed(self._right_combo, idx)
         )
         layout.addWidget(self._right_combo, stretch=2)
 
-        refresh_btn = QPushButton("Refresh")
-        refresh_btn.setFixedHeight(24)
-        refresh_btn.setToolTip("Run comparison between selected sources")
-        refresh_btn.setStyleSheet("QPushButton { font-size: 9pt; padding: 0 10px; }")
-        refresh_btn.clicked.connect(self._on_refresh_clicked)
-        layout.addWidget(refresh_btn)
+        compare_btn = QPushButton("Compare")
+        compare_btn.setFixedHeight(24)
+        compare_btn.setToolTip("Run comparison between selected sources")
+        compare_btn.setStyleSheet("QPushButton { font-size: 9pt; padding: 0 10px; }")
+        compare_btn.clicked.connect(self._on_refresh_clicked)
+        layout.addWidget(compare_btn)
 
+        return bar
+
+    def _make_legend_bar(self) -> QWidget:
+        bar = QWidget()
+        bar.setFixedHeight(22)
+        bar.setStyleSheet(
+            f"QWidget {{ background: #f5f5f5; border-bottom: 1px solid {_BORDER}; }}"
+        )
+        layout = QHBoxLayout(bar)
+        layout.setContentsMargins(8, 0, 8, 0)
+        legend = QLabel(
+            "value differs = changed between sources\u2002|\u2002"
+            "only in baseline = not in compare\u2002|\u2002"
+            "only in compare = not in baseline"
+        )
+        legend.setStyleSheet(f"color: {_FG_DIM}; font-size: 8pt; background: transparent;")
+        layout.addWidget(legend)
+        layout.addStretch()
+        return bar
+
+    def _make_summary_bar(self) -> QWidget:
+        bar = QWidget()
+        bar.setFixedHeight(22)
+        bar.setStyleSheet(
+            f"QWidget {{ background: #f5f5f5; border-bottom: 1px solid {_BORDER}; }}"
+        )
+        layout = QHBoxLayout(bar)
+        layout.setContentsMargins(8, 0, 8, 0)
+        self._summary_label = QLabel("")
+        self._summary_label.setStyleSheet(
+            f"color: {_FG_DIM}; font-size: 8pt; background: transparent;"
+        )
+        layout.addWidget(self._summary_label)
+        layout.addStretch()
         return bar
 
     def _make_table(self) -> QWidget:
@@ -200,7 +248,7 @@ class ComparePanel(QWidget):
 
         layout.addStretch()
 
-        self._apply_btn = QPushButton("Apply Selected")
+        self._apply_btn = QPushButton("Apply Selected to Live Node")
         self._apply_btn.setFixedHeight(24)
         self._apply_btn.setEnabled(False)
         self._apply_btn.setToolTip("Apply checked parameter changes to the live node")
@@ -231,12 +279,17 @@ class ComparePanel(QWidget):
 
     def _update_apply_button(self) -> None:
         """Enable Apply Selected only when at least one checkbox is checked."""
-        for row in range(self._table.rowCount()):
-            cb_widget = self._table.cellWidget(row, _COL_CHECK)
-            if isinstance(cb_widget, QCheckBox) and cb_widget.isChecked():
-                self._apply_btn.setEnabled(True)
-                return
-        self._apply_btn.setEnabled(False)
+        count = sum(
+            1 for row in range(self._table.rowCount())
+            if isinstance(self._table.cellWidget(row, _COL_CHECK), QCheckBox)
+            and self._table.cellWidget(row, _COL_CHECK).isEnabled()
+            and self._table.cellWidget(row, _COL_CHECK).isChecked()
+        )
+        self._apply_btn.setEnabled(count > 0)
+        if count > 0:
+            self._apply_btn.setText(f"Apply {count} Selected to Live Node")
+        else:
+            self._apply_btn.setText("Apply Selected to Live Node")
 
     def _on_source_changed(self, combo: QComboBox, index: int) -> None:
         """Handle source dropdown change; open file dialog for Browse option."""
@@ -260,16 +313,22 @@ class ComparePanel(QWidget):
                 combo.blockSignals(False)
 
     def _on_refresh_clicked(self) -> None:
-        """Emit compare_requested with the current source IDs."""
-        left_id = self._left_combo.currentText()
-        right_id = self._right_combo.currentText()
-        self.compare_requested.emit(left_id, right_id)
+        """Emit compare_requested with the current source IDs.
+
+        For Browse sources the UserRole holds the full filepath; fall back to
+        the display text for the three built-in options.
+        """
+        def _source_id(combo: QComboBox) -> str:
+            path = combo.currentData(Qt.ItemDataRole.UserRole)
+            return path if isinstance(path, str) else combo.currentText()
+
+        self.compare_requested.emit(_source_id(self._left_combo), _source_id(self._right_combo))
 
     def _on_select_all_clicked(self) -> None:
-        """Check all checkboxes in the table."""
+        """Check all enabled checkboxes in the table."""
         for row in range(self._table.rowCount()):
             cb_widget = self._table.cellWidget(row, _COL_CHECK)
-            if isinstance(cb_widget, QCheckBox):
+            if isinstance(cb_widget, QCheckBox) and cb_widget.isEnabled():
                 cb_widget.setChecked(True)
         self._update_apply_button()
 
@@ -284,16 +343,11 @@ class ComparePanel(QWidget):
         if selected:
             self.apply_selected_requested.emit(selected)
 
-    def _make_checkbox_widget(self, row: int) -> QWidget:
-        """Return a centred QCheckBox widget for the checkbox column."""
-        container = QWidget()
-        layout = QHBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    def _make_checkbox_widget(self, row: int) -> QCheckBox:
+        """Return a bare QCheckBox for the checkbox column."""
         cb = QCheckBox()
         cb.stateChanged.connect(lambda _: self._update_apply_button())
-        layout.addWidget(cb)
-        return container
+        return cb
 
     # ------------------------------------------------------------------
     # Public API
@@ -310,8 +364,16 @@ class ComparePanel(QWidget):
         self._table.setRowCount(len(diff))
 
         for row, entry in enumerate(diff):
-            # Checkbox
+            # Detect kind first — drives checkbox state and display label
+            try:
+                kind_name = entry.kind.name.lower()
+            except AttributeError:
+                kind_name = str(getattr(entry, "kind", "changed")).lower()
+
+            # Checkbox (disabled for REMOVED rows — no compare value to apply)
             cb_widget = self._make_checkbox_widget(row)
+            if kind_name == "removed":
+                cb_widget.setEnabled(False)
             self._table.setCellWidget(row, _COL_CHECK, cb_widget)
 
             # Node column — show basename, full path as tooltip
@@ -330,13 +392,9 @@ class ComparePanel(QWidget):
             self._table.setItem(row, _COL_PARAM, param_item)
 
             # Change column (DiffKind)
-            try:
-                kind_name = entry.kind.name.lower()
-            except AttributeError:
-                kind_name = str(getattr(entry, "kind", "changed")).lower()
-
             bg_color = self._change_bg(kind_name)
-            change_item = QTableWidgetItem(kind_name)
+            display_label = _CHANGE_LABELS.get(kind_name, kind_name)
+            change_item = QTableWidgetItem(display_label)
             change_item.setBackground(Qt.GlobalColor.transparent)
             change_item.setFlags(change_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             from PyQt6.QtGui import QColor
@@ -356,9 +414,37 @@ class ComparePanel(QWidget):
             self._table.setItem(row, _COL_RIGHT, right_item)
 
         self._update_apply_button()
+        self._update_summary()
+
+    def _update_summary(self) -> None:
+        """Refresh the summary line above the diff table."""
+        total = len(self._diff_entries)
+        if total == 0:
+            self._summary_label.setText("No differences found")
+            return
+        n_changed = sum(
+            1 for e in self._diff_entries
+            if getattr(e.kind, "name", str(e.kind)).lower() == "changed"
+        )
+        n_baseline_only = sum(
+            1 for e in self._diff_entries
+            if getattr(e.kind, "name", str(e.kind)).lower() == "removed"
+        )
+        n_compare_only = sum(
+            1 for e in self._diff_entries
+            if getattr(e.kind, "name", str(e.kind)).lower() == "added"
+        )
+        self._summary_label.setText(
+            f"{total} difference{'s' if total != 1 else ''} \u2014 "
+            f"{n_changed} value change{'s' if n_changed != 1 else ''}, "
+            f"{n_baseline_only} only in baseline, "
+            f"{n_compare_only} only in compare"
+        )
 
     def clear(self) -> None:
         """Clear the diff table."""
         self._table.setRowCount(0)
         self._diff_entries = []
         self._apply_btn.setEnabled(False)
+        self._apply_btn.setText("Apply Selected to Live Node")
+        self._summary_label.setText("")

@@ -104,6 +104,7 @@ class HistoryManager(QObject):
         if original is None:
             return None
 
+        self.update_entry_status(entry_id, "undone")
         undo_entry = ParamHistoryEntry(
             entry_id=str(uuid.uuid4()),
             timestamp=datetime.now(),

@@ -27,6 +27,12 @@ from PyQt6.QtWidgets import (
 from nav2_config.types.params import ParamValue
 from nav2_config.gui.widgets.param_row import ParamRow
 from nav2_config.core.node_discovery import path_basename
+try:
+    from nav2_config.core.robot_mode_detector import RobotMode
+    _ROBOT_MODE_AVAILABLE = True
+except ImportError:
+    RobotMode = None  # type: ignore[assignment,misc]
+    _ROBOT_MODE_AVAILABLE = False
 
 if TYPE_CHECKING:
     from nav2_config.core.topic_discovery import TopicDiscovery
@@ -354,6 +360,74 @@ class _CategorySection(QWidget):
         return self._rows
 
 
+class _RealRobotWarningBanner(QWidget):
+    """Amber banner warning that parameter changes apply immediately to a real robot.
+
+    Shown only when :attr:`RobotMode.REAL` is detected.  Has an X button that
+    dismisses it for the current session.  Dismissed state resets when mode
+    transitions back to UNKNOWN (i.e. when the connection drops and comes back).
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._dismissed: bool = False
+        self._build_ui()
+        self.setVisible(False)
+
+    def _build_ui(self) -> None:
+        self.setStyleSheet(
+            'QWidget { background: #fff8e1; border-bottom: 1px solid #ffc107; }'
+        )
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(10, 4, 10, 4)
+        layout.setSpacing(6)
+
+        icon = QLabel('⚠')
+        icon.setStyleSheet('font-size: 11pt; color: #f57c00; background: transparent;')
+        layout.addWidget(icon)
+
+        msg = QLabel('Connected to real robot — parameter changes apply immediately')
+        msg.setStyleSheet(
+            'color: #5d4037; font-size: 9pt; font-weight: bold; background: transparent;'
+        )
+        layout.addWidget(msg)
+        layout.addStretch()
+
+        dismiss = QPushButton('✕')
+        dismiss.setFixedSize(16, 16)
+        dismiss.setFlat(True)
+        dismiss.setToolTip('Dismiss this warning for the current session')
+        dismiss.setStyleSheet(
+            'QPushButton { color: #795548; font-size: 9pt; background: transparent; '
+            '              border: none; padding: 0; }'
+            'QPushButton:hover { color: #4e342e; }'
+        )
+        dismiss.clicked.connect(self._on_dismiss)
+        layout.addWidget(dismiss)
+
+    def _on_dismiss(self) -> None:
+        self._dismissed = True
+        self.setVisible(False)
+
+    def set_mode(self, mode: object) -> None:
+        """Show or hide the banner based on *mode*.
+
+        Resets the dismissed flag when mode returns to UNKNOWN so the banner
+        reappears after a reconnect cycle (REAL → UNKNOWN → REAL).
+        """
+        if not _ROBOT_MODE_AVAILABLE or mode is None:
+            self.setVisible(False)
+            return
+        if mode.name == 'UNKNOWN':
+            # Connection lost — reset so the banner re-appears on reconnect.
+            self._dismissed = False
+            self.setVisible(False)
+        elif mode.name == 'REAL':
+            self.setVisible(not self._dismissed)
+        else:
+            self.setVisible(False)
+
+
 class ParamPanel(QWidget):
     """Center panel: scrollable, searchable parameter editor with category grouping.
 
@@ -410,6 +484,9 @@ class ParamPanel(QWidget):
         self._lc_bar = _LifecycleBar()
         self._lc_bar.action_requested.connect(self._on_lc_action)
         layout.addWidget(self._lc_bar)
+
+        self._real_robot_banner = _RealRobotWarningBanner()
+        layout.addWidget(self._real_robot_banner)
 
         # Scroll area for the parameter rows
         self._scroll_area = QScrollArea()
@@ -550,6 +627,15 @@ class ParamPanel(QWidget):
         """Pass expert mode down to the lifecycle bar."""
         if self._lc_bar is not None:
             self._lc_bar.set_expert_mode(enabled)
+
+    def set_robot_mode(self, mode: object) -> None:
+        """Update the real-robot warning banner visibility for *mode*.
+
+        Args:
+            mode: A :class:`~nav2_config.core.robot_mode_detector.RobotMode`
+                enum value, or ``None`` when the feature is unavailable.
+        """
+        self._real_robot_banner.set_mode(mode)
 
     def _on_lc_action(self, action: str) -> None:
         """Forward a lifecycle button click to MainWindow via signal."""
