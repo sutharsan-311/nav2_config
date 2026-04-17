@@ -63,7 +63,7 @@ Once `ros2 node list` shows the expected Nav2 nodes, nav2_config should discover
 
 You set a parameter and get an error like `Parameter type mismatch` or the set fails silently.
 
-nav2_config reads the parameter's type from the live node (via `describe_parameters`) and sends values in the correct type. If you're seeing type errors, it's likely a schema mismatch — the schema says a parameter is `double` but the node expects `integer`, for example.
+nav2_config reads the parameter's type from the live node via `ParameterType` in `get_parameters` responses and sends values in the correct type. If you're seeing type errors, it's likely a schema mismatch — the schema says a parameter is `double` but the node expects `integer`, for example.
 
 **Fix:** pull the latest version — type fixes are regularly patched in the schema:
 ```bash

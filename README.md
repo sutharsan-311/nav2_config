@@ -46,6 +46,8 @@ nav2_config cuts that loop. Change a param, see the effect, adjust again — all
 - **Automatic post-set service calls** — clears costmaps, reloads map, triggers AMCL nomotion update after relevant param changes
 - **External change detection** — detects params changed outside nav2_config (via `ros2 param set` or another tool) and syncs the UI automatically
 - **Config staged until set succeeds** — changes are only committed to the config file after ROS2 confirms the set succeeded; no silent corruption
+- **History tab** — records every parameter change with timestamp, source, node, and old/new value; click any entry and hit Undo to revert it
+- **Compare tab** — diff live Nav2 params against a YAML file or another snapshot; selectively apply individual differences back to the running stack
 - **Expert Mode** — enables direct per-node lifecycle transitions (Configure/Activate/Deactivate/Cleanup) for manual recovery. Bypasses lifecycle_manager — use only for stuck node recovery, not routine ops.
 - **Resume Stack** — resumes a paused Nav2 stack without full restart
 - **Namespaced stack discovery** — discovers Nav2 nodes by basename, works with `/robot1/controller_server` style namespaces
@@ -135,6 +137,7 @@ All stack operations go through lifecycle_manager when present.
 - [Remote Robot Setup](docs/remote-robot.md)
 - [Lifecycle Management](docs/lifecycle-management.md)
 - [YAML Round-Trip Behavior](docs/yaml-round-trip.md)
+- [History and Compare](docs/compare-history.md)
 - [Troubleshooting](docs/troubleshooting.md)
 
 ## vs rqt_reconfigure
