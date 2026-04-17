@@ -137,6 +137,7 @@ class Nav2ParamClient:
         self._callback_group = callback_group
         # Cache: (node_name, service_class) -> rclpy client
         self._clients: dict[tuple[str, type], Any] = {}
+        self._clients_lock = threading.Lock()
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -157,14 +158,15 @@ class Nav2ParamClient:
         where ``/{node_name}`` is already the full path (e.g. ``/controller_server``).
         """
         key = (node_name, srv_class)
-        if key not in self._clients:
-            srv_name = self._SRV_NAMES[srv_class]
-            service_name = f"{node_name}/{srv_name}"
-            self._clients[key] = self._node.create_client(
-                srv_class, service_name, callback_group=self._callback_group
-            )
-            logger.debug("Created service client for %s", service_name)
-        return self._clients[key]
+        with self._clients_lock:
+            if key not in self._clients:
+                srv_name = self._SRV_NAMES[srv_class]
+                service_name = f"{node_name}/{srv_name}"
+                self._clients[key] = self._node.create_client(
+                    srv_class, service_name, callback_group=self._callback_group
+                )
+                logger.debug("Created service client for %s", service_name)
+            return self._clients[key]
 
     def _call(self, client: Any, request: Any) -> Any | None:
         """Send *request* and block until the response arrives or times out.
@@ -319,13 +321,14 @@ class Nav2ParamClient:
         Args:
             node_path: Full ROS2 node path, e.g. ``"/robot1/controller_server"``.
         """
-        stale_keys = [key for key in self._clients if key[0] == node_path]
-        for key in stale_keys:
-            try:
-                self._node.destroy_client(self._clients[key])
-            except Exception as exc:
-                logger.debug("Error destroying param client for %s: %s", key, exc)
-            del self._clients[key]
+        with self._clients_lock:
+            stale_keys = [key for key in self._clients if key[0] == node_path]
+            for key in stale_keys:
+                try:
+                    self._node.destroy_client(self._clients[key])
+                except Exception as exc:
+                    logger.debug("Error destroying param client for %s: %s", key, exc)
+                del self._clients[key]
         if stale_keys:
             logger.debug("Pruned %d param service client(s) for %s", len(stale_keys), node_path)
 

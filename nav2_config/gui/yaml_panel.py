@@ -252,15 +252,15 @@ class YamlPanel(QWidget):
     ) -> str | None:
         """Extract the section for *bare_node* from a full YAML string.
 
-        For root-namespace nodes the section is a top-level key
-        (``controller_server:``).  For namespaced nodes the section is nested
-        one level deeper under the namespace key (``robot1:`` →
-        ``controller_server:``), so we must descend into that block first.
+        Handles root-namespace nodes (``controller_server:`` at indent 0) as
+        well as arbitrarily deep namespaces (``/fleet/robot2`` → descend
+        ``fleet:`` then ``robot2:`` then find ``controller_server:``).
 
         Args:
             yaml_str: Full YAML file content as a string.
             bare_node: The node basename, e.g. ``controller_server``.
-            stack_namespace: The stack namespace, e.g. ``/robot1`` or ``/``.
+            stack_namespace: The stack namespace, e.g. ``/robot1``,
+                ``/fleet/robot2``, or ``/``.
 
         Returns:
             The node's YAML section as a string (trailing blank lines
@@ -268,45 +268,48 @@ class YamlPanel(QWidget):
         """
         lines = yaml_str.splitlines()
 
-        if stack_namespace == '/':
-            # Root namespace: the bare_node key is at the top level (indent 0).
-            key_indent = ''
-        else:
-            # Namespaced: first locate the namespace block, then find bare_node
-            # as an indented child key within it.
-            ns_key = stack_namespace.lstrip('/')
-            ns_start: int | None = None
-            ns_end = len(lines)
-            for i, line in enumerate(lines):
-                if line == f'{ns_key}:' or line.startswith(f'{ns_key}: '):
-                    ns_start = i
-                elif ns_start is not None and self._TOP_KEY_RE.match(line):
-                    ns_end = i
-                    break
-            if ns_start is None:
-                return None
-            # Restrict search to inside the namespace block.
-            lines = lines[ns_start:ns_end]
-            # The bare_node key is indented by 2 spaces inside the namespace block.
-            key_indent = '  '
+        # Build the ordered list of namespace segments to descend through.
+        # e.g. stack_namespace='/fleet/robot2' → ['fleet', 'robot2']
+        #      stack_namespace='/'             → []
+        ns_segments = [s for s in stack_namespace.split('/') if s]
 
-        # Now find the bare_node key within the (possibly narrowed) lines.
+        # Descend into each namespace segment in turn, narrowing `lines` at
+        # each level.  After this loop, `lines` is scoped to the innermost
+        # namespace block and `depth` is the nesting level (in units of 2
+        # spaces per level).
+        depth = 0
+        for segment in ns_segments:
+            indent = '  ' * depth
+            seg_key_bare = f'{indent}{segment}:'
+            seg_key_inline = f'{indent}{segment}: '
+            # Regex for a peer key at the same indent depth (signals block end).
+            peer_re = re.compile(rf'^{re.escape(indent)}[\w./\-]+\s*:')
+
+            seg_start: int | None = None
+            seg_end = len(lines)
+            for i, line in enumerate(lines):
+                if line == seg_key_bare or line.startswith(seg_key_inline):
+                    seg_start = i
+                elif seg_start is not None and peer_re.match(line) and i != seg_start:
+                    seg_end = i
+                    break
+            if seg_start is None:
+                return None
+            lines = lines[seg_start:seg_end]
+            depth += 1
+
+        # Now locate bare_node within the (possibly narrowed) lines.
+        key_indent = '  ' * depth
         node_key_bare = f'{key_indent}{bare_node}:'
         node_key_inline = f'{key_indent}{bare_node}: '
-        # A top-level key (at indent 0) signals the end of the current node section.
-        # For namespaced search, we stop at the same indent level (2-space keys).
-        peer_re = (
-            re.compile(r'^[\w./\-]+\s*:')
-            if key_indent == ''
-            else re.compile(r'^  [\w./\-]+\s*:')
-        )
+        peer_re = re.compile(rf'^{re.escape(key_indent)}[\w./\-]+\s*:')
 
         start: int | None = None
         end = len(lines)
         for i, line in enumerate(lines):
             if line == node_key_bare or line.startswith(node_key_inline):
                 start = i
-            elif start is not None and peer_re.match(line):
+            elif start is not None and peer_re.match(line) and i != start:
                 end = i
                 break
         if start is None:

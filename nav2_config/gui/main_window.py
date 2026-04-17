@@ -672,8 +672,6 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
 
     def _connect_signals(self) -> None:
-        self._node.signals.nodes_discovered.connect(self._node_panel.update_nodes)
-        self._node.signals.nodes_discovered.connect(self._on_nodes_discovered)
         self._node_panel.node_selected.connect(self._on_node_selected)
         self._node_panel.refresh_requested.connect(self._node.force_discover)
         self._node.signals.params_received.connect(self._on_params_received)

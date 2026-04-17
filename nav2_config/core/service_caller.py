@@ -33,6 +33,7 @@ class Nav2ServiceCaller:
         self._cb_group = cb_group
         # Service clients created lazily on first use, keyed by (SrvType, service_name).
         self._clients: dict[tuple[type, str], Any] = {}
+        self._clients_lock = threading.Lock()
 
     # ------------------------------------------------------------------
     # Public API
@@ -58,20 +59,22 @@ class Nav2ServiceCaller:
         local_svc = join_ros_path(stack_ns, "local_costmap/clear_entirely_local_costmap")
 
         key_global = (ClearEntireCostmap, global_svc)
-        if key_global not in self._clients:
-            self._clients[key_global] = self._node.create_client(
-                ClearEntireCostmap,
-                global_svc,
-                callback_group=self._cb_group,
-            )
+        with self._clients_lock:
+            if key_global not in self._clients:
+                self._clients[key_global] = self._node.create_client(
+                    ClearEntireCostmap,
+                    global_svc,
+                    callback_group=self._cb_group,
+                )
 
         key_local = (ClearEntireCostmap, local_svc)
-        if key_local not in self._clients:
-            self._clients[key_local] = self._node.create_client(
-                ClearEntireCostmap,
-                local_svc,
-                callback_group=self._cb_group,
-            )
+        with self._clients_lock:
+            if key_local not in self._clients:
+                self._clients[key_local] = self._node.create_client(
+                    ClearEntireCostmap,
+                    local_svc,
+                    callback_group=self._cb_group,
+                )
 
         ok_global = self._call_empty_like(
             self._clients[key_global],

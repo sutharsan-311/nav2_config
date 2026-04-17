@@ -566,19 +566,6 @@ class Nav2ConfigNode(Node):
             disappeared = set()
         self._prev_discovered = discovered
 
-        # Build status for the GUI: {root_ns_path: bool}.
-        # A node is "found" when its basename was discovered regardless of the actual namespace.
-        # found_nodes is keyed by full_path (e.g. "/robot1/controller_server"), so we must
-        # compare against basenames extracted from the discovered values, not the dict keys.
-        found_basenames = {n.basename for n in found_nodes.values()}
-        status = {
-            (f"/{bn}/{bn}" if spec.self_namespaced else f"/{bn}"): (bn in found_basenames)
-            for bn, spec in NAV2_NODE_SPECS.items()
-        }
-
-        # Always emit — the GUI must always receive fresh discovery data.
-        self.signals.nodes_discovered.emit(status)
-
         # Detect which lifecycle_manager (if any) is running (reuse cached graph data).
         self._update_lifecycle_manager_status(nodes_and_ns)
 
