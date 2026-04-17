@@ -182,6 +182,18 @@ class HistoryPanel(QWidget):
                 font.setStrikeOut(True)
                 item.setFont(col, font)
 
+            elif status == "undo_pending":
+                font = item.font(col)
+                font.setItalic(True)
+                item.setFont(col, font)
+                item.setForeground(col, QColor("#9e9e9e"))
+
+            elif status == "undo_failed":
+                item.setForeground(col, QColor("#e53935"))
+                font = item.font(col)
+                font.setItalic(True)
+                item.setFont(col, font)
+
     def _make_undo_button(self, entry_id: str) -> QPushButton:
         btn = QPushButton("↩")
         btn.setFixedSize(26, 22)

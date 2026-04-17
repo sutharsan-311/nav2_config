@@ -57,4 +57,4 @@ class ParamHistoryEntry:
     ros2_name: str             # the ROS2 parameter name (may differ from dot-notation)
     type_hint: str             # 'double', 'bool', 'string', 'integer', etc.
     hot_reload: bool           # whether this param supports live set
-    status: str = "pending"    # 'pending', 'applied', 'failed', 'undone'
+    status: str = "pending"    # 'pending', 'applied', 'failed', 'undone', 'undo_pending', 'undo_failed'

@@ -397,11 +397,13 @@ class MainWindow(QMainWindow):
 
         # History/compare feature — guarded in case modules aren't built yet
         self._history: Optional[Any] = HistoryManager() if _HISTORY_AVAILABLE else None
-        # Maps (node_path, param_name) -> entry_id for in-flight set calls
+        # Maps (node_path, ros2_name) -> entry_id for in-flight set calls
         self._pending_history: dict[tuple[str, str], str] = {}
-        # Maps (node_path, param_name) -> new_value for in-flight set calls,
+        # Maps (node_path, ros2_name) -> new_value for in-flight set calls,
         # consumed in _on_param_set_result to update the watcher baseline.
         self._pending_set_values: dict[tuple[str, str], Any] = {}
+        # Maps undo_entry_id -> original_entry_id for undo confirmation routing.
+        self._pending_undo_map: dict[str, str] = {}
 
         self._build_ui()
         self._connect_signals()
@@ -943,14 +945,14 @@ class MainWindow(QMainWindow):
             # This prevents the in-memory config from diverging when the set
             # call times out or is rejected by the node.
             if self._config_file:
-                self._pending_config_set[(node_name, param_name)] = (node_name, ros2_name, value)
+                self._pending_config_set[(node_name, ros2_name)] = (node_name, ros2_name, value)
             # Immediate live effect via ROS2 service.
             # Any follow-up action (clear_costmaps, load_map, nomotion_update)
             # is handled automatically by _after_param_set in the ROS2 thread.
             if post_set_action == 'load_map':
                 self.set_status('Loading map...', timeout_ms=0)
             # Record to history before dispatching; status updated in _on_param_set_result.
-            # Keyed by (node_name, param_name) — matches what param_set_result signal carries.
+            # Keyed by (node_name, ros2_name) — matches what param_set_result signal carries.
             if _HISTORY_AVAILABLE and self._history is not None:
                 _entry_id = str(uuid.uuid4())
                 _old_value: Any = None
@@ -971,9 +973,9 @@ class MainWindow(QMainWindow):
                     hot_reload=True,
                     status="pending",
                 ))
-                self._pending_history[(node_name, param_name)] = _entry_id
-            self._pending_set_values[(node_name, param_name)] = value
-            self._node.request_set_param(node_name, param_name, value, type_hint)
+                self._pending_history[(node_name, ros2_name)] = _entry_id
+            self._pending_set_values[(node_name, ros2_name)] = value
+            self._node.request_set_param(node_name, ros2_name, value, type_hint)
         else:
             # Non-hot-reload: update config in-memory then save to disk immediately.
             if self._config_file is None:
@@ -1035,43 +1037,62 @@ class MainWindow(QMainWindow):
             )
 
     def _on_param_set_result(
-        self, node_name: str, param_name: str, success: bool
+        self, node_name: str, ros2_name: str, success: bool
     ) -> None:
+        # Resolve display name (schema .param field) from ros2_name for UI calls.
+        display_name = ros2_name
+        for pv in self._current_params:
+            if pv.definition.ros2_name == ros2_name:
+                display_name = pv.definition.param
+                break
+
         # Only update the panel rows if the result belongs to the currently
         # selected node.  If the user switched nodes before the service call
         # returned, the rows shown no longer correspond to this result, so
         # routing it would update the wrong widget.
         if node_name == self._selected_node_path:
             # Route result to the matching row's Set button (updates confirmed_value).
-            self._param_panel.update_set_result(param_name, success)
+            self._param_panel.update_set_result(display_name, success)
         else:
             logging.debug(
                 'Discarding stale param-set result for %s/%s '
                 '(current node is %s)',
-                node_name, param_name, self._selected_node_path,
+                node_name, ros2_name, self._selected_node_path,
             )
 
-        # Update history entry status for this in-flight set call
+        # Update history entry status for this in-flight set call.
+        # Also handles undo confirmation via _pending_undo_map.
         if _HISTORY_AVAILABLE and self._history is not None:
-            pending_id = self._pending_history.pop((node_name, param_name), None)
+            pending_id = self._pending_history.pop((node_name, ros2_name), None)
             if pending_id is not None:
-                self._history.update_entry_status(
-                    pending_id, 'applied' if success else 'failed'
-                )
+                original_id = self._pending_undo_map.pop(pending_id, None)
+                if original_id is not None:
+                    # This result is for an undo operation — update both entries.
+                    self._history.update_entry_status(
+                        pending_id, 'applied' if success else 'failed'
+                    )
+                    if success:
+                        self._history.update_entry_status(original_id, 'undone')
+                    else:
+                        self._history.update_entry_status(original_id, 'undo_failed')
+                else:
+                    self._history.update_entry_status(
+                        pending_id, 'applied' if success else 'failed'
+                    )
 
         # Update watcher baseline so the next poll doesn't re-report this as external.
-        set_value = self._pending_set_values.pop((node_name, param_name), None)
+        set_value = self._pending_set_values.pop((node_name, ros2_name), None)
         if set_value is not None and success:
-            self._node.update_watcher_baseline_entry(param_name, set_value)
+            self._node.update_watcher_baseline_entry(ros2_name, set_value)
 
         # Apply or discard the staged config change for hot-reload params.
-        staged = self._pending_config_set.pop((node_name, param_name), None)
+        staged = self._pending_config_set.pop((node_name, ros2_name), None)
         if staged is not None and success and self._config_file:
             staged_node, staged_ros2_name, staged_value = staged
             self._config_file.set_value(staged_node, staged_ros2_name, staged_value)
             self._mark_dirty()
             # The live value now matches the file value — clear the amber mismatch dot.
-            self._param_panel.update_file_values({param_name: staged_value})
+            self._param_panel.update_file_values({display_name: staged_value})
 
         # Refresh YAML panel
         if self._config_file:
@@ -1088,21 +1109,21 @@ class MainWindow(QMainWindow):
         if success:
             val: object = '?'
             for pv in self._current_params:
-                if pv.definition.param == param_name:
+                if pv.definition.ros2_name == ros2_name:
                     val = pv.live_value  # confirmed_value after update_set_result
                     break
-            self._status_last_set.setText(f'\u2713 {param_name} \u2192 {val}')
+            self._status_last_set.setText(f'\u2713 {display_name} \u2192 {val}')
             self._status_last_set.setStyleSheet(
                 f'color: {_GREEN}; padding: 0 8px; font-size: 9pt;'
             )
-            logger.debug('Set %s/%s = %r', node_name, param_name, val)
+            logger.debug('Set %s/%s = %r', node_name, ros2_name, val)
         else:
-            self._status_last_set.setText(f'\u2717 {param_name} -- failed')
+            self._status_last_set.setText(f'\u2717 {display_name} -- failed')
             self._status_last_set.setStyleSheet(
                 f'color: {_RED}; padding: 0 8px; font-size: 9pt;'
             )
             self.set_status(
-                f'Failed to set {node_name.lstrip("/")}/{param_name}'
+                f'Failed to set {node_name.lstrip("/")}/{ros2_name}'
             )
         self._last_set_timer.start(5000)
 
@@ -1499,6 +1520,7 @@ class MainWindow(QMainWindow):
         if undo_entry is None:
             logger.warning('_on_undo_requested: entry_id %r not found', entry_id)
             return
+        self._pending_undo_map[undo_entry.entry_id] = entry_id
         req = ApplyParamRequest(
             node_path=undo_entry.ref.node_path,
             param_name=undo_entry.ref.param_name,
