@@ -125,6 +125,8 @@ class ParamValue:
         may have typed a new value during the pending period).
         """
         self.confirmed_value = confirmed
+        baseline = self.confirmed_value if self.is_live else self.definition.default
+        self.is_modified = self.current_value != baseline
 
     @property
     def is_pending(self) -> bool:
