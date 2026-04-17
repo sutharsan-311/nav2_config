@@ -24,6 +24,7 @@ from nav2_config.core.node_discovery import (
     NAV2_NODE_SPECS,
     discover_nav2_nodes,
     discover_lifecycle_managers,
+    infer_stack_namespace,
     join_ros_path,
     path_basename,
 )
@@ -1472,9 +1473,9 @@ class Nav2ConfigNode(Node):
                 f'No nodes found for namespace {stack_namespace}'
             )
             ns_nodes = {
-                node.full_path
-                for node in self._discovered_nodes.values()
-                if node.stack_namespace == stack_namespace
+                path
+                for path in (self._prev_discovered or set())
+                if infer_stack_namespace(path, path_basename(path)) == stack_namespace
             }
             if not ns_nodes:
                 self.get_logger().warning(
