@@ -226,6 +226,12 @@ class Nav2ConfigNode(Node):
         #: Created lazily in _publish_initial_pose; one publisher per AMCL namespace.
         self._initialpose_pubs: dict[str, object] = {}
 
+        #: Per-node cache of filtered parameter name lists.
+        #: Populated on the first successful list_params call for a node and reused
+        #: on subsequent poll ticks to avoid redundant list_parameters RPCs.
+        #: Invalidated (entry removed) when the node disappears from the topology.
+        self._param_names_cache: dict[str, list[str]] = {}
+
         #: full_path of the node currently selected in the GUI (always polled).
         self._selected_node_path: str | None = None
 
@@ -551,6 +557,29 @@ class Nav2ConfigNode(Node):
             for path in disappeared:
                 self._param_client.prune_node(path)
 
+            # Invalidate the param-name list cache for disappeared nodes so the
+            # next fetch triggers a fresh list_params RPC (the node may have
+            # restarted with a different parameter set).
+            for path in disappeared:
+                self._param_names_cache.pop(path, None)
+
+            # Prune /initialpose publishers for AMCL nodes that have disappeared.
+            # Each AMCL node has at most one publisher, keyed by its initialpose topic.
+            for path in disappeared:
+                if path_basename(path) == 'amcl':
+                    topic = self._initialpose_topic(path)
+                    pub = self._initialpose_pubs.pop(topic, None)
+                    if pub is not None:
+                        try:
+                            self.destroy_publisher(pub)
+                        except Exception as exc:
+                            self.get_logger().debug(
+                                f"Error destroying initialpose publisher for {topic}: {exc}"
+                            )
+                        self.get_logger().debug(
+                            f"Pruned /initialpose publisher for {path} ({topic})"
+                        )
+
             # Prune stale service clients for each stack namespace that has no
             # remaining nodes after this tick. Deduplicate so each namespace is
             # only pruned once.
@@ -709,7 +738,10 @@ class Nav2ConfigNode(Node):
         """Fetch all live params for *node_name*, merging with schema where available.
 
         Called on the ROS2 thread.  Emits ``signals.params_received``.
+        An explicit fetch always bypasses the param-name cache so that a
+        user-initiated refresh picks up any new or removed parameters.
         """
+        self._param_names_cache.pop(node_name, None)
         param_values = self._build_param_values(node_name)
         # Update watcher baseline so poll doesn't flag these values as external changes.
         if self._watcher.watched_node == node_name:
@@ -734,16 +766,21 @@ class Nav2ConfigNode(Node):
         """
         bare_node = node_name.rstrip('/').rsplit('/', 1)[-1]
 
-        try:
-            live_names = [
-                n for n in self._param_client.list_params(node_name)
-                if not any(f in n for f in _PARAM_FILTER_SUBSTRINGS)
-            ]
-        except Exception as exc:
-            self.get_logger().warning(
-                f"Unexpected error listing params for {node_name}: {exc}"
-            )
-            raise
+        if node_name in self._param_names_cache:
+            live_names = self._param_names_cache[node_name]
+        else:
+            try:
+                live_names = [
+                    n for n in self._param_client.list_params(node_name)
+                    if not any(f in n for f in _PARAM_FILTER_SUBSTRINGS)
+                ]
+            except Exception as exc:
+                self.get_logger().warning(
+                    f"Unexpected error listing params for {node_name}: {exc}"
+                )
+                raise
+            if live_names:
+                self._param_names_cache[node_name] = live_names
 
         if not live_names:
             # Node offline — fall back to schema defaults so the panel isn't empty.
