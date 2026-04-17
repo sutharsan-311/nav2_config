@@ -311,21 +311,43 @@ class ConfigFile:
     def get_modified_params(self) -> list[tuple[str, str, Any]]:
         """Return all parameters that differ from the originally-loaded values.
 
+        Covers four cases:
+        - Node exists in both: params whose value changed are reported with the
+          new value; params removed from the node are reported with ``None``.
+        - Node only in modified (added): all its params are reported with their
+          current value.
+        - Node only in original (removed): all its params are reported with
+          ``None`` to signal removal.
+
         Returns:
             List of ``(node_name, param_name, new_value)`` tuples.
+            ``new_value`` is ``None`` when a param or entire node was removed.
         """
         result: list[tuple[str, str, Any]] = []
-        for node_name in self.get_node_names():
+
+        orig_nodes = set(_find_ros_param_paths(self.original_data, []))
+        mod_nodes = set(_find_ros_param_paths(self.modified_data, []))
+        all_nodes = orig_nodes | mod_nodes
+
+        for node_name in sorted(all_nodes):
             key_path = _node_name_to_yaml_keys(node_name)
+
             orig_ros = _traverse_get(self.original_data, key_path[:-1], [key_path[-1]])
             mod_ros = _traverse_get(self.modified_data, key_path[:-1], [key_path[-1]])
-            if not isinstance(orig_ros, dict) or not isinstance(mod_ros, dict):
-                continue
-            orig_flat = _flatten_params(orig_ros)
-            mod_flat = _flatten_params(mod_ros)
+
+            orig_flat = _flatten_params(orig_ros) if isinstance(orig_ros, dict) else {}
+            mod_flat = _flatten_params(mod_ros) if isinstance(mod_ros, dict) else {}
+
+            # Params added or changed in modified
             for pname, new_val in mod_flat.items():
                 if orig_flat.get(pname) != new_val:
                     result.append((node_name, pname, new_val))
+
+            # Params present in original but absent from modified (removed)
+            for pname in orig_flat:
+                if pname not in mod_flat:
+                    result.append((node_name, pname, None))
+
         return result
 
     def to_yaml_string(self) -> str:
