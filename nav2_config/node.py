@@ -173,6 +173,9 @@ class Nav2ConfigNode(Node):
         #: All currently-running lifecycle_manager node paths.
         self._active_lifecycle_managers: set[str] = set()
 
+        #: Guards mutations to _lifecycle_manager_clients and _active_lifecycle_managers.
+        self._lifecycle_lock = threading.Lock()
+
         #: Maps node_path → manager_path for each node managed by a lifecycle_manager.
         self._node_to_manager: dict[str, str] = {}
 
@@ -1032,24 +1035,26 @@ class Nav2ConfigNode(Node):
         active = set(mgr_status.keys())
 
         # Lazily create service clients for any newly discovered managers.
-        for full_path in active:
-            if full_path not in self._lifecycle_manager_clients:
-                self._lifecycle_manager_clients[full_path] = LifecycleManagerClient(
-                    self, full_path, self._cb_group
-                )
+        with self._lifecycle_lock:
+            for full_path in active:
+                if full_path not in self._lifecycle_manager_clients:
+                    self._lifecycle_manager_clients[full_path] = LifecycleManagerClient(
+                        self, full_path, self._cb_group
+                    )
 
         # Prune clients for managers that have disappeared from the graph.
         vanished_managers = set(self._lifecycle_manager_clients) - active
-        for full_path in vanished_managers:
-            mgr_client = self._lifecycle_manager_clients.pop(full_path)
-            if mgr_client._client is not None:
-                try:
-                    self.destroy_client(mgr_client._client)
-                except Exception as exc:
-                    self.get_logger().debug(
-                        f'Error destroying lifecycle_manager client for {full_path}: {exc}'
-                    )
-            self.get_logger().debug(f'Pruned lifecycle_manager client for {full_path}')
+        with self._lifecycle_lock:
+            for full_path in vanished_managers:
+                mgr_client = self._lifecycle_manager_clients.pop(full_path)
+                if mgr_client._client is not None:
+                    try:
+                        self.destroy_client(mgr_client._client)
+                    except Exception as exc:
+                        self.get_logger().debug(
+                            f'Error destroying lifecycle_manager client for {full_path}: {exc}'
+                        )
+                self.get_logger().debug(f'Pruned lifecycle_manager client for {full_path}')
 
         # Rebuild node↔manager mappings on every tick so that changes to
         # node_names (e.g. dynamic plugin loads or namespace remaps) are
@@ -1114,10 +1119,10 @@ class Nav2ConfigNode(Node):
         self._node_to_manager = new_node_to_manager
         self._manager_to_nodes = new_manager_to_nodes
 
-        if active == self._active_lifecycle_managers:
-            return
-
-        self._active_lifecycle_managers = active
+        with self._lifecycle_lock:
+            if active == self._active_lifecycle_managers:
+                return
+            self._active_lifecycle_managers = active
         present = bool(active)
         primary = next(iter(sorted(active))) if active else ''
         self.signals.lifecycle_manager_status.emit(present, primary)
