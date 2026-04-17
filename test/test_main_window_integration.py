@@ -147,7 +147,7 @@ def _make_bare_main_window(imports: dict) -> Any:
     """
     from nav2_config.gui.main_window import MainWindow
 
-    win = object.__new__(MainWindow)
+    win = MainWindow.__new__(MainWindow)
 
     # Core state
     win._node = MagicMock()
