@@ -68,7 +68,15 @@ def _make_parameter_value(value: Any, type_hint: str) -> ParameterValue:
     pv = ParameterValue()
     if type_hint == "bool":
         pv.type = ParameterType.PARAMETER_BOOL
-        pv.bool_value = bool(value)
+        if isinstance(value, bool):
+            pv.bool_value = value
+        elif isinstance(value, str) and value.lower() in ("true", "false", "1", "0", "yes", "no"):
+            pv.bool_value = value.lower() in ("true", "1", "yes")
+        else:
+            raise ValueError(
+                f"Cannot convert {value!r} to bool: expected one of "
+                f"true/false/1/0/yes/no (case-insensitive) or a Python bool"
+            )
     elif type_hint == "int":
         pv.type = ParameterType.PARAMETER_INTEGER
         try:

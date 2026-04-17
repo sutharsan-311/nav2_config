@@ -16,8 +16,11 @@ machine: IDLE → READY → PENDING → SUCCESS / FAILED.
 
 from __future__ import annotations
 
+import logging
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any
+
+_logger = logging.getLogger(__name__)
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -449,7 +452,27 @@ class ParamRow(QWidget):
                 and isinstance(value, str):
             items = [item.strip() for item in value.split(',') if item.strip()]
             if param_type == 'bool_array':
-                value = [v.lower() in ('true', '1', 'yes') for v in items]
+                _BOOL_TRUE  = {'true', '1', 'yes'}
+                _BOOL_FALSE = {'false', '0', 'no'}
+                parsed: list[bool] = []
+                bad_tokens: list[str] = []
+                for v in items:
+                    lowered = v.lower()
+                    if lowered in _BOOL_TRUE:
+                        parsed.append(True)
+                    elif lowered in _BOOL_FALSE:
+                        parsed.append(False)
+                    else:
+                        bad_tokens.append(v)
+                if bad_tokens:
+                    _logger.warning(
+                        "bool_array param %r: unrecognized token(s) %r — "
+                        "keeping original value unchanged",
+                        self._param_value.definition.param,
+                        bad_tokens,
+                    )
+                    return
+                value = parsed
             elif param_type == 'int_array':
                 try:
                     value = [int(v) for v in items]

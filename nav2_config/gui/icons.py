@@ -19,6 +19,8 @@ from PyQt6.QtCore import Qt, QSize, QRect
 from PyQt6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PyQt6.QtWidgets import QApplication, QStyle
 
+from nav2_config.core.node_discovery import path_basename
+
 _ICON_DIR = os.path.join(os.path.dirname(__file__), '..', 'resources', 'icons')
 
 
@@ -228,47 +230,47 @@ def status_pending() -> QIcon:
 #   map_server        → Map        (serves the static map)
 
 _NODE_RVIZ_ICON: dict[str, str] = {
-    '/amcl':                              'PoseArray.png',
-    '/controller_server':                 'TwistStamped.png',
-    '/planner_server':                    'Path.png',
-    '/bt_navigator':                      'MarkerArray.png',
-    '/local_costmap/local_costmap':       'GridCells.png',
-    '/global_costmap/global_costmap':     'Map.png',
-    '/smoother_server':                   'Path.png',
-    '/velocity_smoother':                 'TwistStamped.png',
-    '/behavior_server':                   'Wrench.png',
-    '/waypoint_follower':                 'Pose.png',
-    '/map_server':                        'Map.png',
+    'amcl':              'PoseArray.png',
+    'controller_server': 'TwistStamped.png',
+    'planner_server':    'Path.png',
+    'bt_navigator':      'MarkerArray.png',
+    'local_costmap':     'GridCells.png',
+    'global_costmap':    'Map.png',
+    'smoother_server':   'Path.png',
+    'velocity_smoother': 'TwistStamped.png',
+    'behavior_server':   'Wrench.png',
+    'waypoint_follower': 'Pose.png',
+    'map_server':        'Map.png',
 }
 
 # System theme fallbacks (used when RViz2 PNG fails to load)
 _NODE_THEME_MAP: dict[str, str] = {
-    '/amcl':                              'find-location',
-    '/controller_server':                 'media-playback-start',
-    '/planner_server':                    'go-jump',
-    '/bt_navigator':                      'preferences-system',
-    '/local_costmap/local_costmap':       'view-grid',
-    '/global_costmap/global_costmap':     'view-grid',
-    '/smoother_server':                   'draw-freehand',
-    '/velocity_smoother':                 'go-next',
-    '/behavior_server':                   'system-run',
-    '/waypoint_follower':                 'flag',
-    '/map_server':                        'image-x-generic',
+    'amcl':              'find-location',
+    'controller_server': 'media-playback-start',
+    'planner_server':    'go-jump',
+    'bt_navigator':      'preferences-system',
+    'local_costmap':     'view-grid',
+    'global_costmap':    'view-grid',
+    'smoother_server':   'draw-freehand',
+    'velocity_smoother': 'go-next',
+    'behavior_server':   'system-run',
+    'waypoint_follower': 'flag',
+    'map_server':        'image-x-generic',
 }
 
 # Letter for the final programmatic fallback
 _NODE_LETTER_MAP: dict[str, str] = {
-    '/amcl':                              'A',
-    '/controller_server':                 'C',
-    '/planner_server':                    'P',
-    '/bt_navigator':                      'B',
-    '/local_costmap/local_costmap':       'L',
-    '/global_costmap/global_costmap':     'G',
-    '/smoother_server':                   'S',
-    '/velocity_smoother':                 'V',
-    '/behavior_server':                   'R',
-    '/waypoint_follower':                 'W',
-    '/map_server':                        'M',
+    'amcl':              'A',
+    'controller_server': 'C',
+    'planner_server':    'P',
+    'bt_navigator':      'B',
+    'local_costmap':     'L',
+    'global_costmap':    'G',
+    'smoother_server':   'S',
+    'velocity_smoother': 'V',
+    'behavior_server':   'R',
+    'waypoint_follower': 'W',
+    'map_server':        'M',
 }
 
 _NODE_ICON_CACHE: dict[tuple[str, bool], QIcon] = {}
@@ -305,9 +307,10 @@ def node_icon(node_path: str, active: bool) -> QIcon:
         return _NODE_ICON_CACHE[cache_key]
 
     icon: QIcon | None = None
+    basename = path_basename(node_path)
 
     # 1. RViz2 PNG
-    rviz_filename = _NODE_RVIZ_ICON.get(node_path)
+    rviz_filename = _NODE_RVIZ_ICON.get(basename)
     if rviz_filename:
         candidate = _rviz(rviz_filename)
         if not candidate.isNull():
@@ -315,7 +318,7 @@ def node_icon(node_path: str, active: bool) -> QIcon:
 
     # 2. System theme icon
     if icon is None:
-        theme_name = _NODE_THEME_MAP.get(node_path)
+        theme_name = _NODE_THEME_MAP.get(basename)
         if theme_name:
             candidate = _theme(theme_name)
             if not candidate.isNull():
@@ -323,7 +326,7 @@ def node_icon(node_path: str, active: bool) -> QIcon:
 
     # 3. Colored letter fallback
     if icon is None:
-        letter = _NODE_LETTER_MAP.get(node_path, node_path.lstrip('/')[:1].upper() or '?')
+        letter = _NODE_LETTER_MAP.get(basename, basename[:1].upper() or '?')
         icon = _letter_icon(letter, active)
 
     _NODE_ICON_CACHE[cache_key] = icon

@@ -29,6 +29,7 @@ from nav2_config.core.node_discovery import (
     NAV2_NODE_SPECS,
     DiscoveredNav2Node,
     DiscoveredLifecycleManager,
+    path_basename,
 )
 from nav2_config.gui.icons import node_icon
 
@@ -52,17 +53,17 @@ _FG_DIM   = '#666666'
 
 # ── Icon letter + colour per node ─────────────────────────────────────────────
 _NODE_ICON_DEFS: dict[str, tuple[str, str]] = {
-    '/amcl':                          ('A',  '#2196f3'),
-    '/controller_server':             ('C',  '#4caf50'),
-    '/planner_server':                ('P',  '#2196f3'),
-    '/bt_navigator':                  ('B',  '#ff9800'),
-    '/local_costmap/local_costmap':   ('LC', '#9c27b0'),
-    '/global_costmap/global_costmap': ('GC', '#9c27b0'),
-    '/smoother_server':               ('S',  '#607d8b'),
-    '/velocity_smoother':             ('V',  '#009688'),
-    '/behavior_server':               ('BR', '#f44336'),
-    '/waypoint_follower':             ('W',  '#795548'),
-    '/map_server':                    ('M',  '#3f51b5'),
+    'amcl':              ('A',  '#2196f3'),
+    'controller_server': ('C',  '#4caf50'),
+    'planner_server':    ('P',  '#2196f3'),
+    'bt_navigator':      ('B',  '#ff9800'),
+    'local_costmap':     ('LC', '#9c27b0'),
+    'global_costmap':    ('GC', '#9c27b0'),
+    'smoother_server':   ('S',  '#607d8b'),
+    'velocity_smoother': ('V',  '#009688'),
+    'behavior_server':   ('BR', '#f44336'),
+    'waypoint_follower': ('W',  '#795548'),
+    'map_server':        ('M',  '#3f51b5'),
 }
 
 _ICON_CACHE: dict[tuple[str, str], QIcon] = {}
@@ -504,7 +505,7 @@ class _NodeRow(QWidget):
         self._found = False
         self._state = 'not found'
         self._is_selected = False
-        _, self._border_color = _NODE_ICON_DEFS.get(node_path, ('?', '#666666'))
+        _, self._border_color = _NODE_ICON_DEFS.get(path_basename(node_path), ('?', '#666666'))
         self.setAutoFillBackground(False)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self._build_ui(display_name)
@@ -626,7 +627,7 @@ class _NodeRow(QWidget):
             if not self._found:
                 name_color = _GRAY
             else:
-                _, icon_color = _NODE_ICON_DEFS.get(self._node_path, ('?', '#666666'))
+                _, icon_color = _NODE_ICON_DEFS.get(path_basename(self._node_path), ('?', '#666666'))
                 name_color = icon_color if self._state == 'active' else _FG
             self._name_lbl.setStyleSheet(
                 f'font-weight: 600; font-size: 10pt; color: {name_color}; background: transparent;'
@@ -641,7 +642,7 @@ class _NodeRow(QWidget):
         if not icon.isNull():
             self._icon_lbl.setPixmap(icon.pixmap(self.ICON_SIZE, self.ICON_SIZE))
         else:
-            letter, color = _NODE_ICON_DEFS.get(self._node_path, ('?', '#666666'))
+            letter, color = _NODE_ICON_DEFS.get(path_basename(self._node_path), ('?', '#666666'))
             fallback = _colored_letter_icon(letter, color, self.ICON_SIZE)
             self._icon_lbl.setPixmap(fallback.pixmap(self.ICON_SIZE, self.ICON_SIZE))
 
