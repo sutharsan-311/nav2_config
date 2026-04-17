@@ -395,6 +395,10 @@ class MainWindow(QMainWindow):
         self._topology_managers: dict[str, DiscoveredLifecycleManager] = {}
         self._selected_node_path: str | None = None
 
+        # Schema index for type inference in _yaml_dict_to_snapshot.
+        # Built lazily on first compare; maps (bare_node, param_name) -> Nav2ParamDef.
+        self._schema_index: dict[tuple[str, str], Any] | None = None
+
         # History/compare feature — guarded in case modules aren't built yet
         self._history: Optional[Any] = HistoryManager() if _HISTORY_AVAILABLE else None
         # Maps (node_path, ros2_name) -> entry_id for in-flight set calls
@@ -1500,9 +1504,62 @@ class MainWindow(QMainWindow):
             self._pending_history[(req.node_path, req.param_name)] = entry_id
 
         if req.hot_reload:
+            # Stage config change — applied only after ROS2 confirms success.
+            if self._config_file:
+                self._pending_config_set[(req.node_path, req.param_name)] = (
+                    req.node_path, req.ros2_name, req.value
+                )
             self._pending_set_values[(req.node_path, req.param_name)] = req.value
             self._node.request_set_param(
                 req.node_path, req.ros2_name, req.value, req.type_hint
+            )
+        else:
+            # Non-hot-reload: update config file and save to disk immediately.
+            if self._config_file is None:
+                logger.warning(
+                    f"_apply_param_change: no config file loaded for "
+                    f"{req.node_path}/{req.param_name}"
+                )
+                if _HISTORY_AVAILABLE and self._history is not None:
+                    pending_id = self._pending_history.pop(
+                        (req.node_path, req.param_name), None
+                    )
+                    if pending_id is not None:
+                        self._history.update_entry_status(pending_id, "failed")
+                return
+            self._config_file.set_value(req.node_path, req.ros2_name, req.value)
+            self._mark_dirty()
+            try:
+                self._config_file.save()
+            except Exception as exc:
+                logger.warning(
+                    f"_apply_param_change: auto-save failed for "
+                    f"{req.node_path}/{req.param_name}: {exc}"
+                )
+                if _HISTORY_AVAILABLE and self._history is not None:
+                    pending_id = self._pending_history.pop(
+                        (req.node_path, req.param_name), None
+                    )
+                    if pending_id is not None:
+                        self._history.update_entry_status(pending_id, "failed")
+                return
+            self._dirty = False
+            self._update_title()
+            self._yaml_panel.set_save_button_dirty(False)
+            self._yaml_panel.set_file_content(
+                self._config_file.to_yaml_string(), dirty=False
+            )
+            self._param_panel.mark_param_file_saved(req.param_name)
+            self._node_panel.set_node_restart_pending(req.node_path, True)
+            # Update history entry status to "applied" (saved to file)
+            if _HISTORY_AVAILABLE and self._history is not None:
+                pending_id = self._pending_history.pop(
+                    (req.node_path, req.param_name), None
+                )
+                if pending_id is not None:
+                    self._history.update_entry_status(pending_id, "applied")
+            logger.info(
+                f"Config saved (non-hot-reload): {req.param_name} = {req.value}"
             )
 
     def _on_undo_requested(self, entry_id: str) -> None:
@@ -1604,7 +1661,9 @@ class MainWindow(QMainWindow):
                 params_dict = self._config_file.get_all_params_for_node_original(node_path)
             if not params_dict:
                 return None
-            return self._yaml_dict_to_snapshot(norm_path, params_dict, label)
+            return self._yaml_dict_to_snapshot(
+                norm_path, params_dict, label, self._get_schema_index()
+            )
 
         # Any other string is a filepath from "Browse YAML file..."
         if _import_yaml_for_compare is None:
@@ -1612,7 +1671,9 @@ class MainWindow(QMainWindow):
         imported = _import_yaml_for_compare(source_id)
         for raw_path, params_dict in imported.items():
             if "/" + raw_path.strip("/").strip() == norm_path:
-                return self._yaml_dict_to_snapshot(norm_path, params_dict, label)
+                return self._yaml_dict_to_snapshot(
+                    norm_path, params_dict, label, self._get_schema_index()
+                )
         return None
 
     @staticmethod
@@ -1620,14 +1681,37 @@ class MainWindow(QMainWindow):
         node_path: str,
         params_dict: dict[str, Any],
         label: str,
+        schema_index: "dict[tuple[str, str], Any] | None" = None,
     ) -> "ParamSnapshot":
         """Build a ParamSnapshot from a flat {param_name: value} dict.
+
+        Looks up each param in the schema index to get the correct type_hint
+        and ros2_name.  For params not in the schema, the type is inferred from
+        the Python value type.  Falls back to "string" / param_name when the
+        schema index is not provided.
 
         Args:
             node_path: Normalized ROS2 node path (used as ParamRef.node_path).
             params_dict: Flat mapping of dot-notation param names to values.
             label: Human-readable label for the snapshot.
+            schema_index: Optional dict keyed by (bare_node, param_name) →
+                Nav2ParamDef.  When provided, type_hint and ros2_name are taken
+                from the matching definition instead of being guessed.
         """
+        # Derive the bare node name (last path segment) for schema lookup.
+        bare_node = node_path.rstrip("/").rsplit("/", 1)[-1]
+
+        def _infer_type(v: Any) -> str:
+            if isinstance(v, bool):
+                return "bool"
+            if isinstance(v, int):
+                return "integer"
+            if isinstance(v, float):
+                return "double"
+            if isinstance(v, list):
+                return "string_array"
+            return "string"
+
         snap = ParamSnapshot(
             snapshot_id=str(uuid.uuid4()),
             label=label,
@@ -1635,13 +1719,40 @@ class MainWindow(QMainWindow):
         )
         for param_name, value in params_dict.items():
             ref = ParamRef(node_path=node_path, param_name=param_name)
+            # Try schema lookup: first by (bare_node, param_name), then by
+            # (bare_node, ros2_name) for plugin-namespaced params.
+            schema_def = None
+            if schema_index is not None:
+                schema_def = schema_index.get((bare_node, param_name))
+            if schema_def is not None:
+                type_hint = schema_def.type
+                ros2_name = schema_def.ros2_name
+            else:
+                type_hint = _infer_type(value)
+                ros2_name = param_name
             snap.entries[ref] = ParamSnapshotEntry(
                 ref=ref,
                 value=value,
-                type_hint="string",
-                ros2_name=param_name,
+                type_hint=type_hint,
+                ros2_name=ros2_name,
             )
         return snap
+
+    def _get_schema_index(self) -> "dict[tuple[str, str], Any]":
+        """Return a schema index keyed by (bare_node, param_name).
+
+        Built once and cached.  Falls back to an empty dict on import error.
+        """
+        if self._schema_index is not None:
+            return self._schema_index
+        try:
+            from nav2_config.types.params import load_schema as _load_schema
+            defs = _load_schema()
+            self._schema_index = {(d.node, d.param): d for d in defs}
+        except Exception as exc:
+            logger.warning(f"Could not load schema for snapshot type inference: {exc}")
+            self._schema_index = {}
+        return self._schema_index
 
     def _on_compare_apply(self, diffs: list) -> None:
         """Apply a batch of diff entries from the compare panel.
