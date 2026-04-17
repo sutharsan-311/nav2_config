@@ -113,13 +113,14 @@ class Nav2ServiceCaller:
         svc = join_ros_path(stack_ns, "map_server/load_map")
 
         key = (LoadMap, svc)
-        if key not in self._clients:
-            self._clients[key] = self._node.create_client(
-                LoadMap,
-                svc,
-                callback_group=self._cb_group,
-            )
-        client = self._clients[key]
+        with self._clients_lock:
+            if key not in self._clients:
+                self._clients[key] = self._node.create_client(
+                    LoadMap,
+                    svc,
+                    callback_group=self._cb_group,
+                )
+            client = self._clients[key]
 
         if not client.wait_for_service(timeout_sec=self.SERVICE_TIMEOUT):
             self._node.get_logger().warning(f'load_map service not available on {svc}')
@@ -152,12 +153,13 @@ class Nav2ServiceCaller:
         svc = join_ros_path(stack_ns, "request_nomotion_update")
 
         key = (Empty, svc)
-        if key not in self._clients:
-            self._clients[key] = self._node.create_client(
-                Empty,
-                svc,
-                callback_group=self._cb_group,
-            )
+        with self._clients_lock:
+            if key not in self._clients:
+                self._clients[key] = self._node.create_client(
+                    Empty,
+                    svc,
+                    callback_group=self._cb_group,
+                )
 
         return self._call_empty_like(self._clients[key], Empty.Request(), svc)
 
@@ -180,12 +182,13 @@ class Nav2ServiceCaller:
         svc = join_ros_path(stack_ns, "reinitialize_global_localization")
 
         key = (Empty, svc)
-        if key not in self._clients:
-            self._clients[key] = self._node.create_client(
-                Empty,
-                svc,
-                callback_group=self._cb_group,
-            )
+        with self._clients_lock:
+            if key not in self._clients:
+                self._clients[key] = self._node.create_client(
+                    Empty,
+                    svc,
+                    callback_group=self._cb_group,
+                )
 
         return self._call_empty_like(self._clients[key], Empty.Request(), svc)
 
@@ -202,18 +205,19 @@ class Nav2ServiceCaller:
         # "<stack_namespace>/" (non-root) or "/" (root namespace catches all
         # absolute service paths that have no deeper namespace prefix).
         prefix = stack_namespace.rstrip('/') + '/'
-        stale_keys = [
-            key for key in self._clients
-            if key[1].startswith(prefix)
-        ]
-        for key in stale_keys:
-            try:
-                self._node.destroy_client(self._clients[key])
-            except Exception as exc:
-                self._node.get_logger().debug(
-                    f'Error destroying service client for {key[1]}: {exc}'
-                )
-            del self._clients[key]
+        with self._clients_lock:
+            stale_keys = [
+                key for key in self._clients
+                if key[1].startswith(prefix)
+            ]
+            for key in stale_keys:
+                try:
+                    self._node.destroy_client(self._clients[key])
+                except Exception as exc:
+                    self._node.get_logger().debug(
+                        f'Error destroying service client for {key[1]}: {exc}'
+                    )
+                del self._clients[key]
         if stale_keys:
             self._node.get_logger().debug(
                 f'Pruned {len(stale_keys)} service client(s) for namespace {stack_namespace}'

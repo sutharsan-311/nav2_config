@@ -867,17 +867,6 @@ class NodePanel(QWidget):
     # Public slots
     # ------------------------------------------------------------------
 
-    def update_nodes(self, status: dict[str, bool]) -> None:
-        """Update discovery state for all nodes."""
-        self._found_nodes = {p for p, found in status.items() if found}
-        for path in status:
-            self._refresh_row(path)
-        self._update_count_header(len(self._found_nodes))
-        logger.debug(
-            'Node panel: %d/%d nodes discovered',
-            len(self._found_nodes), len(NAV2_NODE_SPECS),
-        )
-
     def update_lifecycle_states(self, states: dict[str, str]) -> None:
         """Update lifecycle state labels in whichever mode is active."""
         self._lifecycle_states.update(states)

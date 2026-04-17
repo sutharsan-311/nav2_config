@@ -747,8 +747,13 @@ class MainWindow(QMainWindow):
         self._robot_mode_pill.set_mode(mode)
         self._param_panel.set_robot_mode(mode)
 
-    def _on_nodes_discovered(self, status: dict[str, bool]) -> None:
-        found = sum(1 for v in status.values() if v)
+    def _on_topology_updated(self, nodes_by_path: dict, managers_by_path: dict) -> None:
+        """Store topology caches, refresh the node panel, and update the status bar."""
+        self._topology_nodes = nodes_by_path
+        self._topology_managers = managers_by_path
+        self._node_panel.update_topology(nodes_by_path, managers_by_path)
+
+        found = len(nodes_by_path)
         total = len(NAV2_NODE_SPECS)
         total_params = sum(len(p) for p in self._all_node_params.values())
 
@@ -771,17 +776,9 @@ class MainWindow(QMainWindow):
             self._status_dot.setPixmap(status_connected().pixmap(10, 10))
 
         current = self._param_panel._node_name
-        if current:
-            for path, running in status.items():
-                if path == current and not running:
-                    self.set_status(f'Node {current.lstrip("/")} went offline')
-                    break
+        if current and current not in nodes_by_path:
+            self.set_status(f'Node {current.lstrip("/") } went offline')
 
-    def _on_topology_updated(self, nodes_by_path: dict, managers_by_path: dict) -> None:
-        """Store topology caches and refresh the node panel."""
-        self._topology_nodes = nodes_by_path
-        self._topology_managers = managers_by_path
-        self._node_panel.update_topology(nodes_by_path, managers_by_path)
         if self._selected_node_path:
             self._refresh_selected_node_context()
 
