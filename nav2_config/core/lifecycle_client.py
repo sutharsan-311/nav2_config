@@ -70,6 +70,8 @@ class LifecycleClient:
         self._callback_group = callback_group
         self._get_clients: dict[str, object] = {}
         self._change_clients: dict[str, object] = {}
+        self._get_clients_lock = threading.Lock()
+        self._change_clients_lock = threading.Lock()
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -77,21 +79,23 @@ class LifecycleClient:
 
     def _get_state_client(self, node_name: str) -> object:
         """Return a cached (or newly created) GetState client for *node_name*."""
-        if node_name not in self._get_clients:
-            svc = f'{node_name}/get_state'
-            self._get_clients[node_name] = self._node.create_client(
-                GetState, svc, callback_group=self._callback_group
-            )
-        return self._get_clients[node_name]
+        with self._get_clients_lock:
+            if node_name not in self._get_clients:
+                svc = f'{node_name}/get_state'
+                self._get_clients[node_name] = self._node.create_client(
+                    GetState, svc, callback_group=self._callback_group
+                )
+            return self._get_clients[node_name]
 
     def _change_state_client(self, node_name: str) -> object:
         """Return a cached (or newly created) ChangeState client for *node_name*."""
-        if node_name not in self._change_clients:
-            svc = f'{node_name}/change_state'
-            self._change_clients[node_name] = self._node.create_client(
-                ChangeState, svc, callback_group=self._callback_group
-            )
-        return self._change_clients[node_name]
+        with self._change_clients_lock:
+            if node_name not in self._change_clients:
+                svc = f'{node_name}/change_state'
+                self._change_clients[node_name] = self._node.create_client(
+                    ChangeState, svc, callback_group=self._callback_group
+                )
+            return self._change_clients[node_name]
 
     def _call(
         self,
