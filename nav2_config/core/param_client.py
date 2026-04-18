@@ -26,7 +26,9 @@ logger = logging.getLogger(__name__)
 _SERVICE_TIMEOUT: float = 5.0
 
 #: Seconds to wait for a service to become available before giving up.
-_AVAILABILITY_TIMEOUT: float = 2.0
+#: Healthy services respond in <50 ms; 0.5 s gives fast failure when the
+#: node is gone without false negatives on a loaded system.
+_AVAILABILITY_TIMEOUT: float = 0.5
 
 
 # ---------------------------------------------------------------------------
