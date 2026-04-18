@@ -62,8 +62,9 @@ def test_fetch_success_emits_params_received():
     fake_params = [fake_pv]
 
     with patch.object(type(node), '_build_param_values', return_value=fake_params):
-        from nav2_config.node import Nav2ConfigNode
-        Nav2ConfigNode._fetch_params_for_node(node, '/controller_server')
+        with patch.object(type(node), 'get_logger', return_value=MagicMock()):
+            from nav2_config.node import Nav2ConfigNode
+            Nav2ConfigNode._fetch_params_for_node(node, '/controller_server')
 
     assert len(received) == 1
     assert received[0][1] == fake_params
