@@ -51,6 +51,9 @@ _FG       = '#1a1a1a'
 _FG_DIM   = '#666666'
 _AMBER    = '#ff9800'
 
+#: Number of parameter categories to create widgets for per Qt event-loop tick.
+_LOAD_BATCH_SIZE: int = 5
+
 
 # ── Lifecycle control bar ─────────────────────────────────────────────────────
 
@@ -468,6 +471,9 @@ class ParamPanel(QWidget):
         # pre-search snapshot of expanded state (None = not in search mode)
         self._pre_search_expanded: set[str] | None = None
         self._lc_bar: _LifecycleBar | None = None
+        # State for deferred (batched) widget creation in load_params.
+        self._pending_load_categories: list[tuple[str, list]] = []
+        self._pending_load_remembered: set[str] = set()
         self._build_ui()
 
     # ------------------------------------------------------------------
@@ -728,6 +734,7 @@ class ParamPanel(QWidget):
     # ------------------------------------------------------------------
 
     def _clear_rows(self) -> None:
+        self._pending_load_categories = []   # cancel in-progress deferred load
         layout = self._scroll_layout
         while layout.count():
             item = layout.takeAt(0)
@@ -768,7 +775,12 @@ class ParamPanel(QWidget):
         self._title_label.setText(f'Parameters  —  {display}')
 
     def load_params(self, params: list[ParamValue]) -> None:
-        """Rebuild the parameter rows for the given list of ParamValue objects."""
+        """Rebuild the parameter rows for the given list of ParamValue objects.
+
+        Widget creation is deferred across Qt event-loop ticks in batches of
+        _LOAD_BATCH_SIZE categories so that the UI stays responsive while
+        loading large nodes (local_costmap, global_costmap, etc.).
+        """
         self._clear_rows()
         self._param_values = params
         self._search.clear()
@@ -785,16 +797,25 @@ class ParamPanel(QWidget):
         self._scroll_layout.takeAt(self._scroll_layout.count() - 1)
 
         remembered = self._expanded_categories.get(self._node_name, set())
-        # Reset expand-all button without triggering its toggle handler
         self._expand_all_btn.blockSignals(True)
         self._expand_all_btn.setChecked(False)
         self._expand_all_btn.setText('⊞ All')
         self._expand_all_btn.blockSignals(False)
         self._pre_search_expanded = None
 
-        for category in sorted(categories):
+        self._pending_load_categories = sorted(categories.items())
+        self._pending_load_remembered = remembered
+        from PyQt6.QtCore import QTimer
+        QTimer.singleShot(0, self._load_next_batch)
+
+    def _load_next_batch(self) -> None:
+        """Process one batch of categories; reschedule if more remain."""
+        batch = self._pending_load_categories[:_LOAD_BATCH_SIZE]
+        self._pending_load_categories = self._pending_load_categories[_LOAD_BATCH_SIZE:]
+
+        for category, pvs in batch:
             section = _CategorySection(category)
-            for pv in sorted(categories[category], key=lambda p: p.definition.param):
+            for pv in sorted(pvs, key=lambda p: p.definition.param):
                 row = ParamRow(
                     pv,
                     show_description=self._show_descriptions,
@@ -805,20 +826,23 @@ class ParamPanel(QWidget):
                 row.param_set_requested.connect(self._on_row_set_requested)
                 section.add_row(row)
                 self._all_rows.append(row)
-            # Restore remembered expansion state for this node
-            if category in remembered:
+            if category in self._pending_load_remembered:
                 section.set_expanded(True)
             section.toggled.connect(self._on_section_toggled)
             self._sections[category] = section
             self._scroll_layout.addWidget(section)
 
-        self._scroll_layout.addStretch()
-        self._refresh_count_label()
-        self._update_set_all_btn()
-        logger.debug(
-            'ParamPanel: loaded %d params in %d categories',
-            len(params), len(categories),
-        )
+        if self._pending_load_categories:
+            from PyQt6.QtCore import QTimer
+            QTimer.singleShot(0, self._load_next_batch)
+        else:
+            self._scroll_layout.addStretch()
+            self._refresh_count_label()
+            self._update_set_all_btn()
+            logger.debug(
+                'ParamPanel: loaded %d params in %d categories',
+                len(self._param_values), len(self._sections),
+            )
 
     def update_set_result(self, param_name: str, success: bool) -> None:
         """Route a ROS2 set_parameters result to the matching row's Set button."""
