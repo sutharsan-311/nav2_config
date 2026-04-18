@@ -14,7 +14,7 @@ import time
 from typing import Any
 
 import rclpy
-from rclpy.callback_groups import ReentrantCallbackGroup
+from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from rclpy.node import Node
 from rcl_interfaces.msg import ParameterType
 from PyQt6.QtCore import QObject, pyqtSignal
@@ -156,6 +156,12 @@ class Nav2ConfigNode(Node):
         # With the default MutuallyExclusiveCallbackGroup the timer would hold
         # the group lock while blocking, and the service client could never fire.
         self._cb_group = ReentrantCallbackGroup()
+        # Serializes the four periodic timers relative to each other so shared
+        # dicts (_lifecycle_states, _param_names_cache, _prev_discovered) are
+        # never accessed concurrently.  Service response callbacks remain on
+        # _cb_group (ReentrantCallbackGroup) and can fire while a timer blocks
+        # on a future — that is the correct interaction.
+        self._timer_cb_group = MutuallyExclusiveCallbackGroup()
 
         #: Parameter service client.
         self._param_client = Nav2ParamClient(self, self._cb_group)
@@ -235,16 +241,19 @@ class Nav2ConfigNode(Node):
         #: full_path of the node currently selected in the GUI (always polled).
         self._selected_node_path: str | None = None
 
-        # ROS2 timers share the same reentrant group so that service calls
-        # issued inside these callbacks can complete concurrently.
+        # Timers use _timer_cb_group (MutuallyExclusiveCallbackGroup) so they
+        # are serialized relative to each other — preventing concurrent writes
+        # to shared dicts (_lifecycle_states, _param_names_cache, etc.).
+        # Service response callbacks remain on _cb_group (ReentrantCallbackGroup)
+        # and can fire while a timer blocks on a future.
         self.create_timer(self.DISCOVERY_INTERVAL, self._on_timer_tick,
-                          callback_group=self._cb_group)
+                          callback_group=self._timer_cb_group)
         self.create_timer(self.POLL_INTERVAL, self._on_poll_tick,
-                          callback_group=self._cb_group)
+                          callback_group=self._timer_cb_group)
         self.create_timer(self.TOPIC_FRAME_INTERVAL, self._on_topic_frame_tick,
-                          callback_group=self._cb_group)
+                          callback_group=self._timer_cb_group)
         self.create_timer(5.0, self._on_robot_mode_tick,
-                          callback_group=self._cb_group)
+                          callback_group=self._timer_cb_group)
 
         self.get_logger().info('Nav2 Config GUI started')
 
@@ -740,9 +749,18 @@ class Nav2ConfigNode(Node):
         Called on the ROS2 thread.  Emits ``signals.params_received``.
         An explicit fetch always bypasses the param-name cache so that a
         user-initiated refresh picks up any new or removed parameters.
+        Always emits ``signals.params_received`` — even on error (with an
+        empty list) so the GUI never hangs waiting for it.
         """
         self._param_names_cache.pop(node_name, None)
-        param_values = self._build_param_values(node_name)
+        try:
+            param_values = self._build_param_values(node_name)
+        except Exception as exc:
+            self.get_logger().error(
+                f"Error fetching params for {node_name}: {exc}"
+            )
+            self.signals.params_received.emit(node_name, [])
+            return
         # Update watcher baseline so poll doesn't flag these values as external changes.
         if self._watcher.watched_node == node_name:
             if any(pv.is_live for pv in param_values):
@@ -766,8 +784,9 @@ class Nav2ConfigNode(Node):
         """
         bare_node = node_name.rstrip('/').rsplit('/', 1)[-1]
 
-        if node_name in self._param_names_cache:
-            live_names = self._param_names_cache[node_name]
+        _cached_names = self._param_names_cache.get(node_name)
+        if _cached_names is not None:
+            live_names = _cached_names
         else:
             try:
                 live_names = [
@@ -1498,9 +1517,6 @@ class Nav2ConfigNode(Node):
         """
         targets = self._managers_for_namespace(stack_namespace)
         if not targets:
-            self.get_logger().warning(
-                f'No nodes found for namespace {stack_namespace}'
-            )
             ns_nodes = {
                 path
                 for path in (self._prev_discovered or set())
@@ -1508,7 +1524,7 @@ class Nav2ConfigNode(Node):
             }
             if not ns_nodes:
                 self.get_logger().warning(
-                    f'No nodes found for namespace {stack_namespace}'
+                    f'No nodes found for namespace {stack_namespace!r}'
                 )
                 self.signals.lifecycle_change_result.emit(
                     '',
