@@ -15,7 +15,7 @@ import pytest
 SRC_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(SRC_ROOT))
 
-from nav2_config.core.yaml_exporter import _node_path_to_yaml_keys, export_yaml
+from nav2_config.core.yaml_exporter import _format_value, _node_path_to_yaml_keys, export_yaml
 from nav2_config.types.params import Nav2ParamDef, ParamRange, ParamValue
 
 
@@ -334,3 +334,86 @@ def test_export_yaml_plugin_filter_excludes_other_plugins() -> None:
     assert "controller_frequency" in yaml_str   # non-plugin-specific: always included
     assert "xy_goal_tolerance" in yaml_str       # DWB plugin: included
     assert "max_vel_x" not in yaml_str           # TEB plugin: excluded
+
+
+# ---------------------------------------------------------------------------
+# _format_value — unit tests for the scalar/sequence formatter
+# ---------------------------------------------------------------------------
+
+
+def test_format_value_bool_true() -> None:
+    """Python True formats as lowercase 'true', not 'True'."""
+    assert _format_value(True) == "true"
+
+
+def test_format_value_bool_false() -> None:
+    """Python False formats as lowercase 'false'."""
+    assert _format_value(False) == "false"
+
+
+def test_format_value_int() -> None:
+    """Integer values are rendered without a decimal point."""
+    assert _format_value(42) == "42"
+
+
+def test_format_value_float_with_decimal() -> None:
+    """A float with a fractional part keeps its decimal notation."""
+    assert _format_value(3.14) == "3.14"
+
+
+def test_format_value_float_whole_number() -> None:
+    """A float equal to a whole number retains the '.0' suffix so YAML
+    parsers do not misinterpret it as an integer."""
+    assert _format_value(20.0) == "20.0"
+
+
+def test_format_value_plain_string_unquoted() -> None:
+    """A plain identifier string is returned without quotes."""
+    assert _format_value("base_link") == "base_link"
+
+
+def test_format_value_empty_string_quoted() -> None:
+    """An empty string is represented as two double-quotes so YAML parsers
+    see an explicit empty string rather than a null."""
+    assert _format_value("") == '""'
+
+
+def test_format_value_string_with_colon_quoted() -> None:
+    """A string containing ':' must be quoted to avoid YAML mapping syntax."""
+    result = _format_value("key: value")
+    assert result.startswith('"') and result.endswith('"')
+    assert "key: value" in result
+
+
+def test_format_value_string_starting_with_tilde_quoted() -> None:
+    """A string starting with '~' must be quoted because bare '~' is YAML null."""
+    result = _format_value("~foo")
+    assert result.startswith('"')
+
+
+def test_format_value_string_starting_with_dash_quoted() -> None:
+    """A string starting with '-' must be quoted to avoid YAML block-sequence
+    indicator ambiguity."""
+    result = _format_value("-my-topic")
+    assert result.startswith('"')
+
+
+def test_format_value_empty_list() -> None:
+    """An empty list produces the inline YAML form '[]'."""
+    assert _format_value([]) == "[]"
+
+
+def test_format_value_list_of_strings() -> None:
+    """A list of plain strings is rendered as an inline YAML flow sequence."""
+    assert _format_value(["a", "b", "c"]) == "[a, b, c]"
+
+
+def test_format_value_nested_list_of_floats() -> None:
+    """Each element of a float list is formatted with the same float rules."""
+    result = _format_value([1.0, 2.5])
+    assert result == "[1.0, 2.5]"
+
+
+def test_format_value_list_of_bools() -> None:
+    """Boolean elements inside a list use lowercase true/false."""
+    assert _format_value([True, False]) == "[true, false]"
