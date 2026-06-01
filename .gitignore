@@ -9,3 +9,7 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 graphify-out/
+
+# Internal machine artifact for the param-coverage backlog (BACKLOG.md is the
+# committed human-readable roadmap; backlog.json is regenerated each run).
+backlog.json
