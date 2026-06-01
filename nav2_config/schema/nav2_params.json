@@ -2439,7 +2439,11 @@
     "node": "velocity_smoother",
     "param": "max_velocity",
     "type": "double_array",
-    "default": [0.5, 0.0, 2.5],
+    "default": [
+      0.5,
+      0.0,
+      2.5
+    ],
     "range": null,
     "unit": "m/s, m/s, rad/s",
     "description": "Maximum [x, y, theta] velocities. y is non-zero for holonomic robots.",
@@ -2459,7 +2463,11 @@
     "node": "velocity_smoother",
     "param": "min_velocity",
     "type": "double_array",
-    "default": [-0.5, 0.0, -2.5],
+    "default": [
+      -0.5,
+      0.0,
+      -2.5
+    ],
     "range": null,
     "unit": "m/s, m/s, rad/s",
     "description": "Minimum [x, y, theta] velocities (negative = reverse / opposite direction).",
@@ -2479,7 +2487,11 @@
     "node": "velocity_smoother",
     "param": "max_accel",
     "type": "double_array",
-    "default": [2.5, 0.0, 3.2],
+    "default": [
+      2.5,
+      0.0,
+      3.2
+    ],
     "range": null,
     "unit": "m/s\u00b2, m/s\u00b2, rad/s\u00b2",
     "description": "Maximum [x, y, theta] acceleration limits.",
@@ -2499,7 +2511,11 @@
     "node": "velocity_smoother",
     "param": "max_decel",
     "type": "double_array",
-    "default": [-2.5, 0.0, -3.2],
+    "default": [
+      -2.5,
+      0.0,
+      -3.2
+    ],
     "range": null,
     "unit": "m/s\u00b2, m/s\u00b2, rad/s\u00b2",
     "description": "Maximum [x, y, theta] deceleration limits (negative values).",
@@ -2519,7 +2535,11 @@
     "node": "velocity_smoother",
     "param": "deadband_velocity",
     "type": "double_array",
-    "default": [0.0, 0.0, 0.0],
+    "default": [
+      0.0,
+      0.0,
+      0.0
+    ],
     "range": null,
     "unit": "m/s, m/s, rad/s",
     "description": "Velocity commands below this threshold are zeroed out (deadband).",
@@ -7916,6 +7936,179 @@
       "local_costmap",
       "voxel_layer",
       "unknown"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": null,
+    "description": "Enable or disable the collision monitor at startup. When false the node activates but does not act on incoming velocity commands.",
+    "impact": "Set to false to temporarily bypass all collision safety zones without stopping the node.",
+    "category": "general",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "collision_monitor",
+      "safety",
+      "enable"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "base_frame_id",
+    "type": "string",
+    "default": "base_footprint",
+    "range": null,
+    "unit": null,
+    "description": "TF frame attached to the robot base used as the reference frame for all polygon and source transformations.",
+    "impact": "Must match the robot's TF tree. Wrong value causes transform failures and disables all collision detection.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "tf",
+      "frame"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "odom_frame_id",
+    "type": "string",
+    "default": "odom",
+    "range": null,
+    "unit": null,
+    "description": "Odometry TF frame used to project the robot's future trajectory when evaluating approach-type polygons.",
+    "impact": "Must match the odometry frame in the TF tree. Incorrect value causes trajectory projection to fail for approach action types.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "tf",
+      "odom",
+      "frame"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "transform_tolerance",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "s",
+    "description": "Maximum age of a TF transform before it is considered too old to use. Applies to all source and polygon frame lookups.",
+    "impact": "Increase on systems with high TF latency or slow sensors. Too large a value may use stale poses and produce incorrect collision estimates.",
+    "category": "timing",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "collision_monitor",
+      "tf",
+      "tolerance",
+      "timing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "source_timeout",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "s",
+    "description": "Maximum time a sensor source may go without publishing before it is considered invalid and ignored. 0 disables timeout checking.",
+    "impact": "Lower values make the system more sensitive to sensor dropouts (safer but noisier). Higher values tolerate slow sensors but may miss obstacle data during outages.",
+    "category": "timing",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "collision_monitor",
+      "sensor",
+      "timeout",
+      "timing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "stop_pub_timeout",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "s",
+    "description": "Duration for which a zero-velocity (stop) command continues to be published after the triggering condition clears. Prevents the robot from immediately resuming motion.",
+    "impact": "Increase for conservative behaviour in cluttered environments. Decrease to allow faster recovery when obstacles clear.",
+    "category": "timing",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "collision_monitor",
+      "stop",
+      "timeout",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "cmd_vel_in_topic",
+    "type": "string",
+    "default": "cmd_vel_smoothed",
+    "range": null,
+    "unit": null,
+    "description": "Topic on which the collision monitor subscribes to incoming velocity commands from the controller or smoother.",
+    "impact": "Must be remapped to match the upstream velocity publisher. Mismatch results in no commands being received and the robot not moving.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "topic",
+      "cmd_vel"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "cmd_vel_out_topic",
+    "type": "string",
+    "default": "cmd_vel",
+    "range": null,
+    "unit": null,
+    "description": "Topic on which the collision monitor publishes the (potentially modified or zeroed) velocity command to the robot hardware interface.",
+    "impact": "Must match the topic the robot's hardware driver subscribes to. Mismatch means safety-limited commands never reach the robot.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "topic",
+      "cmd_vel"
     ],
     "post_set_action": null
   }

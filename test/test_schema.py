@@ -32,6 +32,7 @@ KNOWN_NODES = {
     "behavior_server",
     "waypoint_follower",
     "map_server",
+    "collision_monitor",
 }
 
 
