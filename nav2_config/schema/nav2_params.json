@@ -8111,5 +8111,160 @@
       "cmd_vel"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "polygons",
+    "type": "string_array",
+    "default": [
+      "FootprintApproach"
+    ],
+    "range": null,
+    "unit": null,
+    "description": "List of named polygon (or circle) zone identifiers that the collision monitor will configure and evaluate. Each entry must have a corresponding set of <name>.type, <name>.action_type, and shape parameters.",
+    "impact": "Defines which safety zones are active. Adding zones increases CPU usage slightly. Omitting this parameter causes the node to fail on startup.",
+    "category": "general",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "polygons",
+      "zones",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "observation_sources",
+    "type": "string_array",
+    "default": [
+      "scan"
+    ],
+    "range": null,
+    "unit": null,
+    "description": "List of named sensor source identifiers (e.g. laser scans, point clouds) that feed obstacle data into the collision monitor. Each entry must have a corresponding set of <name>.type and <name>.topic parameters.",
+    "impact": "Determines which sensors are used for collision detection. Missing or mismatched names cause sources to be silently ignored. Omitting this parameter causes the node to fail on startup.",
+    "category": "general",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "sensors",
+      "sources",
+      "topics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "state_topic",
+    "type": "string",
+    "default": "",
+    "range": null,
+    "unit": null,
+    "description": "Topic on which the collision monitor publishes its current state (active action type and triggering polygon). Empty string disables state publishing.",
+    "impact": "Enable to monitor which safety zone is currently active for debugging or higher-level behaviour trees. Has no effect on collision-avoidance behaviour itself.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "topic",
+      "state",
+      "debug"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "base_shift_correction",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": null,
+    "description": "When true, sensor data is shifted to account for robot base motion between the time the scan was captured and the time it is processed, improving accuracy at higher speeds.",
+    "impact": "Disable only on very slow robots or when transform latency causes overcorrection. Leaving it enabled is the safe default; disabling may cause phantom or missed detections at speed.",
+    "category": "general",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "collision_monitor",
+      "motion",
+      "correction",
+      "accuracy"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "action_type",
+    "type": "string",
+    "default": "stop",
+    "range": null,
+    "unit": null,
+    "description": "Safety action taken when the polygon zone is triggered. Accepted values: 'stop' (zero velocity), 'slowdown' (scale velocity by slowdown_ratio), 'limit' (cap linear/angular velocity), 'approach' (project trajectory and stop before collision), 'none' (no action, monitoring only).",
+    "impact": "Determines how aggressively the robot reacts to objects in the zone. 'stop' is safest but most disruptive. 'approach' allows smooth deceleration but requires accurate odometry. Required \u2014 omitting this parameter causes node startup to fail.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "polygon",
+      "action",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "min_points",
+    "type": "int",
+    "default": 4,
+    "range": {
+      "min": 1,
+      "max": null
+    },
+    "unit": null,
+    "description": "Minimum number of sensor data points that must fall inside the polygon zone to trigger the configured action. Helps reject spurious single-point detections.",
+    "impact": "Increase to reduce false positives from sensor noise. Decrease for faster reaction to sparse obstacles (e.g. thin poles). A value of 1 triggers on any single point inside the zone.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": true,
+    "tags": [
+      "collision_monitor",
+      "polygon",
+      "threshold",
+      "noise"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "visualize",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": null,
+    "description": "When true, publishes a PolygonStamped marker on the topic '<polygon_name>' (configurable via polygon_pub_topic) so the zone can be visualised in RViz.",
+    "impact": "Enable during development and tuning to confirm zone shapes are correct. Adds a small topic-publishing overhead; disable in production if not needed.",
+    "category": "debug",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": true,
+    "tags": [
+      "collision_monitor",
+      "polygon",
+      "visualize",
+      "rviz",
+      "debug"
+    ],
+    "post_set_action": null
   }
 ]
