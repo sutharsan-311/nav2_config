@@ -8266,5 +8266,169 @@
       "debug"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "topic",
+    "type": "string",
+    "default": "scan",
+    "range": null,
+    "unit": null,
+    "description": "Topic name for this observation source's sensor data. Each observation source (laser scan, pointcloud, range, etc.) subscribes to this topic to receive its sensor readings.",
+    "impact": "Must match the topic published by the corresponding sensor driver. An incorrect topic causes the source to receive no data and silently contribute nothing to collision detection.",
+    "category": "connectivity",
+    "plugin_specific": true,
+    "plugin": "source",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "source",
+      "topic",
+      "connectivity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "min_height",
+    "type": "double",
+    "default": 0.05,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "m",
+    "description": "Minimum z-height of PointCloud2 points (in the global frame) to be considered as obstacles. Points below this threshold are discarded.",
+    "impact": "Lower values include near-floor points and may cause false positives from floor reflections. Raise to filter out ground plane noise; lower if the sensor is mounted high and low obstacles must be detected.",
+    "category": "filtering",
+    "plugin_specific": true,
+    "plugin": "PointCloud",
+    "hot_reload": true,
+    "tags": [
+      "collision_monitor",
+      "pointcloud",
+      "filter",
+      "height"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "max_height",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "m",
+    "description": "Maximum z-height of PointCloud2 points (in the global frame) to be considered as obstacles. Points above this threshold are discarded.",
+    "impact": "Increase to detect taller obstacles such as walls, people, and furniture. Decrease to ignore overhead structure like ceiling-mounted equipment or tree canopies.",
+    "category": "filtering",
+    "plugin_specific": true,
+    "plugin": "PointCloud",
+    "hot_reload": true,
+    "tags": [
+      "collision_monitor",
+      "pointcloud",
+      "filter",
+      "height"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "time_before_collision",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "s",
+    "description": "Time horizon used by the APPROACH polygon action. The robot's future trajectory is simulated this many seconds ahead; if the footprint would intersect the polygon within that window, velocity is reduced. Only used when action_type is 'approach'.",
+    "impact": "Larger value triggers slowdown earlier and further from the obstacle, giving more stopping margin. Smaller value allows the robot to approach closer before decelerating, which can reduce navigation hesitation.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "approach",
+      "safety",
+      "polygon"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "simulation_time_step",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.01,
+      "max": 1.0
+    },
+    "unit": "s",
+    "description": "Time step used when numerically integrating robot motion during the APPROACH polygon collision prediction. At each step the footprint is projected forward and tested against the polygon. Only used when action_type is 'approach'.",
+    "impact": "Smaller step improves collision detection accuracy along curved paths but increases CPU usage per control cycle. The default of 0.1 s is appropriate for most indoor robots.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "approach",
+      "simulation",
+      "performance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "slowdown_ratio",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Velocity scaling factor applied when the robot enters a SLOWDOWN polygon zone. The incoming velocity command is multiplied by this ratio. Only used when action_type is 'slowdown'.",
+    "impact": "Lower value slows the robot more aggressively near obstacles. A value of 1.0 effectively disables the slowdown. Tune alongside zone size to achieve the desired approach behaviour.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "slowdown",
+      "safety",
+      "polygon",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "footprint_topic",
+    "type": "string",
+    "default": "local_costmap/published_footprint",
+    "range": null,
+    "unit": null,
+    "description": "Topic providing the robot footprint geometry used for APPROACH polygon collision prediction. The footprint is projected along the simulated trajectory to check for intersections with the zone. Only used when action_type is 'approach'.",
+    "impact": "Must match the footprint topic published by the costmap (or any other publisher). An incorrect topic causes the approach calculation to use a zero or stale footprint, leading to incorrect collision predictions.",
+    "category": "connectivity",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "approach",
+      "footprint",
+      "polygon",
+      "topic"
+    ],
+    "post_set_action": null
   }
 ]
