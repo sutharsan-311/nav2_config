@@ -8430,5 +8430,179 @@
       "topic"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "bt_navigator",
+    "param": "bt_search_directories",
+    "type": "string_array",
+    "default": [
+      "$(find-pkg-share nav2_bt_navigator)/behavior_trees"
+    ],
+    "range": null,
+    "unit": null,
+    "description": "List of directories to search for Behavior Tree XML files. At startup each directory is scanned for .xml files so they can be referenced by filename in the default_nav_to_pose_bt_xml / default_nav_through_poses_bt_xml parameters or passed as a goal.",
+    "impact": "Add custom BT directories here to make your own trees available without specifying full paths. The package-share path is always searched by default.",
+    "category": "configuration",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "bt_navigator",
+      "behavior_tree",
+      "xml",
+      "configuration"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "bt_navigator",
+    "param": "default_cancel_timeout",
+    "type": "int",
+    "default": 50,
+    "range": {
+      "min": 1,
+      "max": 5000
+    },
+    "unit": "ms",
+    "description": "Maximum time the BT action server will wait for a cancel request to be acknowledged and the tree to reach a terminal state before returning CANCELED.",
+    "impact": "Too small a value may cause the navigator to report failure on cancel before the BT has finished cleaning up. Increase if plugins need extra time to abort mid-action.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "bt_navigator",
+      "behavior_tree",
+      "timeout",
+      "cancel"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "bt_navigator",
+    "param": "error_code_name_prefixes",
+    "type": "string_array",
+    "default": [
+      "assisted_teleop",
+      "backup",
+      "compute_path",
+      "dock_robot",
+      "drive_on_heading",
+      "follow_object",
+      "follow_path",
+      "nav_thru_poses",
+      "nav_to_pose",
+      "spin",
+      "undock_robot",
+      "wait"
+    ],
+    "range": null,
+    "unit": null,
+    "description": "List of action-name prefixes used to harvest error codes from the BT blackboard after execution. Each prefix is combined with '_error_code' to form the blackboard key read at the end of a BT tick.",
+    "impact": "Must include a prefix for every action server whose error codes should propagate to the navigator result. Missing entries cause error codes to be silently dropped and result in unhelpful UNKNOWN failure reasons.",
+    "category": "configuration",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "bt_navigator",
+      "behavior_tree",
+      "error_code",
+      "configuration"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "bt_navigator",
+    "param": "filter_duration",
+    "type": "double",
+    "default": 0.3,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "s",
+    "description": "Time window for the OdomSmoother used to compute the robot's current speed from the odometry topic. The smoother averages odometry messages received within this window.",
+    "impact": "Larger values produce a smoother speed estimate but add lag, which affects estimated-time-to-goal feedback accuracy. 0.3 s is a good default for typical odometry rates.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "bt_navigator",
+      "odometry",
+      "smoothing",
+      "feedback"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "bt_navigator",
+    "param": "groot_server_port",
+    "type": "int",
+    "default": 1669,
+    "range": {
+      "min": 1024,
+      "max": 65535
+    },
+    "unit": null,
+    "description": "TCP port used by the Groot2 monitoring server for the navigator. Declared per-navigator sub-namespace (e.g. navigate_to_pose.groot_server_port). Both navigate_to_pose and navigate_through_poses default to 1669.",
+    "impact": "Only relevant when enable_groot_monitoring is true. Change if the port conflicts with another service. Both navigators share the same default so they must be given different ports when run simultaneously.",
+    "category": "debugging",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "bt_navigator",
+      "groot",
+      "monitoring",
+      "debugging"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "bt_navigator",
+    "param": "introspection_mode",
+    "type": "string",
+    "default": "disabled",
+    "range": null,
+    "unit": null,
+    "description": "Controls ROS 2 service-call introspection for the navigator's action server. Valid values: 'disabled' (off), 'metadata' (record request/response metadata only), 'contents' (record full request/response data). Requires rclcpp >= 29.",
+    "impact": "Enabling introspection is useful for debugging action call flow but adds overhead. Use 'metadata' for lightweight tracing and 'contents' only during focused debugging sessions.",
+    "category": "debugging",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "bt_navigator",
+      "introspection",
+      "debugging",
+      "ros2"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "bt_navigator",
+    "param": "search_window",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.1,
+      "max": 100.0
+    },
+    "unit": "m",
+    "description": "Maximum path length (meters) searched forward along the global path from the last known closest segment when computing distance-to-goal feedback. Declared per-navigator sub-namespace (e.g. navigate_to_pose.search_window).",
+    "impact": "A larger window ensures the closest point is found even after large odometry jumps, at slightly higher CPU cost. Too small a value may lock onto a stale segment, causing incorrect distance-remaining estimates.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "bt_navigator",
+      "path_tracking",
+      "feedback",
+      "performance"
+    ],
+    "post_set_action": null
   }
 ]
