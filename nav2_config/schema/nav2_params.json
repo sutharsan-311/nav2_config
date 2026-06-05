@@ -8604,5 +8604,175 @@
       "performance"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.model_dt",
+    "type": "double",
+    "default": 0.05,
+    "range": {
+      "min": 0.01,
+      "max": 0.2
+    },
+    "unit": "s",
+    "description": "Time step used when propagating sampled trajectories in the MPPI optimizer. Must equal the controller period (1/controller_frequency); MPPI will raise an error if they differ.",
+    "impact": "Shorter steps improve trajectory accuracy but increase per-step computation. A value that does not match the controller period will cause MPPI to refuse to start.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": false,
+    "tags": [
+      "mppi",
+      "controller",
+      "trajectory",
+      "timing"
+    ],
+    "post_set_action": "restart_controller"
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.time_steps",
+    "type": "int",
+    "default": 56,
+    "range": {
+      "min": 10,
+      "max": 200
+    },
+    "unit": "steps",
+    "description": "Number of time steps in each sampled trajectory. Horizon length = time_steps * model_dt (e.g. 56 * 0.05 s = 2.8 s look-ahead).",
+    "impact": "More steps extend the planning horizon, improving anticipation of distant obstacles and curves at the cost of higher memory and compute per control cycle. Too few steps causes the optimizer to react too late.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "trajectory",
+      "horizon"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.batch_size",
+    "type": "int",
+    "default": 1000,
+    "range": {
+      "min": 100,
+      "max": 10000
+    },
+    "unit": "trajectories",
+    "description": "Number of random trajectory samples evaluated per optimization step. The nav2_bringup default YAML uses 2000.",
+    "impact": "Larger batches improve solution quality and robustness in cluttered environments at the cost of proportionally higher CPU/GPU load. Reduce on resource-constrained hardware.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "sampling",
+      "performance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.iteration_count",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 10
+    },
+    "unit": "",
+    "description": "Number of MPPI optimization iterations performed per control cycle. Each iteration re-samples noise around the previous best control sequence.",
+    "impact": "More iterations refine the control solution and can improve tracking in tight spaces, but multiply computation time proportionally. 1 is sufficient for most environments.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "optimization"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.temperature",
+    "type": "double",
+    "default": 0.3,
+    "range": {
+      "min": 0.0001,
+      "max": 10.0
+    },
+    "unit": "",
+    "description": "Softmax temperature lambda used in the MPPI importance-sampling weight: w_k = exp(-cost_k / temperature). Controls how sharply the optimizer focuses on low-cost trajectories.",
+    "impact": "Lower values make the controller more aggressive by concentrating weight on the very best trajectories; higher values average over more samples, giving smoother but potentially sub-optimal commands.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "tuning",
+      "sampling"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.gamma",
+    "type": "double",
+    "default": 0.015,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Discount factor applied to the control-effort regularization term in the MPPI cost. Scales how much deviation of sampled controls from the nominal sequence is penalized.",
+    "impact": "Increasing gamma penalizes control sequences that deviate strongly from the previous solution, producing smoother command trajectories. Too high a value can restrict the optimizer from finding better paths.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "tuning",
+      "smoothness"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.motion_model",
+    "type": "string",
+    "default": "diff_drive",
+    "range": {
+      "options": [
+        "diff_drive",
+        "omni",
+        "ackermann"
+      ]
+    },
+    "unit": "",
+    "description": "Pluggable kinematic motion model used to propagate sampled trajectories. \"diff_drive\" (non-holonomic), \"omni\" (holonomic with independent vy), or \"ackermann\" (car-like with minimum turning radius).",
+    "impact": "Must match the robot drive type. A mismatch causes trajectories to be kinematically infeasible, degrading path tracking. Requires a matching motion model plugin to be loaded.",
+    "category": "general",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": false,
+    "tags": [
+      "mppi",
+      "controller",
+      "kinematics",
+      "motion_model"
+    ],
+    "post_set_action": "restart_controller"
   }
 ]
