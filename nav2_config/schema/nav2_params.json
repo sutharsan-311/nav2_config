@@ -8774,5 +8774,180 @@
       "motion_model"
     ],
     "post_set_action": "restart_controller"
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.vx_max",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "m/s",
+    "description": "Maximum forward (positive-x) velocity allowed for sampled MPPI trajectories. Acts as a hard kinematic constraint: any trajectory sample that exceeds this value is penalized by the ConstraintCritic.",
+    "impact": "Increase to allow faster navigation on open terrain. Decrease to enforce conservative speed in tight or crowded spaces. Must be consistent with the robot's physical velocity limits; setting it above the hardware limit has no practical effect.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "velocity",
+      "constraint",
+      "kinematics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.vx_min",
+    "type": "double",
+    "default": -0.35,
+    "range": {
+      "min": -10.0,
+      "max": 0.0
+    },
+    "unit": "m/s",
+    "description": "Maximum backward (negative-x) velocity allowed for sampled MPPI trajectories. Must be negative or zero. The optimizer corrects a positive value to its negative automatically with a warning.",
+    "impact": "Setting closer to zero prevents reversing; a more negative value allows the robot to back up further when recovering from blocked paths. If reversing is undesirable, set to 0.0.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "velocity",
+      "constraint",
+      "kinematics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.wz_max",
+    "type": "double",
+    "default": 1.9,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "rad/s",
+    "description": "Maximum angular velocity magnitude allowed for sampled MPPI trajectories. Applies to both clockwise and counter-clockwise rotation.",
+    "impact": "Increase to allow sharper in-place turns; decrease to produce smoother, wider arcs. Should match the robot's angular velocity hardware limit.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "velocity",
+      "constraint",
+      "kinematics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ax_max",
+    "type": "double",
+    "default": 3.0,
+    "range": {
+      "min": 0.0,
+      "max": 20.0
+    },
+    "unit": "m/s\u00b2",
+    "description": "Maximum forward acceleration limit applied during MPPI trajectory propagation. The optimizer takes the absolute value of this parameter, so negative inputs are accepted.",
+    "impact": "Lower values produce smoother acceleration profiles and reduce actuator wear but may slow response to new goals. Higher values allow faster speed changes at the cost of jerkier motion.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "acceleration",
+      "constraint",
+      "kinematics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ax_min",
+    "type": "double",
+    "default": -3.0,
+    "range": {
+      "min": -20.0,
+      "max": 0.0
+    },
+    "unit": "m/s\u00b2",
+    "description": "Maximum deceleration limit (negative value) applied during MPPI trajectory propagation. Must be negative or zero; the optimizer negates positive values automatically with a warning.",
+    "impact": "A value closer to zero (e.g. -1.0) limits braking harshness, useful on slippery surfaces. A more negative value (e.g. -5.0) allows emergency stops but may cause wheel slip.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "acceleration",
+      "constraint",
+      "kinematics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.vx_std",
+    "type": "double",
+    "default": 0.2,
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "unit": "m/s",
+    "description": "Standard deviation of the Gaussian noise added to the forward-velocity control dimension when generating MPPI trajectory samples. Controls exploration width in the vx direction.",
+    "impact": "Larger values increase trajectory diversity, helping MPPI escape local minima, but may produce physically infeasible samples and raise cost variance. Smaller values make sampling conservative, useful when the robot must stay on a tight corridor.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "noise",
+      "sampling",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.wz_std",
+    "type": "double",
+    "default": 0.4,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "rad/s",
+    "description": "Standard deviation of the Gaussian noise added to the angular-velocity control dimension when generating MPPI trajectory samples. Controls turning exploration breadth.",
+    "impact": "Higher values allow wider turn exploration, benefiting navigation around tight corners, but can create erratic steering. Lower values produce smoother but potentially tunnel-visioned trajectories in highly curved paths.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "noise",
+      "sampling",
+      "tuning"
+    ],
+    "post_set_action": null
   }
 ]
