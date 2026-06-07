@@ -8949,5 +8949,138 @@
       "tuning"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "costmap_update_timeout",
+    "type": "double",
+    "default": 0.3,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "s",
+    "description": "Maximum time to wait for a costmap update before the current control cycle proceeds. Set to 0 or negative to disable waiting.",
+    "impact": "Increase if the costmap is slow to update and you see stale-costmap warnings. Too high a value stalls the control loop; 0 disables the wait entirely.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "costmap",
+      "timeout"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "use_realtime_priority",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Request soft real-time scheduling priority for the controller thread. Requires the process to have the appropriate OS capabilities (e.g. CAP_SYS_NICE).",
+    "impact": "Enabling reduces control-loop jitter on loaded systems, which can improve trajectory tracking. Has no effect if the process lacks the required privilege.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "controller",
+      "realtime",
+      "performance"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "controller_server",
+    "param": "progress_checker_plugins",
+    "type": "string_array",
+    "default": [
+      "progress_checker"
+    ],
+    "range": null,
+    "unit": "",
+    "description": "List of progress checker plugin names. Each name must resolve to a plugin type via its '.plugin' sub-parameter.",
+    "impact": "Requires node restart. The progress checker monitors whether the robot is making progress; failure triggers a recovery or error. Swapping the plugin changes how progress is measured.",
+    "category": "plugins",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "controller",
+      "plugin",
+      "progress"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "controller_server",
+    "param": "path_handler_plugins",
+    "type": "string_array",
+    "default": [
+      "path_handler"
+    ],
+    "range": null,
+    "unit": "",
+    "description": "List of path handler plugin names responsible for pre-processing the incoming path before passing it to the controller.",
+    "impact": "Requires node restart. The default FeasiblePathHandler prunes and validates the path. Changing this affects how path feasibility and pruning are handled.",
+    "category": "plugins",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "controller",
+      "plugin",
+      "path"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "controller_server",
+    "param": "odom_duration",
+    "type": "double",
+    "default": 0.3,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "s",
+    "description": "Duration of the odometry history window used by OdomSmoother to compute a moving-average of the robot's current velocity.",
+    "impact": "A longer window gives smoother velocity estimates but increases latency. A shorter window is more responsive but noisier. Tune based on odometry quality.",
+    "category": "odometry",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "controller",
+      "odometry",
+      "smoothing"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "controller_server",
+    "param": "search_window",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.1,
+      "max": 50.0
+    },
+    "unit": "m",
+    "description": "Maximum path length (in meters) to search ahead from the robot's current position when finding the closest point on the path.",
+    "impact": "A larger window prevents the robot from snapping back to a distant segment but costs more CPU per cycle. Reduce on long paths with tight compute budgets.",
+    "category": "path_tracking",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "path",
+      "search"
+    ],
+    "post_set_action": null
   }
 ]
