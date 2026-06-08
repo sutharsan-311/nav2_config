@@ -9082,5 +9082,163 @@
       "search"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "path_handler.prune_distance",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.1,
+      "max": 50.0
+    },
+    "unit": "m",
+    "description": "Maximum path length ahead of the robot (from the closest point on the path) to include in the transformed local plan passed to the controller. Effectively a forward look-ahead window along the path.",
+    "impact": "Increase to give the controller a longer segment for smooth curve handling; decrease to limit the path horizon and reduce unnecessary computation on very long paths.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "FeasiblePathHandler",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "path",
+      "pruning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "path_handler.reject_unit_path",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "If true, throws an InvalidPath exception when the global plan contains only a single pose (a \"unit path\"). Prevents the controller from attempting to track a degenerate one-point plan.",
+    "impact": "Enable to make the system fail-fast if the planner returns a trivial path; leave disabled (default) to let the controller handle single-point plans gracefully.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "FeasiblePathHandler",
+    "hot_reload": false,
+    "tags": [
+      "controller",
+      "path",
+      "validation"
+    ],
+    "post_set_action": "restart_controller"
+  },
+  {
+    "node": "controller_server",
+    "param": "path_handler.enforce_path_inversion",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, the path handler detects direction-reversal (inversion) points in the global plan and restricts the controller to only the segment up to the first inversion. Once the robot reaches the inversion within tolerance, the handler advances to the next segment.",
+    "impact": "Required for paths that include backward driving segments. Without this, the controller may try to drive through an inversion point instead of stopping and reversing.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "FeasiblePathHandler",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "path",
+      "inversion",
+      "reverse"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "path_handler.enforce_path_rotation",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, the path handler inserts mandatory in-place rotation constraints wherever the path heading changes by more than minimum_rotation_angle. The controller must complete the rotation before advancing to the next segment.",
+    "impact": "Useful for differential-drive robots navigating tight turns. Requires minimum_rotation_angle to be set appropriately. Has no effect if minimum_rotation_angle is 0.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "FeasiblePathHandler",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "path",
+      "rotation",
+      "differential"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "path_handler.inversion_xy_tolerance",
+    "type": "double",
+    "default": 0.2,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "m",
+    "description": "Euclidean distance tolerance used to decide whether the robot has reached a path inversion (or rotation) constraint point. Once the robot is within this distance AND within inversion_yaw_tolerance, the handler advances to the next path segment.",
+    "impact": "Smaller values require a more precise stop at the inversion point before the next segment is released; larger values allow the robot to advance sooner but may cause overshooting.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "FeasiblePathHandler",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "path",
+      "inversion",
+      "tolerance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "path_handler.inversion_yaw_tolerance",
+    "type": "double",
+    "default": 0.4,
+    "range": {
+      "min": 0.0,
+      "max": 3.14159
+    },
+    "unit": "rad",
+    "description": "Angular (yaw) tolerance used together with inversion_xy_tolerance to determine whether the robot has satisfied the inversion or rotation constraint. The robot must be within both position and yaw tolerance for the handler to unlock the next path segment.",
+    "impact": "Smaller values enforce a tighter heading match at the constraint point; larger values accept a broader angular offset before advancing.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "FeasiblePathHandler",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "path",
+      "inversion",
+      "tolerance",
+      "yaw"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "path_handler.minimum_rotation_angle",
+    "type": "double",
+    "default": 0.785,
+    "range": {
+      "min": 0.0,
+      "max": 3.14159
+    },
+    "unit": "rad",
+    "description": "Minimum heading change (in radians) between consecutive path poses that triggers a mandatory in-place rotation constraint when enforce_path_rotation is true. Defaults to 0.785 rad (~45 deg). Automatically reset to 0 when enforce_path_rotation is disabled.",
+    "impact": "Lower values cause more frequent in-place rotations on gently curved paths; higher values only enforce rotations at sharp corners. Tune alongside enforce_path_rotation for your maneuverability requirements.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "FeasiblePathHandler",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "path",
+      "rotation",
+      "angle"
+    ],
+    "post_set_action": null
   }
 ]
