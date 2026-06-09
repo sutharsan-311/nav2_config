@@ -8952,6 +8952,194 @@
   },
   {
     "node": "controller_server",
+    "param": "follow_path.vy_max",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "unit": "m/s",
+    "description": "Maximum lateral (y-axis) velocity for holonomic robots. Not used by differential-drive or Ackermann motion models \u2014 only active when motion_model is 'omni' or 'diff_omni'.",
+    "impact": "Raising this allows faster sideways movement on holonomic platforms, reducing time to re-align. On diff-drive robots this value is unused; setting it has no effect.",
+    "category": "velocity",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "velocity",
+      "holonomic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.vy_std",
+    "type": "double",
+    "default": 0.2,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "m/s",
+    "description": "Standard deviation of Gaussian noise added to the lateral-velocity control dimension when generating MPPI trajectory samples. Only meaningful for holonomic motion models.",
+    "impact": "Higher values produce broader lateral exploration in sampled trajectories, helping holonomic robots navigate around side obstacles. Irrelevant for diff-drive robots.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "noise",
+      "sampling",
+      "holonomic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ay_max",
+    "type": "double",
+    "default": 3.0,
+    "range": {
+      "min": 0.0,
+      "max": 20.0
+    },
+    "unit": "m/s\u00b2",
+    "description": "Maximum positive lateral (y-axis) acceleration constraint applied during MPPI trajectory propagation. Used only with holonomic motion models.",
+    "impact": "Increasing allows faster lateral direction changes on holonomic robots. Too high a value can cause physically unrealisable trajectories if the hardware cannot achieve it.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "acceleration",
+      "holonomic",
+      "constraints"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ay_min",
+    "type": "double",
+    "default": -3.0,
+    "range": {
+      "min": -20.0,
+      "max": 0.0
+    },
+    "unit": "m/s\u00b2",
+    "description": "Maximum negative lateral (y-axis) acceleration constraint applied during MPPI trajectory propagation. Must be negative (or zero). If set positive, MPPI will flip the sign and log a warning.",
+    "impact": "Symmetric with ay_max; controls how quickly the robot can decelerate or reverse lateral motion. Relevant only for holonomic platforms.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "acceleration",
+      "holonomic",
+      "constraints"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.az_max",
+    "type": "double",
+    "default": 3.5,
+    "range": {
+      "min": 0.0,
+      "max": 20.0
+    },
+    "unit": "rad/s\u00b2",
+    "description": "Maximum angular acceleration constraint applied when propagating MPPI trajectory samples. Limits how fast the yaw rate can change between consecutive time steps.",
+    "impact": "Lower values produce smoother, more physically realisable yaw profiles. Higher values allow sharper turns in sampled trajectories but may exceed hardware limits, causing the robot to track sub-optimally.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "acceleration",
+      "angular",
+      "constraints"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.open_loop",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, MPPI propagates trajectories in open loop, ignoring the robot's current odometry velocity as the initial state. The previous optimal control sequence is used as the starting point instead.",
+    "impact": "Useful when odometry is unreliable or noisy. Open-loop mode can reduce jitter caused by odometry spikes but makes the controller less reactive to sudden velocity changes. Leave false for robots with good odometry.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "odometry",
+      "behavior"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.publish_optimal_trajectory",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, publishes the optimal (winning) MPPI trajectory as a nav_msgs/Path topic for visualisation in RViz.",
+    "impact": "Enables real-time debugging of the selected trajectory. Negligible CPU cost; disable in production if the topic is not consumed to avoid unnecessary serialization.",
+    "category": "debugging",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "visualization",
+      "debugging"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.regenerate_noises",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, fresh Gaussian noise samples are drawn from scratch every control cycle. When false (default), the previous noise sequence is shifted and only the new tail sample is generated, saving compute.",
+    "impact": "Setting to true provides statistically independent samples each cycle which can escape local minima in adversarial environments, at the cost of higher random-number-generation overhead. The default (false) is preferred for real-time performance.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "noise",
+      "sampling",
+      "performance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
     "param": "costmap_update_timeout",
     "type": "double",
     "default": 0.3,
