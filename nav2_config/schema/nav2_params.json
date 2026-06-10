@@ -2725,6 +2725,96 @@
     "post_set_action": null
   },
   {
+    "node": "map_saver",
+    "param": "save_map_timeout",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.1,
+      "max": 60.0
+    },
+    "unit": "s",
+    "description": "Maximum time to wait for a map message to arrive on the subscribed topic when a save request is received. If the map is not received within this window, the save operation fails.",
+    "impact": "Increase if the map publisher is slow or intermittent. Decrease to fail fast in automated pipelines. Too low a value will cause saves to fail if map latency is high.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "map_saver",
+      "timeout",
+      "map"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "map_saver",
+    "param": "free_thresh_default",
+    "type": "double",
+    "default": 0.25,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Default probability threshold below which a cell is written as free (value 0) in the saved PGM file. Used when the save-map service request does not specify a free threshold.",
+    "impact": "Lowering the threshold labels more uncertain cells as free, making the saved map more permissive. Raising it is more conservative. Must remain below occupied_thresh_default.",
+    "category": "map_io",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "map_saver",
+      "threshold",
+      "map"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "map_saver",
+    "param": "occupied_thresh_default",
+    "type": "double",
+    "default": 0.65,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Default probability threshold above which a cell is written as occupied (value 100) in the saved PGM file. Used when the save-map service request does not specify an occupied threshold.",
+    "impact": "Raising the threshold requires higher occupancy probability before a cell is marked occupied, producing a more open map. Lowering it marks more cells occupied. Must remain above free_thresh_default.",
+    "category": "map_io",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "map_saver",
+      "threshold",
+      "map"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "map_saver",
+    "param": "map_subscribe_transient_local",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "When true, the map subscription uses transient local (latched) QoS so that the saver receives the last published map even if it subscribes after the publisher. When false, standard volatile QoS is used.",
+    "impact": "Set to true (default) when the map publisher uses latched QoS (e.g. map_server). Set to false if the map topic uses non-latched QoS or when subscribing to a live SLAM output that does not retain messages.",
+    "category": "connectivity",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "map_saver",
+      "qos",
+      "subscription",
+      "map"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "controller_server",
     "param": "FollowPath.max_robot_pose_search_dist",
     "type": "double",
