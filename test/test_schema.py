@@ -34,6 +34,7 @@ KNOWN_NODES = {
     "map_server",
     "map_saver",
     "collision_monitor",
+    "docking_server",
 }
 
 

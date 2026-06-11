@@ -9518,5 +9518,187 @@
       "angle"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller_frequency",
+    "type": "double",
+    "default": 50.0,
+    "range": {
+      "min": 0.001,
+      "max": 200.0
+    },
+    "unit": "Hz",
+    "description": "Rate at which the docking control loop runs. Controls how frequently velocity commands are computed and sent during dock approach, rotation-to-dock, and undock phases. Must be greater than 0.",
+    "impact": "Higher frequencies yield smoother, more responsive approach trajectories but increase CPU load. Very low frequencies can cause sluggish or oscillatory behaviour near the dock. 50 Hz is suitable for most robot/dock combinations.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "frequency",
+      "control"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "initial_perception_timeout",
+    "type": "double",
+    "default": 5.0,
+    "range": {
+      "min": 0.0,
+      "max": 60.0
+    },
+    "unit": "s",
+    "description": "Maximum time allowed for the dock plugin to produce a first valid refined pose estimate after the robot arrives at the staging pose. If no detection arrives within this window, a FailedToDetectDock exception is raised and the action fails (or retries if max_retries allows).",
+    "impact": "Increase if the external detector (camera, AR tag, etc.) needs extra warm-up time. Decrease to fail fast on unreliable perception rather than waiting at the staging pose.",
+    "category": "perception",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "perception",
+      "timeout"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "wait_charge_timeout",
+    "type": "double",
+    "default": 5.0,
+    "range": {
+      "min": 0.0,
+      "max": 120.0
+    },
+    "unit": "s",
+    "description": "How long the server waits for charging to begin after the robot makes physical contact with the dock (only applies to charging docks where isCharger() returns true). If charging is not detected within this window, a FailedToCharge exception is raised.",
+    "impact": "Set slightly longer than the actual charger handshake delay of your hardware. Too short causes spurious failures; too long delays error recovery when contact is poor.",
+    "category": "charging",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "charging",
+      "timeout"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "dock_approach_timeout",
+    "type": "double",
+    "default": 30.0,
+    "range": {
+      "min": 0.0,
+      "max": 300.0
+    },
+    "unit": "s",
+    "description": "Maximum time allowed for the robot to complete the final approach to the dock (and for the reset-approach-to-staging phase on retries). If the timeout expires, a FailedToControl exception is raised.",
+    "impact": "Should be generous enough to cover the full approach distance at minimum speed. Reduce if you want faster failure detection; increase for slow robots or long approach distances.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "approach",
+      "timeout"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "undock_linear_tolerance",
+    "type": "double",
+    "default": 0.05,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "m",
+    "description": "Linear distance tolerance for declaring that the robot has reached the staging pose during undocking. The robot must be within both undock_linear_tolerance and undock_angular_tolerance of the staging pose before undocking is considered complete.",
+    "impact": "Smaller values require a more precise stop at the staging pose. Larger values allow undocking to complete sooner but leave the robot farther from the intended staging position.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "undocking",
+      "tolerance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "undock_angular_tolerance",
+    "type": "double",
+    "default": 0.05,
+    "range": {
+      "min": 0.0,
+      "max": 3.14159
+    },
+    "unit": "rad",
+    "description": "Angular (yaw) tolerance for declaring that the robot has reached the staging pose during undocking. Used together with undock_linear_tolerance; both conditions must be satisfied.",
+    "impact": "Smaller values enforce a tighter heading match at the staging pose after undocking. Larger values allow completion with a broader angular offset.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "undocking",
+      "tolerance",
+      "angular"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "max_retries",
+    "type": "int",
+    "default": 3,
+    "range": {
+      "min": 0,
+      "max": 10
+    },
+    "unit": null,
+    "description": "Maximum number of docking retry attempts before the action server reports failure. Each retry resets the robot to the staging pose and attempts the approach again. A DockingException during approach increments the retry counter.",
+    "impact": "Higher values make docking more persistent at the cost of longer total action time on difficult docks. Set to 0 to fail immediately on the first error. 3 is a good starting point for robust field deployments.",
+    "category": "recovery",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "retry",
+      "recovery"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "base_frame",
+    "type": "string",
+    "default": "base_link",
+    "range": null,
+    "unit": null,
+    "description": "Name of the robot's base TF frame, used to look up the current robot pose and to transform dock target poses into the base frame for velocity computation.",
+    "impact": "Must match the actual base link frame published by your robot URDF / TF tree. Mismatches cause TF lookup failures and prevent docking from functioning.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "frame",
+      "tf"
+    ],
+    "post_set_action": null
   }
 ]
