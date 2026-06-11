@@ -44,6 +44,8 @@ jobs:
           colcon build --packages-select nav2_config --event-handlers console_cohesion+
 
       - name: Test
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: |
           source /opt/ros/${{ matrix.ros_distribution }}/setup.bash
           source "$GITHUB_WORKSPACE/install/setup.bash"
