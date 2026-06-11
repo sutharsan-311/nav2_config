@@ -8,8 +8,16 @@ on:
 
 jobs:
   build-and-test:
-    name: Build & Test (ROS2 Humble, Ubuntu 22.04)
-    runs-on: ubuntu-22.04
+    name: Build & Test (${{ matrix.ros_distribution }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - ros_distribution: humble
+            os: ubuntu-22.04
+          - ros_distribution: jazzy
+            os: ubuntu-24.04
 
     steps:
       - name: Checkout repository
@@ -17,32 +25,27 @@ jobs:
         with:
           path: src/nav2_config
 
-      - name: Set up ROS2 Humble
+      - name: Set up ROS2 ${{ matrix.ros_distribution }}
         uses: ros-tooling/setup-ros@v0.7
         with:
-          required-ros-distributions: humble
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          pip install PyQt6
+          required-ros-distributions: ${{ matrix.ros_distribution }}
 
       - name: Install rosdep dependencies
         run: |
-          source /opt/ros/humble/setup.bash
+          source /opt/ros/${{ matrix.ros_distribution }}/setup.bash
           cd "$GITHUB_WORKSPACE"
           rosdep update
           rosdep install --from-paths src --ignore-src -r -y
 
       - name: Build
         run: |
-          source /opt/ros/humble/setup.bash
+          source /opt/ros/${{ matrix.ros_distribution }}/setup.bash
           cd "$GITHUB_WORKSPACE"
           colcon build --packages-select nav2_config --event-handlers console_cohesion+
 
       - name: Test
         run: |
-          source /opt/ros/humble/setup.bash
+          source /opt/ros/${{ matrix.ros_distribution }}/setup.bash
           source "$GITHUB_WORKSPACE/install/setup.bash"
           cd "$GITHUB_WORKSPACE"
           colcon test --packages-select nav2_config --event-handlers console_cohesion+
