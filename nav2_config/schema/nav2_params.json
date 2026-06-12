@@ -9230,6 +9230,181 @@
   },
   {
     "node": "controller_server",
+    "param": "follow_path.CostCritic.collision_cost",
+    "type": "double",
+    "default": 1000000.0,
+    "range": {
+      "min": 1000.0,
+      "max": 10000000.0
+    },
+    "unit": "",
+    "description": "Penalty added to a sampled trajectory's total cost when any of its evaluated points is found to be in full collision (LETHAL_OBSTACLE). The enormous value ensures that fully-colliding trajectories are never selected.",
+    "impact": "Increasing this value beyond the default rarely changes behaviour since collisions are already ranked last. Lowering it risks selecting colliding trajectories; do not lower below the order-of-magnitude of other critic weights.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "cost_critic",
+      "collision",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.CostCritic.critical_cost",
+    "type": "double",
+    "default": 300.0,
+    "range": {
+      "min": 0.0,
+      "max": 10000.0
+    },
+    "unit": "",
+    "description": "Flat penalty added per trajectory point whose costmap value is at or above near_collision_cost (i.e. within the inscribed-inflation band). Acts as a hard repulsive region just outside lethal space.",
+    "impact": "Higher values make the robot avoid the near-collision band more aggressively. Too high can prevent passage through narrow doorways; too low allows the robot to linger near obstacles.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "cost_critic",
+      "collision",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.CostCritic.near_collision_cost",
+    "type": "int",
+    "default": 253,
+    "range": {
+      "min": 1,
+      "max": 253
+    },
+    "unit": "",
+    "description": "Costmap cell value threshold at or above which the critical_cost penalty is applied rather than the normal repulsive weight. Default of 253 corresponds to INSCRIBED_INFLATED_OBSTACLE \u2014 the ring immediately inside lethal space.",
+    "impact": "Lowering this threshold widens the near-collision zone so critical_cost is applied at greater distances from obstacles, producing a larger safety buffer. Setting it higher than 253 triggers a warning and has no practical effect.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "cost_critic",
+      "collision",
+      "costmap"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.CostCritic.near_goal_distance",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "m",
+    "description": "When the remaining local path length falls below this value the CostCritic disables its obstacle-repulsion term. Goals near walls would otherwise accumulate large repulsive costs, preventing the robot from reaching them.",
+    "impact": "Increase if the robot stops short of goals placed close to obstacles. Decrease if you observe the robot cutting corners near the final approach. Set to 0 to always apply repulsion.",
+    "category": "goal_handling",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "cost_critic",
+      "goal",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.CostCritic.trajectory_point_step",
+    "type": "int",
+    "default": 2,
+    "range": {
+      "min": 1,
+      "max": 10
+    },
+    "unit": "steps",
+    "description": "Stride used when iterating over trajectory time-steps inside CostCritic: only every Nth point is evaluated against the costmap. Reduces the number of costmap lookups per trajectory.",
+    "impact": "Larger strides speed up the critic at the risk of missing narrow obstacle crossings between sampled points. A step of 1 evaluates every point (maximum safety); 2-4 is a common trade-off for real-time performance.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "cost_critic",
+      "performance",
+      "sampling"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.GoalCritic.threshold_to_consider",
+    "type": "double",
+    "default": 1.4,
+    "range": {
+      "min": 0.1,
+      "max": 5.0
+    },
+    "unit": "m",
+    "description": "Remaining local path length below which GoalCritic activates and pulls sampled trajectories toward the goal position. Above this threshold the path-following critics handle alignment.",
+    "impact": "Increasing the threshold causes GoalCritic to engage earlier (farther from the goal), which can improve final approach accuracy but may conflict with path-following critics over a larger distance. Decrease if the robot deviates from the path too early near the goal.",
+    "category": "goal_handling",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "goal_critic",
+      "goal",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.TrajectoryValidator.collision_lookahead_time",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
+    "unit": "s",
+    "description": "Time horizon over which the TrajectoryValidator checks the selected optimal trajectory for collisions before it is sent to the robot. Converted to a number of trajectory samples via collision_lookahead_time / model_dt. Capped at time_steps if larger.",
+    "impact": "Increasing this value catches collisions that appear later in the trajectory at the cost of slightly more costmap lookups per cycle. Decreasing it speeds up validation but may let the robot commit to a trajectory that enters collision shortly after the horizon.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": false,
+    "tags": [
+      "mppi",
+      "controller",
+      "trajectory_validator",
+      "collision",
+      "safety"
+    ],
+    "post_set_action": "restart_controller"
+  },
+  {
+    "node": "controller_server",
     "param": "costmap_update_timeout",
     "type": "double",
     "default": 0.3,
