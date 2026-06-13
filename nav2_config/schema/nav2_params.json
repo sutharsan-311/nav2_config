@@ -6421,6 +6421,86 @@
     "post_set_action": null
   },
   {
+    "node": "behavior_server",
+    "param": "local_costmap_topic",
+    "type": "string",
+    "default": "local_costmap/costmap_raw",
+    "range": null,
+    "unit": "",
+    "description": "Topic on which the local costmap raw data is published. Behavior plugins subscribe to this topic for collision checking during recovery behaviors that operate in the local frame.",
+    "impact": "Must match the costmap_raw topic published by the local costmap server. Mismatched topic disables collision checking for local-costmap-dependent behaviors such as Backup and DriveOnHeading.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "behavior_server",
+      "costmap",
+      "topic"
+    ],
+    "post_set_action": "restart_node"
+  },
+  {
+    "node": "behavior_server",
+    "param": "global_costmap_topic",
+    "type": "string",
+    "default": "global_costmap/costmap_raw",
+    "range": null,
+    "unit": "",
+    "description": "Topic on which the global costmap raw data is published. Behavior plugins subscribe to this topic for collision checking during recovery behaviors that require global context.",
+    "impact": "Must match the costmap_raw topic published by the global costmap server. Mismatched topic disables collision checking for global-costmap-dependent behaviors.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "behavior_server",
+      "costmap",
+      "topic"
+    ],
+    "post_set_action": "restart_node"
+  },
+  {
+    "node": "behavior_server",
+    "param": "local_footprint_topic",
+    "type": "string",
+    "default": "local_costmap/published_footprint",
+    "range": null,
+    "unit": "",
+    "description": "Topic providing the robot footprint polygon from the local costmap. Used by the local collision checker to determine the robot's shape when verifying behavior trajectories.",
+    "impact": "Must match the published_footprint topic from the local costmap. An incorrect topic prevents behaviors from obtaining the robot footprint, which may cause incorrect collision checks.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "behavior_server",
+      "footprint",
+      "topic"
+    ],
+    "post_set_action": "restart_node"
+  },
+  {
+    "node": "behavior_server",
+    "param": "global_footprint_topic",
+    "type": "string",
+    "default": "global_costmap/published_footprint",
+    "range": null,
+    "unit": "",
+    "description": "Topic providing the robot footprint polygon from the global costmap. Used by the global collision checker during recovery behaviors that check against the global map.",
+    "impact": "Must match the published_footprint topic from the global costmap. An incorrect topic prevents the global collision checker from obtaining the robot footprint.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "behavior_server",
+      "footprint",
+      "topic"
+    ],
+    "post_set_action": "restart_node"
+  },
+  {
     "node": "controller_server",
     "param": "FollowPath.BaseObstacle.class",
     "type": "string",
