@@ -37,6 +37,10 @@ jobs:
           rosdep update
           rosdep install --from-paths src --ignore-src -r -y
 
+      - name: Install PyQt6 via pip (humble — not in apt on Ubuntu 22.04)
+        if: matrix.ros_distribution == 'humble'
+        run: pip install PyQt6
+
       - name: Build
         run: |
           source /opt/ros/${{ matrix.ros_distribution }}/setup.bash
