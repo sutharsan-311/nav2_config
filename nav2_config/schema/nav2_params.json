@@ -9775,6 +9775,176 @@
     "post_set_action": null
   },
   {
+    "node": "controller_server",
+    "param": "follow_path.PathAlignCritic.offset_from_furthest",
+    "type": "int",
+    "default": 20,
+    "range": {
+      "min": 1,
+      "max": 100
+    },
+    "unit": "timesteps",
+    "description": "Number of path-point indices ahead of the robot's furthest reached path point that PathAlignCritic uses as its reference pose. Increasing this causes the critic to align trajectories to a point further along the path rather than the immediately closest one.",
+    "impact": "Larger values make the robot aim further ahead on the path, smoothing out minor local deviations; too large a value may cause the critic to ignore upcoming sharp turns. Tune in proportion to the MPPI time horizon and desired look-ahead distance.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAlignCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_align",
+      "lookahead"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathAlignCritic.max_path_occupancy_ratio",
+    "type": "double",
+    "default": 0.07,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "ratio",
+    "description": "Maximum fraction of path points (from the start up to the furthest reached point) that may be in collision before PathAlignCritic is entirely suppressed. When dynamic obstacles block more than this ratio of the local path the critic skips scoring so the obstacle critic can handle avoidance.",
+    "impact": "Lower values disable path-alignment scoring sooner in the presence of obstacles, giving more freedom for avoidance but potentially causing the robot to stray from the path. Higher values keep alignment active longer, which may force trajectories through obstacle-dense regions.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAlignCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_align",
+      "obstacle",
+      "occupancy"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathAlignCritic.trajectory_point_step",
+    "type": "int",
+    "default": 4,
+    "range": {
+      "min": 1,
+      "max": 20
+    },
+    "unit": "timesteps",
+    "description": "Stride used when iterating over trajectory time steps inside PathAlignCritic. Only every N-th trajectory point is compared against the reference path, reducing computational cost.",
+    "impact": "Smaller step sizes give a denser and more accurate alignment cost at the expense of CPU time. Larger steps speed up scoring but may miss short-lived deviations from the path.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAlignCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_align",
+      "performance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathAlignCritic.use_path_orientations",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": null,
+    "description": "When true, PathAlignCritic includes heading error (yaw difference between each trajectory pose and its nearest path pose) in addition to lateral position error when computing alignment cost. When false only positional (XY) distance is used.",
+    "impact": "Enabling this creates stronger pressure to match path headings throughout the maneuver, which helps on paths with rapid direction changes but can over-constrain the controller on smooth paths or when the path orientations are not well-defined.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAlignCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_align",
+      "orientation",
+      "yaw"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathAngleCritic.max_angle_to_furthest",
+    "type": "double",
+    "default": 0.785398,
+    "range": {
+      "min": 0.0,
+      "max": 3.14159
+    },
+    "unit": "rad",
+    "description": "Angular threshold used by PathAngleCritic. If the robot's heading error to the look-ahead path point is below this value the critic skips scoring, avoiding unnecessary corrections when the robot is already roughly aligned. Defaults to \u03c0/4 (~45 deg).",
+    "impact": "Smaller values cause the critic to engage and penalise trajectories more frequently; larger values leave heading corrections to other critics unless the robot is significantly misaligned. A value of 0 would engage the critic at all times.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAngleCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_angle",
+      "threshold",
+      "heading"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathAngleCritic.mode",
+    "type": "int",
+    "default": 0,
+    "range": {
+      "min": 0,
+      "max": 2
+    },
+    "unit": null,
+    "description": "Selects how PathAngleCritic evaluates heading alignment. 0 = FORWARD_PREFERENCE: penalises trajectories that face away from the look-ahead point, favouring forward motion. 1 = NO_DIRECTIONAL_PREFERENCE: applies the same angular penalty regardless of forward/reverse direction, useful for omnidirectional robots. 2 = CONSIDER_FEASIBLE_PATH_ORIENTATIONS: uses the path's own yaw at the look-ahead point to choose the preferred direction, best for paths with explicit orientation constraints.",
+    "impact": "Mode 0 is the safest default for differential-drive robots. Mode 1 enables symmetric reversing behaviour; it is automatically upgraded to mode 0 if vx_min >= 0. Mode 2 is most appropriate when the global planner provides reliable orientation information along the path.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAngleCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_angle",
+      "mode",
+      "reversing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.GoalAngleCritic.threshold_to_consider",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "unit": "m",
+    "description": "Remaining path-length threshold below which GoalAngleCritic activates. The critic only penalises heading error when the robot is within this distance of the goal so that angular alignment is enforced only in the final approach phase.",
+    "impact": "Larger values engage goal-angle scoring earlier, which helps the robot orient toward the goal sooner but may conflict with path-following critics further from the goal. Smaller values delay the alignment push until the robot is very close to the goal.",
+    "category": "goal_tolerance",
+    "plugin_specific": true,
+    "plugin": "MPPIController/GoalAngleCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "goal_angle",
+      "threshold",
+      "approach"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "docking_server",
     "param": "controller_frequency",
     "type": "double",
