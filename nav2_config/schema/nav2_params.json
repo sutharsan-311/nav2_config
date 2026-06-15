@@ -10125,5 +10125,186 @@
       "tf"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "fixed_frame",
+    "type": "string",
+    "default": "odom",
+    "range": null,
+    "unit": null,
+    "description": "Name of the fixed TF frame used as the reference frame for dock poses and collision checking during docking and undocking. Typically 'odom' or 'map'.",
+    "impact": "Must match the frame in which dock poses are stored and in which the robot's odometry is expressed. Using 'map' provides globally-consistent docking if a map is available; 'odom' is simpler but drifts with odometric error over long distances.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "frame",
+      "tf"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "dock_prestaging_tolerance",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "unit": "m",
+    "description": "Euclidean distance tolerance within which the robot is considered to have reached the pre-staging pose before the final dock approach begins. If the robot starts the action already within this radius of the staging pose, it skips directly to the approach phase.",
+    "impact": "Increase to allow the docking action to begin the approach from a wider area around the staging pose; decrease for stricter pre-positioning. Setting too large can cause the robot to skip the staging phase and approach from an unexpected angle.",
+    "category": "tolerances",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "tolerance",
+      "staging"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "k_phi",
+    "type": "double",
+    "default": 3.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": null,
+    "description": "Proportional gain of the smooth-control-law that acts on the angle from the robot to the target pose (phi error). Part of the graceful/smooth control law used by the docking controller to compute curvature commands during dock approach.",
+    "impact": "Higher values turn the robot toward the dock target more aggressively. Too high causes oscillation or overshoot; too low causes sluggish lateral convergence. Tune together with k_delta for stable approach trajectories.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "control",
+      "gains"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "k_delta",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": null,
+    "description": "Proportional gain of the smooth-control-law that acts on the heading error at the goal (delta error). Part of the graceful/smooth control law used by the docking controller; governs how strongly the robot corrects its heading as it nears the dock.",
+    "impact": "Increasing this gain makes the robot orient toward the dock heading earlier and more forcefully. Excessively high values cause oscillatory heading correction; too low results in the robot arriving at the dock with the wrong orientation.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "control",
+      "gains"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "v_linear_min",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "m/s",
+    "description": "Minimum linear speed commanded during the docking approach. The smooth control law will not issue a forward/backward velocity below this value, ensuring the robot continues to move even when the computed command would otherwise stall.",
+    "impact": "Set low enough that the robot can make fine positional corrections near the dock, but high enough to prevent stalling. Too high prevents the robot from creeping slowly into the dock; too low may cause jitter at the goal.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "velocity",
+      "control"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "v_linear_max",
+    "type": "double",
+    "default": 0.25,
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "unit": "m/s",
+    "description": "Maximum linear speed commanded during the docking approach. The smooth control law caps forward/backward velocity to this value regardless of the distance to the dock.",
+    "impact": "Higher values speed up the approach from the staging pose but reduce accuracy near the dock and increase collision risk. Keep at or below the robot's comfortable low-speed driving limit; typical values are 0.1\u20130.5 m/s for indoor docking.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "velocity",
+      "control"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "v_angular_max",
+    "type": "double",
+    "default": 0.75,
+    "range": {
+      "min": 0.0,
+      "max": 3.14
+    },
+    "unit": "rad/s",
+    "description": "Maximum angular velocity commanded during the docking approach by the smooth control law. Angular commands computed from the k_phi/k_delta gains are clamped to \u00b1v_angular_max before being sent to the robot.",
+    "impact": "Lower values produce gentler turns during approach, which helps with precise alignment but slows lateral correction. Higher values allow sharper turns but may destabilise the approach if the robot has a slow odometry update rate.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "velocity",
+      "control"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "dock_collision_threshold",
+    "type": "double",
+    "default": 0.3,
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "unit": "m",
+    "description": "Distance from the dock pose below which collision checking is suspended during the approach (docking) phase. Collision checking is also suspended for the region near the robot origin during undocking, to avoid false positives caused by the dock structure itself being inside the costmap.",
+    "impact": "Increase if the dock structure or charging contacts appear in the costmap and falsely abort the final approach. Decrease if you want collision detection right up to the dock contact point. Setting too high disables collision checking for a large portion of the approach.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "collision",
+      "safety"
+    ],
+    "post_set_action": null
   }
 ]
