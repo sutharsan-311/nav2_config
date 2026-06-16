@@ -10306,5 +10306,171 @@
       "safety"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ConstraintCritic.cost_power",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 10
+    },
+    "unit": null,
+    "description": "Exponent applied to the ConstraintCritic cost before it is added to the total trajectory score. When set to 1 the penalty scales linearly with the magnitude of the velocity constraint violation; values greater than 1 apply a super-linear (power-law) penalty that more aggressively discourages trajectories that exceed vx_max, vx_min, or vy_max.",
+    "impact": "Increase to more harshly penalise constraint-violating trajectories so the optimizer avoids them even when their path score is otherwise good. In practice 1 (linear) is sufficient for most robots; raising it above 2 may cause numerical instability in the MPPI cost.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/ConstraintCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "constraint",
+      "cost_power"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ConstraintCritic.cost_weight",
+    "type": "double",
+    "default": 4.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": null,
+    "description": "Scalar weight multiplied into the ConstraintCritic penalty before accumulation. The critic penalises sampled trajectories whose velocities exceed the kinematic limits (vx_max, vx_min, vy_max for omni, minimum turning radius for Ackermann). This weight controls how strongly that violation discourages those trajectories relative to other critics.",
+    "impact": "Higher values cause the MPPI optimizer to reject kinematically infeasible trajectories more strongly. Too low and the controller may select commands that transiently exceed hardware limits. Too high relative to path-following critics may make the robot overly cautious and slow.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/ConstraintCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "constraint",
+      "cost_weight"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathFollowCritic.offset_from_furthest",
+    "type": "int",
+    "default": 6,
+    "range": {
+      "min": 1,
+      "max": 30
+    },
+    "unit": "path points",
+    "description": "Number of path points ahead of the furthest-reached point to use as the look-ahead target for the PathFollowCritic. Instead of scoring trajectories against the point the robot has already progressed to, the critic targets a point this many steps further along the path, providing forward progress incentive.",
+    "impact": "Larger values encourage the robot to look further ahead and make bolder progress along the path. Smaller values keep the look-ahead closer to the current position, which can be safer in tight spaces but may cause the robot to slow prematurely. A value too large may exceed the end of the path and use the goal as the target.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathFollowCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_follow",
+      "lookahead"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PreferForwardCritic.threshold_to_consider",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "m",
+    "description": "Remaining local path length below which the PreferForwardCritic stops applying its forward-preference penalty. When the robot is within this distance of the goal, the critic deactivates so that reversing manoeuvres are not penalised during final goal-approach or docking.",
+    "impact": "Increase to deactivate the forward-preference earlier, giving other critics (GoalAngleCritic, GoalCritic) more freedom during the approach phase. Decrease to continue penalising reverse trajectories until very close to the goal. Set higher if the robot needs to reverse to dock or reach tight goal orientations.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PreferForwardCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "prefer_forward",
+      "threshold"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.TrajectoryVisualizer.trajectory_step",
+    "type": "int",
+    "default": 5,
+    "range": {
+      "min": 1,
+      "max": 50
+    },
+    "unit": "trajectory index",
+    "description": "Stride used when publishing candidate trajectories for visualisation. Only every Nth sampled trajectory is published to the ~/candidate_trajectories MarkerArray topic. For example, the default of 5 publishes every 5th trajectory out of the full batch sampled by the MPPI optimizer.",
+    "impact": "Smaller values publish more trajectories, giving a richer visualisation at the cost of higher bandwidth and RViz load. Larger values reduce the published set, lowering overhead. This parameter has no effect on controller behaviour \u2014 it is purely a visualisation aid.",
+    "category": "debugging",
+    "plugin_specific": true,
+    "plugin": "MPPIController/TrajectoryVisualizer",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "visualizer",
+      "debug"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.TrajectoryVisualizer.time_step",
+    "type": "int",
+    "default": 3,
+    "range": {
+      "min": 1,
+      "max": 20
+    },
+    "unit": "time steps",
+    "description": "Stride used when sampling poses along each published trajectory. Only every Nth time step within each visualised trajectory is drawn as a marker point, controlling the density of points along the trajectory line strip published to ~/candidate_trajectories.",
+    "impact": "Smaller values draw more points per trajectory, producing smoother visualised arcs at the cost of more RViz markers. Larger values produce sparser lines. Like trajectory_step, this has no effect on actual controller behaviour.",
+    "category": "debugging",
+    "plugin_specific": true,
+    "plugin": "MPPIController/TrajectoryVisualizer",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "visualizer",
+      "debug"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.TrajectoryValidator.consider_footprint",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": null,
+    "description": "When true, the DefaultOptimalTrajectoryValidator checks the full robot footprint (polygon) for collisions along the optimal trajectory before accepting it. When false only the robot's inscribed-circle centre point is checked, which is faster but may miss collisions in narrow corridors where the footprint protrudes.",
+    "impact": "Enable for robots with non-circular footprints operating in tight spaces. Disabling (default) reduces per-cycle computation. When enabled the validator may reject an otherwise optimal trajectory and trigger the MPPI fallback loop, so ensure the costmap inflation radius is tuned appropriately to avoid over-rejection.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController/TrajectoryValidator",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "collision",
+      "footprint",
+      "validator"
+    ],
+    "post_set_action": null
   }
 ]
