@@ -10472,5 +10472,172 @@
       "validator"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.critics",
+    "type": "string_array",
+    "default": [],
+    "range": null,
+    "unit": "",
+    "description": "Ordered list of MPPI critic plugin names that are loaded and evaluated every control cycle. Each name must match a critic class registered via pluginlib (e.g. \"ConstraintCritic\", \"CostCritic\", \"GoalCritic\"). The nav2_bringup default uses [ConstraintCritic, CostCritic, GoalCritic, GoalAngleCritic, PathAlignCritic, PathFollowCritic, PathAngleCritic, PreferForwardCritic].",
+    "impact": "Static — requires node restart to change. Removing critics reduces compute but loses the corresponding cost contribution. Adding or reordering critics changes how trajectories are ranked; each active critic adds a cost term whose relative influence is controlled by its cost_weight.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": false,
+    "tags": [
+      "controller",
+      "mppi",
+      "critics",
+      "plugin"
+    ],
+    "post_set_action": "restart_controller"
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.CostCritic.consider_footprint",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, the CostCritic checks the full robot footprint polygon for collisions at each trajectory point instead of the inscribed-circle centre. Must be consistent with the costmap's use_radius setting; MPPI raises a warning (or exception) if they are mismatched.",
+    "impact": "Enable for non-circular robots in tight spaces to catch footprint-corner collisions the circle approximation misses. Disabling (default) is faster because only a single point lookup is needed per trajectory step. Requires the inflation layer radius to be at least half the robot's largest cross-section.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController/CostCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "collision",
+      "footprint",
+      "critics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.GoalCritic.cost_power",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "unit": "",
+    "description": "Exponent applied to the GoalCritic cost term before accumulating into the trajectory score. A value of 1 applies the cost linearly; 2 squares it, sharpening the gradient near the goal.",
+    "impact": "Increase to 2 to make the optimizer much more aggressive about reaching the goal position as the robot approaches, at the cost of potentially overshooting or oscillating. Keep at 1 for smooth, predictable goal approach.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/GoalCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "critics",
+      "goal",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.GoalCritic.cost_weight",
+    "type": "double",
+    "default": 5.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "Scalar weight for the GoalCritic cost term, which penalises mean distance of sampled trajectories from the goal position. Only active when the robot is within threshold_to_consider of the goal.",
+    "impact": "Higher values pull the robot more strongly towards the goal position during the final approach. Balance against GoalAngleCritic to achieve both precise position and correct heading at the goal.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/GoalCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "critics",
+      "goal",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathAngleCritic.offset_from_furthest",
+    "type": "int",
+    "default": 4,
+    "range": {
+      "min": 0,
+      "max": 30
+    },
+    "unit": "path indices",
+    "description": "Number of path indices ahead of the furthest-reached path point used as the look-ahead target for computing the angular error. The PathAngleCritic penalises trajectories whose final heading deviates from the direction of this look-ahead point.",
+    "impact": "Larger values look further ahead on the path, encouraging the robot to pre-rotate earlier before curves. Smaller values react to the immediately upcoming path direction, which can cause oscillation on sharply curved paths.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAngleCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "critics",
+      "path",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathAlignCritic.threshold_to_consider",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "m",
+    "description": "Remaining local path length below which the PathAlignCritic is deactivated. When the robot is closer than this distance to the end of the local path segment, path-alignment scoring is suppressed so the GoalCritic can take full control of the final approach.",
+    "impact": "Increase if the robot oscillates trying to align to the path while simultaneously approaching the goal. Decrease to keep path alignment active closer to the goal, which improves heading accuracy at the cost of potential oscillation.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAlignCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "critics",
+      "path",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "general_goal_checker.path_length_tolerance",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "m",
+    "description": "Maximum remaining path length at which the SimpleGoalChecker will declare the goal reached. When the local path segment is shorter than this threshold and xy_goal_tolerance / yaw_goal_tolerance are also satisfied, the robot is considered to have achieved the goal.",
+    "impact": "Increase to allow the goal checker to succeed while the robot is still further from the raw goal pose (useful when the planner produces a path that undershoots). Decrease towards 0 to require the robot to physically reach the goal coordinates before declaring success.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "SimpleGoalChecker",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "goal_checker",
+      "tolerance",
+      "path"
+    ],
+    "post_set_action": null
   }
 ]
