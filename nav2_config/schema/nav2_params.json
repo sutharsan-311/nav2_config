@@ -10308,6 +10308,161 @@
     "post_set_action": null
   },
   {
+    "node": "docking_server",
+    "param": "rotate_to_dock_timeout",
+    "type": "double",
+    "default": 10.0,
+    "range": {
+      "min": 0.0,
+      "max": 120.0
+    },
+    "unit": "s",
+    "description": "Maximum time allowed for the initial rotation to face the dock before the docking action aborts.",
+    "impact": "Increase if the robot needs more time to rotate on approach. Too small a value will cause spurious failures on slow-rotating platforms.",
+    "category": "timeouts",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "timeout",
+      "rotation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "rotation_angular_tolerance",
+    "type": "double",
+    "default": 0.05,
+    "range": {
+      "min": 0.0,
+      "max": 0.5
+    },
+    "unit": "rad",
+    "description": "Angular error threshold below which the rotate-to-dock phase is considered complete.",
+    "impact": "Smaller values require more precise alignment before proceeding to the approach phase, improving dock alignment accuracy at the cost of additional time.",
+    "category": "tolerances",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "rotation",
+      "tolerance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "odom_topic",
+    "type": "string",
+    "default": "odom",
+    "range": null,
+    "unit": "",
+    "description": "Topic name for the odometry messages used to estimate the robot's current velocity during docking approach.",
+    "impact": "Must match the odometry source being published. Incorrect topic results in the server using zero velocity estimates, disabling stall detection.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "odometry",
+      "topic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "odom_duration",
+    "type": "double",
+    "default": 0.3,
+    "range": {
+      "min": 0.05,
+      "max": 2.0
+    },
+    "unit": "s",
+    "description": "Duration of the rolling window of odometry messages retained for velocity estimation during docking.",
+    "impact": "Longer windows smooth out noisy odometry but add latency. Shorter windows are more responsive but noisier. Adjust if stall detection is triggering spuriously.",
+    "category": "perception",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "odometry",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "use_collision_detection",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Whether to enable forward collision checking along the projected docking trajectory before executing each velocity command.",
+    "impact": "Enabling prevents the robot from driving into obstacles during the docking approach but requires a valid costmap. Disable only in fully controlled environments to reduce CPU load.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "collision",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "projection_time",
+    "type": "double",
+    "default": 5.0,
+    "range": {
+      "min": 0.5,
+      "max": 30.0
+    },
+    "unit": "s",
+    "description": "Time horizon over which the docking trajectory is projected when checking for collisions.",
+    "impact": "Longer horizons catch obstacles farther along the path but increase computation. Reduce if the collision checker is too conservative and rejects valid docking approaches.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "collision",
+      "trajectory"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "simulation_time_step",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.01,
+      "max": 1.0
+    },
+    "unit": "s",
+    "description": "Discrete time step used when simulating the docking trajectory for collision checking.",
+    "impact": "Smaller steps improve collision detection resolution at the cost of more costmap lookups per cycle. Larger steps reduce CPU load but may miss narrow obstacles between sampled poses.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "collision",
+      "simulation"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "controller_server",
     "param": "follow_path.ConstraintCritic.cost_power",
     "type": "int",
@@ -10481,7 +10636,7 @@
     "range": null,
     "unit": "",
     "description": "Ordered list of MPPI critic plugin names that are loaded and evaluated every control cycle. Each name must match a critic class registered via pluginlib (e.g. \"ConstraintCritic\", \"CostCritic\", \"GoalCritic\"). The nav2_bringup default uses [ConstraintCritic, CostCritic, GoalCritic, GoalAngleCritic, PathAlignCritic, PathFollowCritic, PathAngleCritic, PreferForwardCritic].",
-    "impact": "Static — requires node restart to change. Removing critics reduces compute but loses the corresponding cost contribution. Adding or reordering critics changes how trajectories are ranked; each active critic adds a cost term whose relative influence is controlled by its cost_weight.",
+    "impact": "Static \u2014 requires node restart to change. Removing critics reduces compute but loses the corresponding cost contribution. Adding or reordering critics changes how trajectories are ranked; each active critic adds a cost term whose relative influence is controlled by its cost_weight.",
     "category": "plugins",
     "plugin_specific": true,
     "plugin": "MPPIController",
