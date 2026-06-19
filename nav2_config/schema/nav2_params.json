@@ -10463,6 +10463,163 @@
     "post_set_action": null
   },
   {
+    "node": "docking_server",
+    "param": "dock_plugins",
+    "type": "string_array",
+    "default": [
+      "simple_charging_dock"
+    ],
+    "range": null,
+    "unit": "",
+    "description": "Ordered list of named dock-plugin instances to load at startup. Each name becomes the key under which the plugin is referenced in the dock database and by docking action goals. At least one entry is required — the server will refuse to configure if this list is missing or empty. Each listed name must also have a corresponding '<name>.plugin' type parameter.",
+    "impact": "Must contain exactly the names used in the dock database (docks parameter or dock_database file). Mismatch between list entries and dock records causes a fatal startup error.",
+    "category": "plugins",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "plugins",
+      "configuration"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "use_battery_status",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "When true, the SimpleChargingDock plugin subscribes to the 'battery_state' topic (sensor_msgs/BatteryState) and reports isCharging() only when the measured current exceeds charging_threshold. When false, the dock simply reports isCharging() as true whenever the robot is within the docking pose threshold, without requiring a battery message.",
+    "impact": "Set to true for robots that publish a BatteryState topic so charging is confirmed by electrical feedback. Set to false for docks without battery telemetry or during simulation, where pose proximity alone is used to declare successful docking.",
+    "category": "charging",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "charging",
+      "battery"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "use_external_detection_pose",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, the SimpleChargingDock plugin subscribes to the 'detected_dock_pose' topic (geometry_msgs/PoseStamped) to obtain a refined dock pose from an external detector (e.g. a fiducial or AR-tag detector). The pose is filtered with an exponential moving average before being used to guide the final approach. When false, the dock pose is taken directly from the dock database without refinement.",
+    "impact": "Enable for higher docking accuracy when an external perception pipeline is available. Disable in environments where no external detector is present; leaving it enabled without an active publisher causes the dock to stall waiting for external_detection_timeout.",
+    "category": "perception",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "perception",
+      "external_detection"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "external_detection_timeout",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.1,
+      "max": 30.0
+    },
+    "unit": "s",
+    "description": "Maximum age of the most recent external dock-pose detection before the pose is considered stale. Used by the PoseFilter to reject old detections. Only applies when use_external_detection_pose is true.",
+    "impact": "Decrease to force the controller to react to fresh detections only; increase if the external detector runs slowly or has intermittent output. If no fresh detection arrives within this window, the last valid filtered pose is held, which can cause drift if the dock is moving.",
+    "category": "perception",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "perception",
+      "timeout",
+      "external_detection"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "external_detection_translation_x",
+    "type": "double",
+    "default": -0.2,
+    "range": {
+      "min": -2.0,
+      "max": 2.0
+    },
+    "unit": "m",
+    "description": "X-axis offset applied to the raw external detection pose to account for the offset between the detected feature (e.g. AR tag) and the true dock contact point. Only applies when use_external_detection_pose is true. Combined with external_detection_translation_y and the rotation offsets to form the full correction transform.",
+    "impact": "Tune this to the physical offset between your fiducial marker and the charging contacts on the dock. An incorrect value causes the robot to stop short of or overshoot the dock by the error amount.",
+    "category": "perception",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "perception",
+      "external_detection",
+      "offset"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "external_detection_translation_y",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": -2.0,
+      "max": 2.0
+    },
+    "unit": "m",
+    "description": "Y-axis offset applied to the raw external detection pose to correct for lateral displacement between the detected feature and the actual dock contact point. Only applies when use_external_detection_pose is true.",
+    "impact": "Set to the lateral distance between your fiducial marker and the dock's true alignment axis. An incorrect value causes the robot to approach with a lateral offset, risking a missed connection or mechanical damage.",
+    "category": "perception",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "perception",
+      "external_detection",
+      "offset"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "docking_threshold",
+    "type": "double",
+    "default": 0.05,
+    "range": {
+      "min": 0.001,
+      "max": 0.5
+    },
+    "unit": "m",
+    "description": "Maximum Euclidean distance between the robot base and the dock pose below which the robot is considered docked. Only used when use_stall_detection is false. The docking action declares success once the robot is within this threshold and charging is confirmed (or battery checking is disabled).",
+    "impact": "Smaller values require the robot to align more precisely before declaring success — good for tight connector tolerances but risks never triggering on imperfect floors. Larger values accept a looser stop, which may mean the connector does not fully engage.",
+    "category": "control",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "threshold",
+      "tolerance"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "controller_server",
     "param": "follow_path.ConstraintCritic.cost_power",
     "type": "int",
