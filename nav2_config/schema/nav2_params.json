@@ -10951,5 +10951,144 @@
       "path"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "allow_partial_planning",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, the planner server will return the partial path it has computed so far if planning fails partway through a ComputePathThroughPoses request (e.g. one via-point is unreachable). When false, any planning failure raises an exception and the whole request fails.",
+    "impact": "Enable on multi-goal missions where reaching all via-points is desirable but not strictly required. Disabled by default to preserve strict failure semantics; enabling it may cause the robot to stop short of a pose without error when one intermediate segment cannot be planned.",
+    "category": "planning",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "planning",
+      "partial_plan",
+      "through_poses"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "costmap_update_timeout",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 60.0
+    },
+    "unit": "s",
+    "description": "Maximum time (seconds) the planner server will wait for the global costmap to update before executing a planning request. Declared in nav2_planner/src/parameter_handler.cpp alongside the similar controller_server parameter (which defaults to 0.3 s).",
+    "impact": "Increase if the global costmap is slow to update and the planner occasionally fails because it starts with a stale map. Setting it too high stalls planning on every request when the costmap is not actively updating; the controller_server equivalent should be tuned separately.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "planner",
+      "costmap",
+      "timeout",
+      "performance"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "planner_server",
+    "param": "introspection_mode",
+    "type": "string",
+    "default": "disabled",
+    "range": {
+      "options": [
+        "disabled",
+        "metadata",
+        "contents"
+      ]
+    },
+    "unit": null,
+    "description": "Controls ROS 2 service-call introspection for the planner server's action interfaces. 'disabled' turns introspection off; 'metadata' records request/response metadata only; 'contents' records full request and response data. Declared via nav2_ros_common/include/nav2_ros_common/node_utils.hpp and requires rclcpp >= 29.",
+    "impact": "Enabling introspection is useful for debugging planning request flow but adds publishing overhead. Use 'metadata' for lightweight tracing; 'contents' only for focused debugging sessions. Keep 'disabled' in production.",
+    "category": "debugging",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "planner",
+      "introspection",
+      "debugging",
+      "ros2"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.visualize",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, the MPPI controller publishes sampled trajectory markers and the optimal trajectory on visualization topics. Declared in nav2_mppi_controller/src/controller.cpp via the MPPI ParametersHandler (dynamic by default).",
+    "impact": "Enable during development to inspect sampled trajectories in RViz. Adds non-trivial publishing overhead — disable in production or resource-constrained deployments. The nav2_bringup example YAML sets this to true.",
+    "category": "debugging",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "visualize",
+      "debugging",
+      "rviz"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathFollowCritic.threshold_to_consider",
+    "type": "double",
+    "default": 1.4,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Remaining local path length below which the PathFollowCritic stops scoring trajectories. When the robot is within this distance of the end of the local path the critic deactivates, allowing other critics (GoalCritic, GoalAngleCritic) to dominate the final approach. Declared in nav2_mppi_controller/src/critics/path_follow_critic.cpp.",
+    "impact": "Increase to hand off control to goal-approach critics earlier, which can smooth the final docking manoeuvre. Decrease to keep forward path-following active until very close to the goal — useful when the path ends well before the physical goal and premature hand-off causes drift.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathFollowCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_follow",
+      "threshold"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ConstraintCritic.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enables or disables the ConstraintCritic in the MPPI optimizer. The ConstraintCritic penalises sampled trajectories whose velocities violate the kinematic limits (vx_max, vx_min, vy_max, or minimum turning radius). The 'enabled' field is common to all MPPI critics and is declared in nav2_mppi_controller/include/nav2_mppi_controller/critic_function.hpp.",
+    "impact": "Disabling removes kinematic-limit enforcement from the cost function. Only disable when another mechanism prevents out-of-limit commands, or during debugging. Leaving it enabled ensures the MPPI optimizer avoids trajectories that the motion model cannot execute.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/ConstraintCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "constraint",
+      "enabled"
+    ],
+    "post_set_action": null
   }
 ]
