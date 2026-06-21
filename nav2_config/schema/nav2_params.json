@@ -10471,7 +10471,7 @@
     ],
     "range": null,
     "unit": "",
-    "description": "Ordered list of named dock-plugin instances to load at startup. Each name becomes the key under which the plugin is referenced in the dock database and by docking action goals. At least one entry is required — the server will refuse to configure if this list is missing or empty. Each listed name must also have a corresponding '<name>.plugin' type parameter.",
+    "description": "Ordered list of named dock-plugin instances to load at startup. Each name becomes the key under which the plugin is referenced in the dock database and by docking action goals. At least one entry is required \u2014 the server will refuse to configure if this list is missing or empty. Each listed name must also have a corresponding '<name>.plugin' type parameter.",
     "impact": "Must contain exactly the names used in the dock database (docks parameter or dock_database file). Mismatch between list entries and dock records causes a fatal startup error.",
     "category": "plugins",
     "plugin_specific": false,
@@ -10607,7 +10607,7 @@
     },
     "unit": "m",
     "description": "Maximum Euclidean distance between the robot base and the dock pose below which the robot is considered docked. Only used when use_stall_detection is false. The docking action declares success once the robot is within this threshold and charging is confirmed (or battery checking is disabled).",
-    "impact": "Smaller values require the robot to align more precisely before declaring success — good for tight connector tolerances but risks never triggering on imperfect floors. Larger values accept a looser stop, which may mean the connector does not fully engage.",
+    "impact": "Smaller values require the robot to align more precisely before declaring success \u2014 good for tight connector tolerances but risks never triggering on imperfect floors. Larger values accept a looser stop, which may mean the connector does not fully engage.",
     "category": "control",
     "plugin_specific": true,
     "plugin": "SimpleChargingDock",
@@ -11032,7 +11032,7 @@
     "range": null,
     "unit": "",
     "description": "When true, the MPPI controller publishes sampled trajectory markers and the optimal trajectory on visualization topics. Declared in nav2_mppi_controller/src/controller.cpp via the MPPI ParametersHandler (dynamic by default).",
-    "impact": "Enable during development to inspect sampled trajectories in RViz. Adds non-trivial publishing overhead — disable in production or resource-constrained deployments. The nav2_bringup example YAML sets this to true.",
+    "impact": "Enable during development to inspect sampled trajectories in RViz. Adds non-trivial publishing overhead \u2014 disable in production or resource-constrained deployments. The nav2_bringup example YAML sets this to true.",
     "category": "debugging",
     "plugin_specific": true,
     "plugin": "MPPIController",
@@ -11057,7 +11057,7 @@
     },
     "unit": "m",
     "description": "Remaining local path length below which the PathFollowCritic stops scoring trajectories. When the robot is within this distance of the end of the local path the critic deactivates, allowing other critics (GoalCritic, GoalAngleCritic) to dominate the final approach. Declared in nav2_mppi_controller/src/critics/path_follow_critic.cpp.",
-    "impact": "Increase to hand off control to goal-approach critics earlier, which can smooth the final docking manoeuvre. Decrease to keep forward path-following active until very close to the goal — useful when the path ends well before the physical goal and premature hand-off causes drift.",
+    "impact": "Increase to hand off control to goal-approach critics earlier, which can smooth the final docking manoeuvre. Decrease to keep forward path-following active until very close to the goal \u2014 useful when the path ends well before the physical goal and premature hand-off causes drift.",
     "category": "path_tracking",
     "plugin_specific": true,
     "plugin": "MPPIController/PathFollowCritic",
@@ -11088,6 +11088,186 @@
       "mppi",
       "constraint",
       "enabled"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "dock_direction",
+    "type": "string",
+    "default": "forward",
+    "range": null,
+    "unit": "",
+    "description": "Direction in which the SimpleChargingDock plugin approaches the dock. \"forward\" drives the robot forward into the dock; \"backward\" reverses the robot onto the dock. Must match the physical orientation of the charging connector relative to the robot base.",
+    "impact": "Using \"backward\" enables reverse-approach docking and may be combined with rotate_to_dock to spin the robot 180\u00b0 before backing in. An incorrect setting will drive the robot in the wrong direction and fail to make contact with the dock.",
+    "category": "docking",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "direction",
+      "approach"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "external_detection_rotation_yaw",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": -3.1416,
+      "max": 3.1416
+    },
+    "unit": "rad",
+    "description": "Yaw component of a fixed RPY rotation applied to the externally detected dock pose before it is used by the controller. This corrects for a mismatch between the detector frame and the expected dock approach frame.",
+    "impact": "Set to the rotation offset (in radians) that aligns the detector output with the dock approach direction. An incorrect value will cause the robot to approach the dock from the wrong angle.",
+    "category": "perception",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "detection",
+      "rotation",
+      "pose"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "external_detection_rotation_pitch",
+    "type": "double",
+    "default": 1.57,
+    "range": {
+      "min": -3.1416,
+      "max": 3.1416
+    },
+    "unit": "rad",
+    "description": "Pitch component of a fixed RPY rotation applied to the externally detected dock pose. Together with roll and yaw, this transforms the detector output into the dock approach frame expected by the controller.",
+    "impact": "Typically set to \u03c0/2 (1.57) to convert a pose from a detector that reports orientation in camera frame to the robot navigation frame. Changing this incorrectly will misalign the dock approach and cause docking failures.",
+    "category": "perception",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "detection",
+      "rotation",
+      "pose"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "external_detection_rotation_roll",
+    "type": "double",
+    "default": -1.57,
+    "range": {
+      "min": -3.1416,
+      "max": 3.1416
+    },
+    "unit": "rad",
+    "description": "Roll component of a fixed RPY rotation applied to the externally detected dock pose. Together with pitch and yaw, this corrects the detector frame orientation so the dock pose is expressed in the robot navigation frame.",
+    "impact": "Typically set to -\u03c0/2 (-1.57) for camera-based detectors whose Z-axis points forward. An incorrect value rotates the dock pose about the wrong axis and will misalign the approach trajectory.",
+    "category": "perception",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "detection",
+      "rotation",
+      "pose"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "filter_coef",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Low-pass filter coefficient for the detected dock pose. At each step the filtered pose is updated as: filt = (1 - coef) * filt + coef * measurement. A value of 0.0 disables filtering (raw measurements passed through); a value of 1.0 removes all smoothing.",
+    "impact": "Lower values produce a heavily smoothed dock pose that reduces jitter from a noisy detector, but introduces lag. Higher values track rapid dock motion faster at the cost of more noise in the approach trajectory. Tune based on detector noise level and approach speed.",
+    "category": "perception",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "detection",
+      "filter",
+      "pose"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "staging_x_offset",
+    "type": "double",
+    "default": -0.7,
+    "range": {
+      "min": -5.0,
+      "max": 0.0
+    },
+    "unit": "m",
+    "description": "Offset along the dock pose X-axis used to compute the staging pose from which fine docking control begins. A negative value places the staging pose in front of the dock (the robot stops short and then uses the controller to finish the approach).",
+    "impact": "Larger magnitude (more negative) gives the controller more room to align before contact, improving accuracy on imperfect approaches. Too small a magnitude and the robot may not have enough room to converge to the dock pose before timing out.",
+    "category": "docking",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "staging",
+      "offset"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "use_stall_detection",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, the SimpleChargingDock plugin subscribes to joint_states and uses motor stall (low velocity, high effort on the configured joints) to detect dock contact instead of relying on pose proximity (docking_threshold). Requires stall_joint_names, stall_velocity_threshold, and stall_effort_threshold to also be set.",
+    "impact": "Enable for robots whose drive joints stall when physically pressed against the dock connector, providing a reliable mechanical contact signal. When disabled, dock contact is inferred from pose proximity alone, which is less reliable on slippery floors or with imprecise localization.",
+    "category": "docking",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "stall",
+      "detection",
+      "contact"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "costmap_topic",
+    "type": "string",
+    "default": "local_costmap/costmap_raw",
+    "range": null,
+    "unit": "",
+    "description": "ROS topic providing the raw costmap used by the docking controller to check for collisions along the projected approach trajectory. Declared as controller.costmap_topic in the source. Only active when use_collision_detection is true.",
+    "impact": "Must point to a live costmap that covers the docking approach area. An incorrect or stale topic will cause false collision detections (blocking docking) or missed obstacles. Match the local costmap namespace configured in your Nav2 stack.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "collision",
+      "costmap"
     ],
     "post_set_action": null
   }
