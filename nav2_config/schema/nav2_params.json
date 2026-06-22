@@ -5774,6 +5774,181 @@
     "post_set_action": "restart_stack"
   },
   {
+    "node": "smoother_server",
+    "param": "simple_smoother.refinement_num",
+    "type": "int",
+    "default": 2,
+    "range": {
+      "min": 1,
+      "max": 20
+    },
+    "unit": "",
+    "description": "Number of additional refinement passes to run after the main smoothing when do_refinement is true.",
+    "impact": "More passes reduce residual kinks at the cost of extra CPU time. Values above 4-5 yield diminishing returns.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SimpleSmoother",
+    "hot_reload": true,
+    "tags": [
+      "smoother",
+      "simple_smoother",
+      "refinement"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "simple_smoother.enforce_path_inversion",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "When true, splits the path at directional-reversal points and smooths each forward/backward segment independently. Required when using Hybrid A* or State Lattice planners that produce reversing paths.",
+    "impact": "Prevents the smoother from blending over reversal points. Set false only if the planner never produces reversals (e.g. pure Route Server paths).",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SimpleSmoother",
+    "hot_reload": true,
+    "tags": [
+      "smoother",
+      "simple_smoother",
+      "inversion",
+      "reversing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "route_smoother.plugin",
+    "type": "string",
+    "default": "nav2_smoother::SimpleSmoother",
+    "range": null,
+    "unit": "",
+    "description": "C++ plugin class for the route smoother instance. This is a second SimpleSmoother instance configured for use with the Route Server.",
+    "impact": "Requires node restart. Change to use a custom smoother implementation for route smoothing.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "SimpleSmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "route_smoother",
+      "plugin"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "smoother_server",
+    "param": "route_smoother.tolerance",
+    "type": "double",
+    "default": 1e-10,
+    "range": {
+      "min": 1e-15,
+      "max": 0.001
+    },
+    "unit": "",
+    "description": "Convergence tolerance for the route smoother instance of SimpleSmoother.",
+    "impact": "Very small values produce smoother route paths but increase CPU. The default is very tight.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SimpleSmoother",
+    "hot_reload": true,
+    "tags": [
+      "smoother",
+      "route_smoother",
+      "tolerance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "route_smoother.max_its",
+    "type": "int",
+    "default": 1000,
+    "range": {
+      "min": 10,
+      "max": 100000
+    },
+    "unit": "",
+    "description": "Maximum smoothing iterations per path segment for the route smoother instance.",
+    "impact": "Caps computation time for route smoothing. Paths that don't converge use the best result so far.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "SimpleSmoother",
+    "hot_reload": true,
+    "tags": [
+      "smoother",
+      "route_smoother",
+      "iterations",
+      "performance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "route_smoother.refinement_num",
+    "type": "int",
+    "default": 5,
+    "range": {
+      "min": 1,
+      "max": 20
+    },
+    "unit": "",
+    "description": "Number of additional refinement passes for the route smoother. Higher than simple_smoother default because route paths may have more segments.",
+    "impact": "More passes reduce residual kinks at the cost of extra CPU time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SimpleSmoother",
+    "hot_reload": true,
+    "tags": [
+      "smoother",
+      "route_smoother",
+      "refinement"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "route_smoother.enforce_path_inversion",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, splits the path at directional-reversal points for the route smoother. Typically false for Route Server paths where smoothing over sharp corners is acceptable.",
+    "impact": "Set false when the Route Server path does not contain reversals and blending over corners is desired. Set true if reversing segments must be preserved.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SimpleSmoother",
+    "hot_reload": true,
+    "tags": [
+      "smoother",
+      "route_smoother",
+      "inversion",
+      "reversing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "route_smoother.do_refinement",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Perform additional refinement passes after the main smoothing for the route smoother instance.",
+    "impact": "Slightly increases computation for visibly cleaner route paths. Disable to reduce CPU when route smoothing latency matters.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SimpleSmoother",
+    "hot_reload": true,
+    "tags": [
+      "smoother",
+      "route_smoother",
+      "refinement"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "waypoint_follower",
     "param": "wait_at_waypoint.plugin",
     "type": "string",
