@@ -11445,5 +11445,204 @@
       "costmap"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "update_duration",
+    "type": "double",
+    "default": 0.01,
+    "range": {
+      "min": 0.001,
+      "max": 1.0
+    },
+    "unit": "s",
+    "description": "Period of the main simulator update timer. Controls how frequently the simulator integrates cmd_vel into the robot pose and re-broadcasts TF transforms.",
+    "impact": "Smaller values give finer motion integration and smoother TF output but increase CPU usage. Values larger than the controller frequency will cause the simulated robot to appear to jump between poses.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "timing",
+      "simulation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "map_frame_id",
+    "type": "string",
+    "default": "map",
+    "range": null,
+    "unit": "",
+    "description": "TF frame ID used as the fixed map frame. The simulator publishes the map→odom transform with this as the parent frame.",
+    "impact": "Must match the map frame used by all other Nav2 nodes. A mismatch causes TF lookup failures and navigation breakdowns.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "frames",
+      "tf"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "scan_frame_id",
+    "type": "string",
+    "default": "base_scan",
+    "range": null,
+    "unit": "",
+    "description": "TF frame ID attached to the simulated laser scanner. Published LaserScan messages use this as their header frame_id.",
+    "impact": "Must match the laser sensor frame in the robot URDF so that costmap obstacle layers can project scan hits correctly.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "frames",
+      "tf",
+      "lidar"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "scan_range_min",
+    "type": "double",
+    "default": 0.05,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Minimum valid range for the simulated laser scan. Readings closer than this distance are discarded.",
+    "impact": "Set to match the real sensor's minimum range. Too large a value creates a blind spot around the robot that can cause missed close obstacles.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "lidar",
+      "sensor"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "scan_range_max",
+    "type": "double",
+    "default": 30.0,
+    "range": {
+      "min": 1.0,
+      "max": 200.0
+    },
+    "unit": "m",
+    "description": "Maximum detection range of the simulated laser scan. Rays that do not hit any obstacle within this distance report infinity (or range_max − 0.1 when scan_use_inf is false).",
+    "impact": "Larger values allow obstacle detection further ahead but increase ray-casting compute time. Match to the real sensor's specified maximum range.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "lidar",
+      "sensor"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "scan_angle_min",
+    "type": "double",
+    "default": -3.14159,
+    "range": {
+      "min": -3.14159,
+      "max": 0.0
+    },
+    "unit": "rad",
+    "description": "Start angle of the simulated laser scan arc, measured counter-clockwise from the scanner's forward direction.",
+    "impact": "Together with scan_angle_max, defines the angular field of view. Narrowing the arc reduces CPU load but creates blind sectors; match to the real sensor spec.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "lidar",
+      "sensor"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "scan_angle_max",
+    "type": "double",
+    "default": 3.14159,
+    "range": {
+      "min": 0.0,
+      "max": 3.14159
+    },
+    "unit": "rad",
+    "description": "End angle of the simulated laser scan arc, measured counter-clockwise from the scanner's forward direction.",
+    "impact": "Together with scan_angle_min, defines the angular field of view. Must be greater than scan_angle_min; match to the real sensor spec.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "lidar",
+      "sensor"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "scan_angle_increment",
+    "type": "double",
+    "default": 0.0261,
+    "range": {
+      "min": 0.001,
+      "max": 0.5
+    },
+    "unit": "rad",
+    "description": "Angular resolution between consecutive laser scan rays. Determines the number of range samples as (scan_angle_max − scan_angle_min) / scan_angle_increment.",
+    "impact": "Smaller values produce denser scans with finer obstacle resolution but increase ray-casting and costmap update CPU cost. Match to the real sensor angular resolution.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "lidar",
+      "sensor"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "scan_use_inf",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "When true, rays that reach scan_range_max without hitting an obstacle are reported as infinity. When false, they are reported as scan_range_max − 0.1 m.",
+    "impact": "Most Nav2 costmap layers treat infinity as a free-space indicator and ignore the ray. Setting false encodes max-range hits as finite values, which some older sensor layers interpret as obstacles — keep true unless your pipeline requires finite no-hit ranges.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "lidar",
+      "sensor"
+    ],
+    "post_set_action": null
   }
 ]
