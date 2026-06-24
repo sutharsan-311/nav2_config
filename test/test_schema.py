@@ -36,6 +36,7 @@ KNOWN_NODES = {
     "collision_monitor",
     "docking_server",
     "loopback_simulator",
+    "route_server",
 }
 
 

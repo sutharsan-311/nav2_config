@@ -11476,7 +11476,7 @@
     "default": "map",
     "range": null,
     "unit": "",
-    "description": "TF frame ID used as the fixed map frame. The simulator publishes the map→odom transform with this as the parent frame.",
+    "description": "TF frame ID used as the fixed map frame. The simulator publishes the map\u2192odom transform with this as the parent frame.",
     "impact": "Must match the map frame used by all other Nav2 nodes. A mismatch causes TF lookup failures and navigation breakdowns.",
     "category": "frames",
     "plugin_specific": false,
@@ -11543,7 +11543,7 @@
       "max": 200.0
     },
     "unit": "m",
-    "description": "Maximum detection range of the simulated laser scan. Rays that do not hit any obstacle within this distance report infinity (or range_max − 0.1 when scan_use_inf is false).",
+    "description": "Maximum detection range of the simulated laser scan. Rays that do not hit any obstacle within this distance report infinity (or range_max \u2212 0.1 when scan_use_inf is false).",
     "impact": "Larger values allow obstacle detection further ahead but increase ray-casting compute time. Match to the real sensor's specified maximum range.",
     "category": "sensor",
     "plugin_specific": false,
@@ -11612,7 +11612,7 @@
       "max": 0.5
     },
     "unit": "rad",
-    "description": "Angular resolution between consecutive laser scan rays. Determines the number of range samples as (scan_angle_max − scan_angle_min) / scan_angle_increment.",
+    "description": "Angular resolution between consecutive laser scan rays. Determines the number of range samples as (scan_angle_max \u2212 scan_angle_min) / scan_angle_increment.",
     "impact": "Smaller values produce denser scans with finer obstacle resolution but increase ray-casting and costmap update CPU cost. Match to the real sensor angular resolution.",
     "category": "sensor",
     "plugin_specific": false,
@@ -11632,8 +11632,8 @@
     "default": true,
     "range": null,
     "unit": "",
-    "description": "When true, rays that reach scan_range_max without hitting an obstacle are reported as infinity. When false, they are reported as scan_range_max − 0.1 m.",
-    "impact": "Most Nav2 costmap layers treat infinity as a free-space indicator and ignore the ray. Setting false encodes max-range hits as finite values, which some older sensor layers interpret as obstacles — keep true unless your pipeline requires finite no-hit ranges.",
+    "description": "When true, rays that reach scan_range_max without hitting an obstacle are reported as infinity. When false, they are reported as scan_range_max \u2212 0.1 m.",
+    "impact": "Most Nav2 costmap layers treat infinity as a free-space indicator and ignore the ray. Setting false encodes max-range hits as finite values, which some older sensor layers interpret as obstacles \u2014 keep true unless your pipeline requires finite no-hit ranges.",
     "category": "sensor",
     "plugin_specific": false,
     "plugin": null,
@@ -11642,6 +11642,141 @@
       "loopback_simulator",
       "lidar",
       "sensor"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "radius_to_achieve_node",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.01,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Radius around an intermediate graph node within which the robot is considered to have achieved that waypoint. Uses a bisector-vector heuristic to detect overshoot.",
+    "impact": "Larger values let the robot cut corners and advance the route sooner; smaller values enforce more precise waypoint tracking at the cost of tighter turns.",
+    "category": "tracking",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "route_server",
+      "tracking",
+      "waypoint"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "boundary_radius_to_achieve_node",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.01,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Radius used for the start and end (boundary) nodes of a route instead of radius_to_achieve_node. Boundary nodes use a pure radial check because no bisector vector is available.",
+    "impact": "Should typically be smaller than radius_to_achieve_node to ensure accurate arrival at the destination; increasing it allows the robot to stop further from the goal.",
+    "category": "tracking",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "route_server",
+      "tracking",
+      "goal"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "smooth_corners",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Whether to replace sharp turns at graph nodes with circular arc segments during path conversion. Requires smoothing_radius and smoothing_angle_threshold to be configured.",
+    "impact": "Enabling produces smoother, more kinematically feasible paths; disabling keeps the piecewise-linear route graph geometry exactly as defined.",
+    "category": "path_conversion",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "path",
+      "smoothing"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
+    "param": "edge_cost_functions",
+    "type": "string_array",
+    "default": [
+      "DistanceScorer",
+      "DynamicEdgesScorer"
+    ],
+    "range": null,
+    "unit": "",
+    "description": "List of edge cost function plugin names used to score route graph edges when computing the optimal path. Each name must have a corresponding plugin type declared in the YAML.",
+    "impact": "Requires restart. Adding plugins (e.g. CostmapScorer, PenaltyScorer) incorporates additional cost criteria; all plugin scores are summed to produce the total edge cost.",
+    "category": "plugins",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "plugin",
+      "edge_scoring"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
+    "param": "operations",
+    "type": "string_array",
+    "default": [
+      "AdjustSpeedLimit",
+      "ReroutingService"
+    ],
+    "range": null,
+    "unit": "",
+    "description": "List of route operation plugin names that are active during route tracking. Each name must have a corresponding plugin type declared in the YAML.",
+    "impact": "Requires restart. Operations execute as the robot traverses the route (on query, on status change, or on graph events); adding CollisionMonitor enables real-time obstacle detection and rerouting.",
+    "category": "plugins",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "plugin",
+      "operations"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
+    "param": "CollisionMonitor.max_collision_dist",
+    "type": "double",
+    "default": 5.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "m",
+    "description": "Maximum distance ahead along the route to check for obstacles in the costmap when the CollisionMonitor route operation is active. Values <= 0 cause the full remaining route to be checked.",
+    "impact": "Larger values detect collisions further in advance but require costmap coverage over the full lookahead distance; smaller values reduce CPU cost but may react to obstacles later.",
+    "category": "collision",
+    "plugin_specific": true,
+    "plugin": "CollisionMonitor",
+    "hot_reload": true,
+    "tags": [
+      "route_server",
+      "collision",
+      "safety"
     ],
     "post_set_action": null
   }
