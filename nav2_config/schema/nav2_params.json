@@ -11779,5 +11779,216 @@
       "safety"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "keepout_costmap_filter_info_server",
+    "param": "type",
+    "type": "int",
+    "default": 0,
+    "range": {
+      "min": 0,
+      "max": 3
+    },
+    "unit": "",
+    "description": "Filter type identifier published in the CostmapFilterInfo message. 0 = KEEPOUT_FILTER (mark cells as lethal), 1 = SPEED_FILTER_PERCENT (speed limit as % of max), 2 = SPEED_FILTER_ABSOLUTE (speed limit in m/s), 3 = BINARY_FILTER. Must match the filter plugin loaded in the costmap.",
+    "impact": "Determines which costmap filter plugin interprets the mask. A mismatch between this value and the loaded plugin type causes the filter to be ignored or to produce wrong behaviour.",
+    "category": "filter",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "keepout_costmap_filter_info_server",
+      "filter",
+      "costmap"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "keepout_costmap_filter_info_server",
+    "param": "filter_info_topic",
+    "type": "string",
+    "default": "keepout_costmap_filter_info",
+    "range": null,
+    "unit": "",
+    "description": "Name of the latched topic on which the CostmapFilterInfo message is published. The costmap filter plugin subscribes to this topic to receive filter metadata (type, mask topic, base, multiplier).",
+    "impact": "Must match the filter_info_topic parameter of the corresponding costmap filter plugin. A mismatch prevents the filter from receiving its configuration and leaves it inactive.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "keepout_costmap_filter_info_server",
+      "topics",
+      "filter"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "keepout_costmap_filter_info_server",
+    "param": "mask_topic",
+    "type": "string",
+    "default": "keepout_filter_mask",
+    "range": null,
+    "unit": "",
+    "description": "Name of the OccupancyGrid topic that provides the filter mask map. This is forwarded to the costmap filter plugin via the CostmapFilterInfo message so it knows where to subscribe for mask data.",
+    "impact": "Must match the topic published by the map_server instance serving the filter mask. A mismatch causes the costmap filter to receive no mask data and silently apply no filtering.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "keepout_costmap_filter_info_server",
+      "topics",
+      "filter"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "keepout_costmap_filter_info_server",
+    "param": "base",
+    "type": "double",
+    "default": 0.0,
+    "range": null,
+    "unit": "",
+    "description": "Constant offset in the linear transform applied to the raw mask value: output = mask_value * multiplier + base. For KEEPOUT_FILTER (type=0) this field is not used by the keepout plugin but is still forwarded in the CostmapFilterInfo message.",
+    "impact": "For speed filters, shifting base adjusts the speed limit at zero mask intensity. For keepout filters the value has no runtime effect but should be left at 0.0 to avoid confusing downstream tools.",
+    "category": "filter",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "keepout_costmap_filter_info_server",
+      "filter",
+      "costmap"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "keepout_costmap_filter_info_server",
+    "param": "multiplier",
+    "type": "double",
+    "default": 1.0,
+    "range": null,
+    "unit": "",
+    "description": "Scale factor in the linear transform applied to the raw mask value: output = mask_value * multiplier + base. For KEEPOUT_FILTER (type=0) this field is forwarded but not used by the keepout plugin.",
+    "impact": "For speed filters, adjusting the multiplier scales how steeply the speed limit changes with mask intensity. For keepout filters the value has no runtime effect but should remain at 1.0.",
+    "category": "filter",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "keepout_costmap_filter_info_server",
+      "filter",
+      "costmap"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "speed_costmap_filter_info_server",
+    "param": "type",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 0,
+      "max": 3
+    },
+    "unit": "",
+    "description": "Filter type identifier published in the CostmapFilterInfo message. 1 = SPEED_FILTER_PERCENT (speed limit expressed as a percentage of the robot's maximum speed), 2 = SPEED_FILTER_ABSOLUTE (speed limit in m/s). Must match the filter plugin loaded in the costmap.",
+    "impact": "Determines whether the SpeedFilter interprets the computed limit as a percentage or an absolute value. Using PERCENT (1) automatically scales with the robot's configured max speed; ABSOLUTE (2) requires the mask values to be calibrated in m/s.",
+    "category": "filter",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "speed_costmap_filter_info_server",
+      "filter",
+      "speed",
+      "costmap"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "speed_costmap_filter_info_server",
+    "param": "filter_info_topic",
+    "type": "string",
+    "default": "speed_costmap_filter_info",
+    "range": null,
+    "unit": "",
+    "description": "Name of the latched topic on which the CostmapFilterInfo message is published. The SpeedFilter costmap plugin subscribes to this topic to receive the filter configuration (type, mask topic, base, multiplier).",
+    "impact": "Must match the filter_info_topic parameter of the SpeedFilter plugin in the costmap. A mismatch prevents the plugin from receiving its configuration, leaving speed limiting inactive.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "speed_costmap_filter_info_server",
+      "topics",
+      "filter",
+      "speed"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "speed_costmap_filter_info_server",
+    "param": "mask_topic",
+    "type": "string",
+    "default": "speed_filter_mask",
+    "range": null,
+    "unit": "",
+    "description": "Name of the OccupancyGrid topic that provides the speed-limit filter mask. Forwarded to the SpeedFilter plugin via CostmapFilterInfo so it knows where to subscribe for the mask map.",
+    "impact": "Must match the topic published by the map_server serving the speed mask. A mismatch causes the SpeedFilter to receive no mask data and apply no speed limiting.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "speed_costmap_filter_info_server",
+      "topics",
+      "filter",
+      "speed"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "speed_costmap_filter_info_server",
+    "param": "base",
+    "type": "double",
+    "default": 100.0,
+    "range": null,
+    "unit": "%",
+    "description": "Constant offset in the linear transform: speed_limit = mask_value * multiplier + base. With the default type=1 (SPEED_FILTER_PERCENT) and multiplier=-1.0, a mask value of 0 produces a speed limit of 100 % (no restriction) and higher mask values reduce the limit. Set the unit to m/s when using type=2.",
+    "impact": "Shifts the entire speed-limit curve up or down. Increasing base raises the minimum speed limit across all masked areas; decreasing it lowers the baseline. Changing base together with multiplier lets you calibrate the mask's OccupancyGrid range (0–100) to any desired speed range.",
+    "category": "filter",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "speed_costmap_filter_info_server",
+      "filter",
+      "speed",
+      "costmap"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "speed_costmap_filter_info_server",
+    "param": "multiplier",
+    "type": "double",
+    "default": -1.0,
+    "range": null,
+    "unit": "%",
+    "description": "Scale factor in the linear transform: speed_limit = mask_value * multiplier + base. The default of -1.0 combined with base=100.0 maps an OccupancyGrid value of 0 to 100 % speed and 100 to 0 % (full stop). Set to a positive value and adjust base when using type=2 (SPEED_FILTER_ABSOLUTE) for m/s limits.",
+    "impact": "Controls how steeply the speed limit decreases as the mask intensity increases. A larger magnitude (e.g. -2.0) produces more aggressive speed reductions per unit of mask value; a smaller magnitude (e.g. -0.5) gives a gentler response.",
+    "category": "filter",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "speed_costmap_filter_info_server",
+      "filter",
+      "speed",
+      "costmap"
+    ],
+    "post_set_action": "restart_stack"
   }
 ]

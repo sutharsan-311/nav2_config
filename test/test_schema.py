@@ -37,6 +37,8 @@ KNOWN_NODES = {
     "docking_server",
     "loopback_simulator",
     "route_server",
+    "keepout_costmap_filter_info_server",
+    "speed_costmap_filter_info_server",
 }
 
 
