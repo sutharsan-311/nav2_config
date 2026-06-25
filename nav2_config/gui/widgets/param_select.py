@@ -5,8 +5,8 @@
 
 from __future__ import annotations
 
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QComboBox, QWidget
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QComboBox, QWidget
 
 
 class ParamSelect(QComboBox):

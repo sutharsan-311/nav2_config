@@ -12,9 +12,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from PyQt6.QtCore import Qt, QSize, QRect, pyqtSignal
-from PyQt6.QtGui import QColor, QPainter, QKeySequence, QShortcut
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import Qt, QSize, QRect, pyqtSignal
+from PyQt5.QtGui import QColor, QPainter, QKeySequence
+from PyQt5.QtWidgets import QShortcut
+from PyQt5.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -117,7 +118,7 @@ class _StateBadge(QWidget):
         p.setPen(Qt.PenStyle.NoPen)
         p.drawRoundedRect(0, 1, self.width(), self._H - 2, 4, 4)
         p.setPen(QColor('#ffffff'))
-        from PyQt6.QtGui import QFont
+        from PyQt5.QtGui import QFont
         p.setFont(QFont('Ubuntu', 7, QFont.Weight.Bold))
         p.drawText(QRect(0, 1, self.width(), self._H - 2),
                    Qt.AlignmentFlag.AlignCenter, self._state)
@@ -805,7 +806,7 @@ class ParamPanel(QWidget):
 
         self._pending_load_categories = sorted(categories.items())
         self._pending_load_remembered = remembered
-        from PyQt6.QtCore import QTimer
+        from PyQt5.QtCore import QTimer
         QTimer.singleShot(0, self._load_next_batch)
 
     def _load_next_batch(self) -> None:

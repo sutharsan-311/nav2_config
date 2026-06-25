@@ -22,8 +22,8 @@ from typing import TYPE_CHECKING, Any
 
 _logger = logging.getLogger(__name__)
 
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,

@@ -12,15 +12,15 @@ from __future__ import annotations
 import logging
 import re
 
-from PyQt6.QtCore import Qt, QRegularExpression, QSize, pyqtSignal
-from PyQt6.QtGui import (
+from PyQt5.QtCore import Qt, QRegularExpression, QSize, pyqtSignal
+from PyQt5.QtGui import (
     QColor,
     QFont,
     QSyntaxHighlighter,
     QTextCharFormat,
     QTextDocument,
 )
-from PyQt6.QtWidgets import (
+from PyQt5.QtWidgets import (
     QApplication,
     QHBoxLayout,
     QLabel,

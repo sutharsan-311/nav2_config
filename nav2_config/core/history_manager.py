@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Optional
 
-from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal
 
 from nav2_config.types.history import ChangeSource, ParamHistoryEntry, ParamRef
 

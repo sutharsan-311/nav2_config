@@ -1,3 +1,4 @@
+from __future__ import annotations
 # Copyright 2025-2026 Sutharsan
 # SPDX-License-Identifier: Apache-2.0
 
@@ -10,9 +11,13 @@ in the node's icon colour, like an IDE active-file indicator.
 
 import logging
 
-from PyQt6.QtCore import Qt, QPoint, QRect, QSize, pyqtSignal
-from PyQt6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
-from PyQt6.QtWidgets import (
+
+
+from PyQt5.QtCore import Qt, QPoint, QRect, QSize, pyqtSignal
+from PyQt5.QtGui import QColor, QPainter, QKeySequence
+from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtWidgets import QShortcut
+from PyQt5.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QListWidget,

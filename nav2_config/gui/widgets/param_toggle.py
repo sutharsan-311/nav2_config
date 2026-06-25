@@ -8,8 +8,8 @@ RViz2 light style: uses Qt's native Fusion checkbox — no custom painting.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QWidget
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QCheckBox, QHBoxLayout, QWidget
 
 
 class ParamToggle(QWidget):

@@ -15,8 +15,8 @@ import logging
 import os
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFileDialog,
@@ -397,7 +397,7 @@ class ComparePanel(QWidget):
             change_item = QTableWidgetItem(display_label)
             change_item.setBackground(Qt.GlobalColor.transparent)
             change_item.setFlags(change_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            from PyQt6.QtGui import QColor
+            from PyQt5.QtGui import QColor
             change_item.setBackground(QColor(bg_color))
             self._table.setItem(row, _COL_CHANGE, change_item)
 

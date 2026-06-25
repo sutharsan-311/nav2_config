@@ -8,8 +8,8 @@ standard light palette. A ROS developer sitting next to RViz2 should feel
 instantly at home.
 """
 
-from PyQt6.QtGui import QColor, QPalette
-from PyQt6.QtWidgets import QApplication
+from PyQt5.QtGui import QColor, QPalette
+from PyQt5.QtWidgets import QApplication
 
 
 def create_rviz_palette() -> QPalette:

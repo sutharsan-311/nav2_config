@@ -15,9 +15,9 @@ Preference order:
 
 import os
 
-from PyQt6.QtCore import Qt, QSize, QRect
-from PyQt6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
-from PyQt6.QtWidgets import QApplication, QStyle
+from PyQt5.QtCore import Qt, QSize, QRect
+from PyQt5.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
+from PyQt5.QtWidgets import QApplication, QStyle
 
 from nav2_config.core.node_discovery import path_basename
 

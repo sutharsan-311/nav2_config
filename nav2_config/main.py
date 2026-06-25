@@ -19,8 +19,8 @@ import threading
 
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
-from PyQt6.QtCore import QTimer
-from PyQt6.QtWidgets import QApplication
+from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import QApplication
 
 from nav2_config.node import Nav2ConfigNode
 from nav2_config.gui.main_window import MainWindow

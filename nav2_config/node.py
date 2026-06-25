@@ -17,7 +17,7 @@ import rclpy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from rclpy.node import Node
 from rcl_interfaces.msg import ParameterType
-from PyQt6.QtCore import QObject, pyqtSignal
+from PyQt5.QtCore import QObject, pyqtSignal
 
 from nav2_config.core.lifecycle_client import LifecycleClient, LifecycleManagerClient
 from nav2_config.core.node_discovery import (

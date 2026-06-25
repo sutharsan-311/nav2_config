@@ -9,8 +9,8 @@ filled track (#3399ff). Spinbox uses system font at 9pt.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import (
     QDoubleSpinBox,
     QHBoxLayout,
     QLabel,

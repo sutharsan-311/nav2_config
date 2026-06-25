@@ -9,8 +9,8 @@ monospace — monospace is reserved for the YAML panel only).
 
 from __future__ import annotations
 
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QLineEdit, QWidget
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QLineEdit, QWidget
 
 
 class ParamInput(QLineEdit):

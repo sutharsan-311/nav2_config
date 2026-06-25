@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtWidgets import QTabWidget, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QTabWidget, QVBoxLayout, QWidget
 
 if TYPE_CHECKING:
     from nav2_config.gui.yaml_panel import YamlPanel

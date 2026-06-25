@@ -29,7 +29,7 @@ setup(
         'setuptools',
         'PyYAML',
         'ruamel.yaml',
-        'PyQt6',
+        'PyQt5',
     ],
     zip_safe=True,
     maintainer='Sutharsan',

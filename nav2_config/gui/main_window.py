@@ -21,9 +21,10 @@ if TYPE_CHECKING:
     from nav2_config.core.config_file import ConfigFile
 
 from lifecycle_msgs.msg import Transition
-from PyQt6.QtCore import Qt, QSize, QTimer
-from PyQt6.QtGui import QAction, QCloseEvent, QKeySequence, QShortcut
-from PyQt6.QtWidgets import (
+from PyQt5.QtCore import Qt, QSize, QTimer
+from PyQt5.QtWidgets import QAction, QShortcut
+from PyQt5.QtGui import QCloseEvent, QKeySequence
+from PyQt5.QtWidgets import (
     QCheckBox,
     QDialog,
     QDialogButtonBox,
@@ -45,6 +46,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+_QLabel = QLabel
 
 from nav2_config.core.node_discovery import (
     NAV2_NODE_SPECS,
@@ -635,7 +637,7 @@ class MainWindow(QMainWindow):
         status: QStatusBar = self.statusBar()
         status.setFixedHeight(22)
 
-        from PyQt6.QtWidgets import QLabel as _QLabel
+        from PyQt5.QtWidgets import QLabel as _Q
         self._status_dot = _QLabel()
         self._status_dot.setFixedSize(14, 14)
         self._status_dot.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -2116,7 +2118,7 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
     def _show_about(self) -> None:
-        from PyQt6.QtCore import QT_VERSION_STR
+        from PyQt5.QtCore import QT_VERSION_STR
         python_version = (
             f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
         )
