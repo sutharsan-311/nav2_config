@@ -11957,7 +11957,7 @@
     "range": null,
     "unit": "%",
     "description": "Constant offset in the linear transform: speed_limit = mask_value * multiplier + base. With the default type=1 (SPEED_FILTER_PERCENT) and multiplier=-1.0, a mask value of 0 produces a speed limit of 100 % (no restriction) and higher mask values reduce the limit. Set the unit to m/s when using type=2.",
-    "impact": "Shifts the entire speed-limit curve up or down. Increasing base raises the minimum speed limit across all masked areas; decreasing it lowers the baseline. Changing base together with multiplier lets you calibrate the mask's OccupancyGrid range (0–100) to any desired speed range.",
+    "impact": "Shifts the entire speed-limit curve up or down. Increasing base raises the minimum speed limit across all masked areas; decreasing it lowers the baseline. Changing base together with multiplier lets you calibrate the mask's OccupancyGrid range (0\u2013100) to any desired speed range.",
     "category": "filter",
     "plugin_specific": false,
     "plugin": null,
@@ -11990,5 +11990,71 @@
       "costmap"
     ],
     "post_set_action": "restart_stack"
+  },
+  {
+    "node": "docking_server",
+    "param": "footprint_topic",
+    "type": "string",
+    "default": "local_costmap/published_footprint",
+    "range": null,
+    "unit": "",
+    "description": "ROS topic that provides the robot's footprint polygon used by the docking controller's collision checker during dock approach and undocking. Declared as controller.footprint_topic in the source. Only active when use_collision_detection is true.",
+    "impact": "Must match the footprint publisher in your local costmap namespace (typically local_costmap/published_footprint). A mismatched or absent topic causes the collision checker to use no footprint, making it either over-permissive or raising TF exceptions that abort the docking attempt.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "collision",
+      "footprint",
+      "costmap"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "transform_tolerance",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "s",
+    "description": "Maximum acceptable age of a TF transform used by the docking controller when computing the robot's pose relative to the dock frame and base frame. Declared as controller.transform_tolerance in the source. Applied at every control cycle via tf2::durationFromSec.",
+    "impact": "Increase when the TF tree publishes at a low rate or there is high network latency, to avoid TF lookup failures that abort docking. Decrease to ensure the controller acts only on fresh pose estimates; too tight a tolerance causes spurious failures on well-configured systems.",
+    "category": "transforms",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "tf",
+      "transforms",
+      "tolerance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "introspection_mode",
+    "type": "string",
+    "default": "disabled",
+    "range": null,
+    "unit": "",
+    "description": "Controls ROS 2 service introspection for the docking server's internal services. Accepted values: 'disabled' (no introspection, default), 'metadata' (publishes request/response metadata only), 'contents' (publishes full message contents). Requires rclcpp >= 29.0.0; on older builds this parameter is declared but has no effect.",
+    "impact": "Setting to 'metadata' or 'contents' makes service traffic visible on dedicated ROS topics, which is valuable for debugging docking failures but adds serialization and publication overhead. Leave as 'disabled' in production environments.",
+    "category": "diagnostics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "introspection",
+      "debug",
+      "diagnostics"
+    ],
+    "post_set_action": null
   }
 ]
