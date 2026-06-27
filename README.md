@@ -73,14 +73,19 @@ nav2_config uses standard rclpy APIs (param services, lifecycle services) that a
 cd ~/ros2_ws/src
 git clone https://github.com/sutharsan-311/nav2_config.git
 
-# Install all ROS dependencies automatically
+# Install ROS dependencies (installs PyQt6 automatically on Jazzy)
+cd ~/ros2_ws
 rosdep install --from-paths src --ignore-src -r -y
 
+# On Humble (22.04) only: PyQt6 isn't in apt, so install it via pip
+pip install PyQt6
+
 # Build
-cd ~/ros2_ws
 colcon build --packages-select nav2_config
 source install/setup.bash
 ```
+
+> **PyQt6 on Humble:** Ubuntu 22.04 has no `python3-pyqt6` apt package, so `rosdep install` skips it cleanly — the [rosdep key](https://github.com/ros/rosdistro/pull/50683) means it no longer errors, but you still need the `pip install PyQt6` line above. On Jazzy (24.04) rosdep installs it for you and the pip step isn't needed. See the [Installation Guide](docs/installation.md) for details.
 
 ### apt (coming soon)
 

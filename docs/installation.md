@@ -8,19 +8,15 @@ You need a working ROS2 installation (Humble or Jazzy) with Nav2. If Nav2 isn't 
 sudo apt install ros-$ROS_DISTRO-nav2-bringup
 ```
 
-nav2_config also needs PyQt6. Here's where it gets slightly annoying: `python3-pyqt6` is only packaged for Ubuntu 24.04 (Jazzy). On Humble (22.04), you install it via pip instead.
+nav2_config also needs PyQt6, and how you get it depends on your distro:
 
-**Humble (22.04):**
+**Jazzy (24.04):** `python3-pyqt6` is an apt package, and there's a rosdep key for it ([ros/rosdistro#50683](https://github.com/ros/rosdistro/pull/50683)), so the `rosdep install` step below installs it for you — nothing manual needed.
+
+**Humble (22.04):** PyQt6 isn't in the 22.04 apt repos, so the rosdep key resolves to nothing on Jammy. Thanks to that same key, `rosdep install` no longer errors on `python3-pyqt6` — it recognizes it and skips cleanly — but it won't install PyQt6 either, so install it once via pip:
+
 ```bash
 pip install PyQt6
 ```
-
-**Jazzy (24.04):**
-```bash
-sudo apt install python3-pyqt6
-```
-
-The `rosdep install` command below handles this automatically — it knows which distro you're on and picks the right method.
 
 ## Install from Source
 
@@ -29,9 +25,12 @@ The `rosdep install` command below handles this automatically — it knows which
 cd ~/ros2_ws/src
 git clone https://github.com/sutharsan-311/nav2_config.git
 
-# Install all ROS dependencies (handles PyQt6 for your distro automatically)
+# Install ROS dependencies (installs PyQt6 automatically on Jazzy)
 cd ~/ros2_ws
 rosdep install --from-paths src --ignore-src -r -y
+
+# On Humble (22.04) only: PyQt6 isn't in apt, so install it via pip
+pip install PyQt6
 
 # Build
 colcon build --packages-select nav2_config
@@ -60,9 +59,15 @@ colcon build --packages-select nav2_config && source install/setup.bash
 
 ## Known Issues
 
-**python3-pyqt6 not found on 22.04**
+**python3-pyqt6 not installed on Humble (22.04)**
 
-`rosdep install` may skip `python3-pyqt6` on Humble because it's not in the 22.04 apt repos. The fallback is `pip install PyQt6`. This is a known packaging gap — the package.xml conditionally depends on `python3-pyqt6` for Jazzy and falls back to the pip package on older distros, but rosdep doesn't always handle that correctly.
+PyQt6 isn't packaged for Ubuntu 22.04, so on Humble the `python3-pyqt6` rosdep key resolves to null. `rosdep install` recognizes the key and skips it cleanly — it no longer errors out the way it did before [ros/rosdistro#50683](https://github.com/ros/rosdistro/pull/50683) added the key — but it won't install PyQt6 for you. Install it once via pip:
+
+```bash
+pip install PyQt6
+```
+
+On Jazzy (24.04) this is fully automatic — `python3-pyqt6` is a real apt package and rosdep installs it.
 
 **ImportError: libGL.so.1 on headless systems**
 
