@@ -12056,5 +12056,146 @@
       "diagnostics"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.GoalAngleCritic.cost_power",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 4
+    },
+    "unit": "",
+    "description": "Exponent applied to the mean angular-distance cost before it is added to the MPPI trajectory cost. When set to 1 the cost is linear; higher values apply a polynomial amplification so that trajectories with large heading errors are penalised much more severely than those with small errors. Declared in nav2_mppi_controller/src/critics/goal_angle_critic.cpp.",
+    "impact": "Increasing beyond 1 makes the GoalAngleCritic sharply penalise trajectories that end up badly misaligned with the goal orientation. Leave at 1 for linear (default) behaviour; raise to 2 only when the robot struggles to orient itself precisely at the goal despite an adequate cost_weight.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/GoalAngleCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "goal_angle",
+      "cost_power"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.GoalAngleCritic.cost_weight",
+    "type": "double",
+    "default": 3.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "",
+    "description": "Scalar weight multiplied by the mean angular-distance penalty in GoalAngleCritic. The critic activates only when the remaining path length is less than threshold_to_consider, scoring how far each sampled trajectory's final yaw deviates from the goal orientation. Declared in nav2_mppi_controller/src/critics/goal_angle_critic.cpp.",
+    "impact": "Larger values push MPPI to favour trajectories that end close to the goal heading. Increase if the robot tends to arrive at the goal pointing the wrong way; decrease if over-weighting this critic causes oscillation during the final approach.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/GoalAngleCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "goal_angle",
+      "cost_weight"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathAngleCritic.cost_power",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 4
+    },
+    "unit": "",
+    "description": "Exponent applied to the angular-error penalty in PathAngleCritic before accumulating it into the MPPI trajectory cost. At 1 the cost is linear; higher values concentrate the penalty on trajectories with large heading deviations. Declared in nav2_mppi_controller/src/critics/path_angle_critic.cpp.",
+    "impact": "Raising above 1 makes PathAngleCritic aggressively reject trajectories misaligned with the look-ahead direction. Useful for differential-drive robots on curved paths. Keep at 1 for standard operation.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAngleCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_angle",
+      "cost_power"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathAngleCritic.cost_weight",
+    "type": "double",
+    "default": 2.2,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "",
+    "description": "Scalar weight for the PathAngleCritic angular-alignment penalty. The critic penalises trajectories whose final heading deviates from the direction toward the look-ahead path point (offset_from_furthest indices ahead of the furthest-reached point). Declared in nav2_mppi_controller/src/critics/path_angle_critic.cpp.",
+    "impact": "Higher values force trajectories to stay better aligned with the upcoming path direction. Too high a value can cause the robot to rotate aggressively on slight path curves; too low and the robot may cut corners or drift across curves.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAngleCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_angle",
+      "cost_weight"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathAngleCritic.threshold_to_consider",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "m",
+    "description": "Minimum remaining local path length below which PathAngleCritic deactivates. When the robot is closer to the path end than this threshold the critic skips scoring, allowing goal-approach critics (GoalCritic, GoalAngleCritic) to dominate. Declared in nav2_mppi_controller/src/critics/path_angle_critic.cpp.",
+    "impact": "Increase to hand off angular control to goal-approach critics sooner; decrease to keep path-angle alignment active almost to the goal. Setting too high may cause premature loss of path-angle guidance on long straight runs; too low may conflict with GoalAngleCritic in the final approach.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAngleCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_angle",
+      "threshold"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.GoalCritic.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enables or disables the GoalCritic in the MPPI optimizer. When enabled, GoalCritic penalises sampled trajectories that end far from the current goal point, biasing the controller to drive the robot toward the goal position. The 'enabled' field is common to all MPPI critics and is declared in nav2_mppi_controller/include/nav2_mppi_controller/critic_function.hpp.",
+    "impact": "Disabling removes goal-position attraction from the MPPI cost function, leaving navigation entirely to other critics (e.g. PathFollowCritic). Only disable in experimental configurations; with GoalCritic off the robot may fail to converge on the goal position.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/GoalCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "goal",
+      "enabled"
+    ],
+    "post_set_action": null
   }
 ]
