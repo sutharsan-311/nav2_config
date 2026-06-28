@@ -3829,6 +3829,31 @@
     "post_set_action": null
   },
   {
+    "node": "amcl",
+    "param": "random_seed",
+    "type": "int",
+    "default": -1,
+    "range": {
+      "min": -1,
+      "max": 2147483647
+    },
+    "unit": "",
+    "description": "Seed for the random number generator used by AMCL's particle filter. A value of -1 (default) means the seed is drawn from the system clock, producing non-deterministic runs. Setting a fixed non-negative integer makes particle-filter initialisation and resampling fully reproducible across runs with identical sensor data.",
+    "impact": "Leave at -1 for normal operation. Set to a fixed value (e.g. 42) only when reproducible localization behaviour is required for testing or debugging \u2014 identical seeds with identical sensor input will produce the same particle trajectories every run.",
+    "category": "initialization",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "amcl",
+      "random",
+      "seed",
+      "reproducibility",
+      "initialization"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
     "node": "controller_server",
     "param": "odom_topic",
     "type": "string",
@@ -12195,6 +12220,156 @@
       "mppi",
       "goal",
       "enabled"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PreferForwardCritic.cost_power",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "unit": "",
+    "description": "Exponent applied to the PreferForwardCritic cost term before accumulation into the MPPI trajectory score. PreferForwardCritic penalises trajectories with negative (backward) linear velocity segments. An exponent of 1 applies the penalty linearly; 2 squares it, making reverse motion much more costly. Declared in nav2_mppi_controller/src/critics/prefer_forward_critic.cpp.",
+    "impact": "Keep at 1 for the default linear penalty against backward motion. Increase to 2 only when the robot frequently reverses despite cost_weight already being high, as the squared cost sharpens the gradient but can make tuning less intuitive.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PreferForwardCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "prefer_forward",
+      "cost_power",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PreferForwardCritic.cost_weight",
+    "type": "double",
+    "default": 5.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "Scalar weight for the PreferForwardCritic cost, which accumulates a penalty proportional to the total reverse linear velocity across each sampled MPPI trajectory. Higher weight discourages backward motion more strongly. Declared in nav2_mppi_controller/src/critics/prefer_forward_critic.cpp.",
+    "impact": "Increase to strongly discourage the robot from reversing (useful in narrow corridors or when reverse motion is unsafe). Decrease if the robot needs to back up to recover from tight situations. Setting to 0 effectively disables the forward-preference penalty.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PreferForwardCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "prefer_forward",
+      "cost_weight",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathFollowCritic.cost_power",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "unit": "",
+    "description": "Exponent applied to the PathFollowCritic cost before accumulation into the MPPI trajectory score. PathFollowCritic drives the robot along the reference path by rewarding trajectories that reach the furthest valid path point. An exponent of 1 makes the cost linear; 2 squares it for sharper gradient. Declared in nav2_mppi_controller/src/critics/path_follow_critic.cpp.",
+    "impact": "Keep at 1 for normal path-following. Raising to 2 amplifies differences between trajectories that closely follow the path vs. those that diverge, potentially improving path adherence at the cost of less smooth behaviour.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathFollowCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_follow",
+      "cost_power",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathFollowCritic.cost_weight",
+    "type": "double",
+    "default": 5.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "Scalar weight for the PathFollowCritic cost, which encourages sampled trajectories to progress as far forward along the reference path as possible. This is the primary progress-driving critic in the MPPI stack. Declared in nav2_mppi_controller/src/critics/path_follow_critic.cpp.",
+    "impact": "Increase to make the optimizer more aggressively chase path progress. Too high can cause the robot to cut corners or rush through waypoints. Too low may make the robot meander. This is typically one of the most impactful weights to tune.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathFollowCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_follow",
+      "cost_weight",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathAlignCritic.cost_power",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "unit": "",
+    "description": "Exponent applied to the PathAlignCritic cost before accumulation into the MPPI trajectory score. PathAlignCritic penalises trajectories whose heading deviates from the reference path orientation at sampled points. An exponent of 1 is linear; 2 squares the cost for larger misalignments. Declared in nav2_mppi_controller/src/critics/path_align_critic.cpp.",
+    "impact": "Keep at 1 for standard linear heading-alignment scoring. Increase to 2 if the robot frequently cuts corners or drives at large angles to the path, as the squared cost harshly penalises significant misalignments while leaving small deviations mostly unchanged.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAlignCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_align",
+      "cost_power",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathAlignCritic.cost_weight",
+    "type": "double",
+    "default": 10.0,
+    "range": {
+      "min": 0.0,
+      "max": 200.0
+    },
+    "unit": "",
+    "description": "Scalar weight for the PathAlignCritic cost, which penalises sampled trajectory headings that deviate from the reference path orientation at corresponding path points. Higher weight forces the robot to align its heading with the planned path more closely. Declared in nav2_mppi_controller/src/critics/path_align_critic.cpp.",
+    "impact": "Increase to enforce tighter heading alignment with the planned path \u2014 useful on narrow lanes or when precise tracking is required. Decrease if the robot is too rigidly committed to path tangents and struggles around curves or dynamic obstacles. Balance against PathFollowCritic and PathAngleCritic.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAlignCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_align",
+      "cost_weight",
+      "tuning"
     ],
     "post_set_action": null
   }
