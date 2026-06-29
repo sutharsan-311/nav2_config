@@ -31,7 +31,7 @@ nav2_config cuts that loop. Change a param, see the effect, adjust again — all
 - **Real-time parameter tuning** — change a parameter via `ros2 param set`, the effect is immediate on the running robot
 - **Auto-discovery** — continuously polls for running Nav2 nodes via ROS2 node graph
 - **Works with ANY Nav2 plugin** — reads live parameters directly, not just hardcoded schema entries
-- **362 parameters** with descriptions, ranges, and tuning advice
+- **560 parameters** across 18 Nav2 nodes — every one with a description and tuning advice; 325 also carry numeric ranges
 - **Per-param Set button** — visual feedback cycle: idle → ready → pending → success / failed
 - **Config file as source of truth** — load/save `nav2_params.yaml` via File > Load Config
 - **RViz2-native light theme** — looks at home alongside RViz2, rqt, and Foxglove
