@@ -12372,5 +12372,127 @@
       "tuning"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.CostCritic.cost_power",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 10
+    },
+    "unit": null,
+    "description": "Exponent applied to the CostCritic obstacle-repulsion term before it is added to the MPPI trajectory score. When set to 1 the costmap-based penalty scales linearly with the weighted obstacle cost; values greater than 1 apply a power-law penalty that more aggressively discourages trajectories passing close to obstacles. Declared in nav2_mppi_controller/src/critics/cost_critic.cpp.",
+    "impact": "Increase beyond 1 to harshly penalise trajectories that enter the inflation band even when other critics score them well. In practice 1 (linear) is sufficient for most environments; values above 2 may cause numerical instability in the MPPI cost accumulation.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController/CostCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "cost_critic",
+      "cost_power",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.CostCritic.cost_weight",
+    "type": "double",
+    "default": 3.81,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": null,
+    "description": "Scalar weight multiplied into the CostCritic obstacle-repulsion penalty per trajectory step before accumulation. The raw costmap value at each trajectory point is summed and multiplied by this weight (then divided by 254 internally to normalise to the costmap scale). Higher values increase the repulsive push away from obstacle-inflated regions. Declared in nav2_mppi_controller/src/critics/cost_critic.cpp.",
+    "impact": "Increase to make the robot favour paths that stay further from obstacles in the inflation band. Too high relative to path-following critics may cause the robot to deviate significantly from the planned path near walls. Too low allows the robot to brush close to obstacles without penalty. The effective internal weight is cost_weight / 254.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController/CostCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "cost_critic",
+      "cost_weight",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.CostCritic.inflation_layer_name",
+    "type": "string",
+    "default": "",
+    "range": null,
+    "unit": null,
+    "description": "Name of the inflation layer within the local costmap used by CostCritic to locate the circumscribed-radius cost threshold. When empty, CostCritic searches for any available inflation layer. Set to the exact layer name if multiple inflation layers exist or if the auto-search picks the wrong one. Declared in nav2_mppi_controller/src/critics/cost_critic.cpp.",
+    "impact": "Typically left empty. Specify the layer name only when the costmap has multiple inflation layers and CostCritic selects the wrong one, which would produce incorrect circumscribed-cost thresholds and degrade collision-avoidance accuracy.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController/CostCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "cost_critic",
+      "costmap",
+      "inflation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.TwirlingCritic.cost_power",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "unit": null,
+    "description": "Exponent applied to the TwirlingCritic penalty before it is added to the MPPI trajectory score. TwirlingCritic penalises sampled trajectories with high mean absolute angular velocity (wz), discouraging spinning in place or erratic rotation. An exponent of 1 is linear; 2 squares the penalty. Declared in nav2_mppi_controller/src/critics/twirling_critic.cpp.",
+    "impact": "Keep at 1 for linear anti-spinning behaviour. Increase to 2 if the robot frequently spins unnecessarily even with an adequate cost_weight, as the squared cost harshly penalises large angular velocities while leaving small rotations largely unaffected.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/TwirlingCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "twirling",
+      "cost_power",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.TwirlingCritic.cost_weight",
+    "type": "double",
+    "default": 10.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": null,
+    "description": "Scalar weight multiplied by the mean absolute angular velocity across each sampled trajectory in TwirlingCritic. The critic adds (mean |wz| * cost_weight) ^ cost_power to each trajectory's total score, discouraging trajectories that require high rotational velocity — particularly useful for preventing in-place spinning during goal approach or recovery. Declared in nav2_mppi_controller/src/critics/twirling_critic.cpp.",
+    "impact": "Increase to more strongly penalise trajectories with high angular velocity, reducing in-place spinning and erratic rotation. Too high may prevent the robot from making sharp turns when genuinely needed. Balance against GoalAngleCritic: if both are high the robot may struggle to orient itself at the goal.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/TwirlingCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "twirling",
+      "cost_weight",
+      "tuning"
+    ],
+    "post_set_action": null
   }
 ]
