@@ -12480,7 +12480,7 @@
       "max": 100.0
     },
     "unit": null,
-    "description": "Scalar weight multiplied by the mean absolute angular velocity across each sampled trajectory in TwirlingCritic. The critic adds (mean |wz| * cost_weight) ^ cost_power to each trajectory's total score, discouraging trajectories that require high rotational velocity — particularly useful for preventing in-place spinning during goal approach or recovery. Declared in nav2_mppi_controller/src/critics/twirling_critic.cpp.",
+    "description": "Scalar weight multiplied by the mean absolute angular velocity across each sampled trajectory in TwirlingCritic. The critic adds (mean |wz| * cost_weight) ^ cost_power to each trajectory's total score, discouraging trajectories that require high rotational velocity \u2014 particularly useful for preventing in-place spinning during goal approach or recovery. Declared in nav2_mppi_controller/src/critics/twirling_critic.cpp.",
     "impact": "Increase to more strongly penalise trajectories with high angular velocity, reducing in-place spinning and erratic rotation. Too high may prevent the robot from making sharp turns when genuinely needed. Balance against GoalAngleCritic: if both are high the robot may struggle to orient itself at the goal.",
     "category": "critic_weights",
     "plugin_specific": true,
@@ -12492,6 +12492,155 @@
       "twirling",
       "cost_weight",
       "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "amcl",
+    "param": "introspection_mode",
+    "type": "string",
+    "default": "disabled",
+    "range": {
+      "options": [
+        "disabled",
+        "metadata",
+        "contents"
+      ]
+    },
+    "unit": null,
+    "description": "Controls ROS 2 service-call introspection for AMCL's internal services (global localisation and nomotion-update). 'disabled' turns introspection off (default); 'metadata' records request/response metadata only; 'contents' records the full request and response data. Declared automatically by nav2::ServiceServer via nav2_ros_common/include/nav2_ros_common/service_server.hpp when any service is created; requires rclcpp >= 29.",
+    "impact": "Enabling introspection makes AMCL service traffic visible on dedicated ROS topics, which is useful for debugging localisation service calls. 'metadata' adds minimal overhead; 'contents' serialises full messages and should only be used during focused debugging. Keep 'disabled' in production.",
+    "category": "debugging",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "amcl",
+      "introspection",
+      "debugging",
+      "ros2"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "map_server",
+    "param": "introspection_mode",
+    "type": "string",
+    "default": "disabled",
+    "range": {
+      "options": [
+        "disabled",
+        "metadata",
+        "contents"
+      ]
+    },
+    "unit": null,
+    "description": "Controls ROS 2 service-call introspection for the map server's services (GetMap and LoadMap). 'disabled' turns introspection off (default); 'metadata' records request/response metadata only; 'contents' records full message data. Declared automatically by nav2::ServiceServer via nav2_ros_common/include/nav2_ros_common/service_server.hpp; requires rclcpp >= 29.",
+    "impact": "Enabling introspection surfaces map service call details on ROS topics, aiding diagnosis of map-loading failures. 'metadata' is lightweight; 'contents' includes full map data and carries significant serialisation overhead \u2014 use only briefly during debugging. Keep 'disabled' in production.",
+    "category": "debugging",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "map_server",
+      "introspection",
+      "debugging",
+      "ros2"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "map_saver",
+    "param": "introspection_mode",
+    "type": "string",
+    "default": "disabled",
+    "range": {
+      "options": [
+        "disabled",
+        "metadata",
+        "contents"
+      ]
+    },
+    "unit": null,
+    "description": "Controls ROS 2 service-call introspection for the map saver's SaveMap service. 'disabled' turns introspection off (default); 'metadata' records request/response metadata only; 'contents' records full message data. Declared automatically by nav2::ServiceServer via nav2_ros_common/include/nav2_ros_common/service_server.hpp; requires rclcpp >= 29.",
+    "impact": "Setting to 'metadata' or 'contents' makes map-save service calls visible on ROS introspection topics, which can help debug why a map save fails or verify parameters passed to the service. 'contents' is expensive for large maps. Leave 'disabled' in production.",
+    "category": "debugging",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "map_saver",
+      "introspection",
+      "debugging",
+      "ros2"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "waypoint_follower",
+    "param": "introspection_mode",
+    "type": "string",
+    "default": "disabled",
+    "range": {
+      "options": [
+        "disabled",
+        "metadata",
+        "contents"
+      ]
+    },
+    "unit": null,
+    "description": "Controls ROS 2 action-call introspection for the waypoint follower's FollowWaypoints action server. 'disabled' turns introspection off (default); 'metadata' records goal/result/feedback metadata only; 'contents' records full goal, feedback, and result data. Declared automatically by nav2::SimpleActionServer via nav2_ros_common/include/nav2_ros_common/simple_action_server.hpp; requires rclcpp >= 29.",
+    "impact": "Enabling introspection lets you observe waypoint action traffic on ROS topics, which is helpful for tracing navigation goal issues across a multi-waypoint mission. 'metadata' is lightweight; 'contents' records full waypoint lists and adds notable overhead. Keep 'disabled' during normal operation.",
+    "category": "debugging",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "waypoint_follower",
+      "introspection",
+      "debugging",
+      "ros2"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "base_frame_id",
+    "type": "string",
+    "default": "base_footprint",
+    "range": null,
+    "unit": "",
+    "description": "TF frame ID used as the robot's base (body) frame. The simulator publishes the odom\u2192base transform using this frame as the child. It is also used when computing the transform from the base to the scan frame for simulated laser data. Declared in nav2_loopback_sim/src/loopback_simulator.cpp.",
+    "impact": "Must match the base frame used by Nav2 and the robot's URDF. A mismatch causes TF lookup failures in the controller, costmap, and localisation nodes, preventing navigation from functioning.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "frames",
+      "tf"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "odom_frame_id",
+    "type": "string",
+    "default": "odom",
+    "range": null,
+    "unit": "",
+    "description": "TF frame ID used as the odometry frame. The simulator publishes the map\u2192odom transform with this as the child frame and the odom\u2192base transform with this as the parent frame. Also used as the header frame_id of the published Odometry message. Declared in nav2_loopback_sim/src/loopback_simulator.cpp.",
+    "impact": "Must match the odom frame expected by AMCL, the costmap, and other Nav2 nodes. A mismatch severs the map\u2192base TF chain, causing every navigation and localisation component to fail.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "frames",
+      "tf",
+      "odometry"
     ],
     "post_set_action": null
   }
