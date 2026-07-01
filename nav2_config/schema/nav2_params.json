@@ -12643,5 +12643,131 @@
       "odometry"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "keepout_filter_mask_server",
+    "param": "topic_name",
+    "type": "string",
+    "default": "keepout_filter_mask",
+    "range": null,
+    "unit": "",
+    "description": "OccupancyGrid topic on which this map server publishes the keepout filter mask. The keepout_costmap_filter_info_server forwards this topic name to the costmap filter plugin via the CostmapFilterInfo message.",
+    "impact": "Must match the mask_topic of keepout_costmap_filter_info_server and the topic subscribed by the KeeputFilter costmap plugin. A mismatch causes the keepout filter to receive no mask data and apply no restrictions.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "keepout_filter_mask_server",
+      "filter",
+      "map",
+      "topics"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "keepout_filter_mask_server",
+    "param": "yaml_filename",
+    "type": "string",
+    "default": "",
+    "range": null,
+    "unit": "",
+    "description": "Path to the YAML file describing the keepout filter mask occupancy grid. When empty, no map is loaded at startup; the mask can be provided later via the load_map service.",
+    "impact": "Points to the binary occupancy grid that defines keep-out zones. Cells above the threshold become lethal obstacles in the costmap. Changing the file requires reloading the mask.",
+    "category": "core",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "keepout_filter_mask_server",
+      "filter",
+      "map",
+      "file"
+    ],
+    "post_set_action": "load_map"
+  },
+  {
+    "node": "keepout_filter_mask_server",
+    "param": "frame_id",
+    "type": "string",
+    "default": "map",
+    "range": null,
+    "unit": "",
+    "description": "TF frame ID embedded in the published filter mask OccupancyGrid message. Typically the global map frame.",
+    "impact": "Must match the global_frame parameter of the costmap layers that apply the keepout filter. A mismatch causes the TF lookup for mask overlay to fail.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "keepout_filter_mask_server",
+      "filter",
+      "frames",
+      "tf"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "speed_filter_mask_server",
+    "param": "topic_name",
+    "type": "string",
+    "default": "speed_filter_mask",
+    "range": null,
+    "unit": "",
+    "description": "OccupancyGrid topic on which this map server publishes the speed filter mask. The speed_costmap_filter_info_server forwards this topic name to the costmap filter plugin via the CostmapFilterInfo message.",
+    "impact": "Must match the mask_topic of speed_costmap_filter_info_server. A mismatch prevents the SpeedFilter costmap plugin from receiving mask data, leaving speed limits unenforced.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "speed_filter_mask_server",
+      "filter",
+      "map",
+      "topics"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "speed_filter_mask_server",
+    "param": "yaml_filename",
+    "type": "string",
+    "default": "",
+    "range": null,
+    "unit": "",
+    "description": "Path to the YAML file describing the speed filter mask occupancy grid. Pixel values in this mask are converted to speed limits using the base and multiplier from speed_costmap_filter_info_server.",
+    "impact": "Defines which map regions impose reduced speed limits on the robot. The mask grayscale value combined with the filter info base/multiplier determines the effective speed cap in each zone.",
+    "category": "core",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "speed_filter_mask_server",
+      "filter",
+      "map",
+      "file"
+    ],
+    "post_set_action": "load_map"
+  },
+  {
+    "node": "speed_filter_mask_server",
+    "param": "frame_id",
+    "type": "string",
+    "default": "map",
+    "range": null,
+    "unit": "",
+    "description": "TF frame ID embedded in the published speed filter mask OccupancyGrid message. Typically the global map frame.",
+    "impact": "Must match the global_frame of the costmap layers that apply the speed filter. A mismatch causes TF lookup failures when the filter overlay is computed.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "speed_filter_mask_server",
+      "filter",
+      "frames",
+      "tf"
+    ],
+    "post_set_action": null
   }
 ]

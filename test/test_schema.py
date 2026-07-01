@@ -39,6 +39,8 @@ KNOWN_NODES = {
     "route_server",
     "keepout_costmap_filter_info_server",
     "speed_costmap_filter_info_server",
+    "keepout_filter_mask_server",
+    "speed_filter_mask_server",
 }
 
 
