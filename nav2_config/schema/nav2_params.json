@@ -12769,5 +12769,160 @@
       "tf"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "route_frame",
+    "type": "string",
+    "default": "map",
+    "range": null,
+    "unit": "",
+    "description": "TF frame in which the route graph coordinates are expressed. Route nodes are looked up and published relative to this frame.",
+    "impact": "Must match the coordinate frame of the loaded route graph file. A mismatch causes incorrect routing and TF lookup failures during tracking.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "frames",
+      "tf"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "base_frame",
+    "type": "string",
+    "default": "base_link",
+    "range": null,
+    "unit": "",
+    "description": "TF frame of the robot base used for robot pose lookups during route tracking and goal-intent extraction.",
+    "impact": "Must match the actual base frame broadcast by the robot's TF tree. Incorrect values prevent pose queries and halt route tracking.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "frames",
+      "tf"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "max_planning_time",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.0,
+      "max": 30.0
+    },
+    "unit": "s",
+    "description": "Maximum allowed wall-clock time for a single route planning cycle. A warning is logged if planning exceeds this threshold.",
+    "impact": "A tighter value surfaces slow graph searches earlier; setting to 0 disables the warning. Does not abort planning \u2014 only warns.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "route_server",
+      "performance",
+      "planning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "path_density",
+    "type": "double",
+    "default": 0.05,
+    "range": {
+      "min": 0.01,
+      "max": 1.0
+    },
+    "unit": "m",
+    "description": "Desired spacing between interpolated path points when densifying route edges into a nav_msgs/Path for the controller.",
+    "impact": "Smaller values produce denser paths (smoother controller tracking, higher memory use). Larger values produce sparser paths that may cause the controller to cut corners on tight edges.",
+    "category": "path_generation",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "path",
+      "interpolation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "smoothing_radius",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.05,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Radius of the circular arc inserted at graph-node corners when smooth_corners is enabled. Controls how aggressively sharp turns are rounded.",
+    "impact": "Larger radius produces gentler, wider turns but may cause the robot to deviate further from the nominal edge path. Has no effect when smooth_corners is false.",
+    "category": "path_generation",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "path",
+      "smoothing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "smoothing_angle_threshold",
+    "type": "double",
+    "default": 2.9,
+    "range": {
+      "min": 0.1,
+      "max": 3.14159
+    },
+    "unit": "rad",
+    "description": "Minimum interior angle (in radians) between consecutive edges below which corner smoothing is applied. Corners sharper than this threshold receive a circular arc.",
+    "impact": "Lower values apply smoothing only to very sharp turns; near-pi values smooth nearly all corners. Invalid arcs (e.g. radius too large for edge length) fall back to straight-line interpolation with a warning.",
+    "category": "path_generation",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "path",
+      "smoothing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "tracker_update_rate",
+    "type": "double",
+    "default": 50.0,
+    "range": {
+      "min": 1.0,
+      "max": 500.0
+    },
+    "unit": "Hz",
+    "description": "Rate at which the RouteTracker polls robot pose, checks for node achievement, and evaluates route operations during ComputeAndTrackRoute actions.",
+    "impact": "Higher rates improve responsiveness to node-achievement events and rerouting triggers at the cost of CPU. Lower rates reduce CPU but may cause delayed reactions to obstacles or missed waypoints.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "route_server",
+      "tracking",
+      "performance"
+    ],
+    "post_set_action": null
   }
 ]
