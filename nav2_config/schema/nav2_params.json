@@ -10417,6 +10417,144 @@
   },
   {
     "node": "docking_server",
+    "param": "beta",
+    "type": "double",
+    "default": 0.4,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": null,
+    "description": "Curvature decay constant in the smooth-control-law speed-reduction formula: v = v_linear_max / (1 + beta * |curvature|^lambda). Controls how aggressively the robot slows down when the instantaneous path curvature is high during the dock approach.",
+    "impact": "Larger values cause more speed reduction on curved segments, resulting in a slower but more stable approach. Smaller values keep speed closer to v_linear_max even during tight curves. Tune together with lambda; both affect the speed-vs-curvature trade-off.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "control",
+      "gains"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "lambda",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": null,
+    "description": "Curvature exponent in the smooth-control-law speed formula: v = v_linear_max / (1 + beta * |curvature|^lambda). Determines how steeply speed drops off as curvature increases; higher values create a sharper knee in the speed-curvature curve.",
+    "impact": "Increasing lambda makes the robot maintain near-maximum speed on straight segments but slow down rapidly when curvature rises. Decreasing it produces a more gradual speed reduction across all curvatures. Tune together with beta.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "control",
+      "gains"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "slowdown_radius",
+    "type": "double",
+    "default": 0.25,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "m",
+    "description": "Distance from the dock target at which the smooth-control-law begins linearly scaling down the linear speed to zero. Inside this radius the commanded speed is at most v_linear_max * (r / slowdown_radius), removing the singularity as the robot converges on the goal pose.",
+    "impact": "Larger values create a gentler, longer deceleration ramp \u2014 useful when precise final alignment matters. Too large causes the robot to slow down excessively early, extending overall docking time. Too small may result in overshooting the dock.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "velocity",
+      "control"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "deceleration_max",
+    "type": "double",
+    "default": 2.5,
+    "range": {
+      "min": 0.0,
+      "max": 20.0
+    },
+    "unit": "m/s\u00b2",
+    "description": "Maximum deceleration used to kinematically constrain the approach speed: v <= sqrt(2 * r * deceleration_max). Acts as a safety cap so the robot can always stop within the remaining distance to the dock.",
+    "impact": "Lower values force earlier and more conservative braking, increasing docking time but reducing the risk of overshooting. Higher values allow faster approaches closer to the dock but require good odometry and a mechanically capable drivetrain.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "velocity",
+      "control"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "rotate_to_heading_angular_vel",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 6.28
+    },
+    "unit": "rad/s",
+    "description": "Commanded angular velocity magnitude during the rotate-to-heading phase that precedes (or follows) the dock approach. The robot spins in place at this speed until its heading is aligned with the required approach direction, subject to rotate_to_heading_max_angular_accel.",
+    "impact": "Higher values shorten the rotation phase but may overshoot the target heading if acceleration limits are not matched. Lower values improve alignment accuracy at the cost of longer overall docking time.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "rotation",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "rotate_to_heading_max_angular_accel",
+    "type": "double",
+    "default": 3.2,
+    "range": {
+      "min": 0.0,
+      "max": 20.0
+    },
+    "unit": "rad/s\u00b2",
+    "description": "Maximum angular acceleration applied when ramping the angular velocity during the rotate-to-heading phase. The commanded angular velocity is clamped each cycle to [current_vel - accel*dt, current_vel + accel*dt] and is also reduced near the target heading to avoid overshoot.",
+    "impact": "Higher values allow quicker spin-up and spin-down, shortening the rotation phase on capable hardware. Lower values produce smoother heading transitions useful for robots sensitive to wheel slip or odometry drift during in-place rotation.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "rotation",
+      "control"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
     "param": "v_linear_min",
     "type": "double",
     "default": 0.1,
