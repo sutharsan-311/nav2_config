@@ -12270,6 +12270,27 @@
   },
   {
     "node": "controller_server",
+    "param": "follow_path.GoalAngleCritic.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enables or disables the GoalAngleCritic in the MPPI optimizer. When enabled, GoalAngleCritic penalises sampled trajectories whose final yaw deviates from the goal orientation, activating only once the remaining path length drops below its threshold_to_consider. The 'enabled' field is common to all MPPI critics and is declared in nav2_mppi_controller/include/nav2_mppi_controller/critic_function.hpp; when false the critic's score() returns immediately.",
+    "impact": "Disabling removes goal-heading alignment from the final approach, so the robot may arrive at the goal position with an arbitrary yaw. Keep enabled when goal orientation matters (docking, handovers); disable only if orientation at the goal is genuinely irrelevant or handled elsewhere.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/GoalAngleCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "goal",
+      "enabled"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
     "param": "follow_path.PathAngleCritic.cost_power",
     "type": "int",
     "default": 1,
@@ -12337,6 +12358,27 @@
       "mppi",
       "path_angle",
       "threshold"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathAngleCritic.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enables or disables the PathAngleCritic in the MPPI optimizer. When enabled, PathAngleCritic penalises sampled trajectories whose heading deviates from the direction of a point ahead on the reference path; it deactivates when the remaining local path length falls below its threshold_to_consider. The 'enabled' field is common to all MPPI critics and is declared in nav2_mppi_controller/include/nav2_mppi_controller/critic_function.hpp; when false the critic's score() returns immediately.",
+    "impact": "Disabling removes heading alignment with the path direction, which can cause sluggish turning onto sharp path segments or driving significantly off-axis. Some tunings disable it for omnidirectional robots where heading relative to the path is unimportant.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAngleCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_tracking",
+      "enabled"
     ],
     "post_set_action": null
   },
@@ -12413,6 +12455,27 @@
   },
   {
     "node": "controller_server",
+    "param": "follow_path.PreferForwardCritic.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enables or disables the PreferForwardCritic in the MPPI optimizer. When enabled, PreferForwardCritic penalises sampled trajectories containing negative (reversing) longitudinal velocities, biasing the controller toward forward motion; it deactivates near the goal per its threshold_to_consider. The 'enabled' field is common to all MPPI critics and is declared in nav2_mppi_controller/include/nav2_mppi_controller/critic_function.hpp; when false the critic's score() returns immediately.",
+    "impact": "Disabling lets the optimizer reverse as freely as it drives forward. Appropriate for robots with symmetric sensing (e.g. 360\u00b0 lidar, bidirectional platforms); keep enabled for robots whose sensors face forward, since unpenalised reversing drives blind.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PreferForwardCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "forward",
+      "enabled"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
     "param": "follow_path.PathFollowCritic.cost_power",
     "type": "int",
     "default": 1,
@@ -12463,6 +12526,27 @@
   },
   {
     "node": "controller_server",
+    "param": "follow_path.PathFollowCritic.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enables or disables the PathFollowCritic in the MPPI optimizer. When enabled, PathFollowCritic rewards progress by penalising the distance between each sampled trajectory's endpoint and a point further ahead on the reference path, driving the robot forward along the route. The 'enabled' field is common to all MPPI critics and is declared in nav2_mppi_controller/include/nav2_mppi_controller/critic_function.hpp; when false the critic's score() returns immediately.",
+    "impact": "Disabling removes the main forward-progress incentive; the robot may stall or crawl since remaining critics mostly penalise rather than reward motion. Only disable in experimental critic configurations where another critic (e.g. GoalCritic) provides the drive toward the goal.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathFollowCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_tracking",
+      "enabled"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
     "param": "follow_path.PathAlignCritic.cost_power",
     "type": "int",
     "default": 1,
@@ -12508,6 +12592,27 @@
       "path_align",
       "cost_weight",
       "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.PathAlignCritic.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enables or disables the PathAlignCritic in the MPPI optimizer. When enabled, PathAlignCritic penalises sampled trajectories by their distance from the reference path, keeping the robot tracking the planned route; it deactivates when the remaining local path length falls below its threshold_to_consider. The 'enabled' field is common to all MPPI critics and is declared in nav2_mppi_controller/include/nav2_mppi_controller/critic_function.hpp; when false the critic's score() returns immediately.",
+    "impact": "Disabling removes the lateral pull toward the planned path, allowing the robot to cut corners and deviate freely as long as other critics are satisfied. Useful for loosely-guided navigation experiments; keep enabled when precise path tracking is required (narrow corridors, marked lanes).",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/PathAlignCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "path_tracking",
+      "enabled"
     ],
     "post_set_action": null
   },
@@ -12585,6 +12690,27 @@
   },
   {
     "node": "controller_server",
+    "param": "follow_path.CostCritic.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enables or disables the CostCritic in the MPPI optimizer. When enabled, CostCritic scores sampled trajectories by the costmap cost of the footprint along each trajectory and marks trajectories that enter lethal cost as invalid, providing MPPI's obstacle avoidance. The 'enabled' field is common to all MPPI critics and is declared in nav2_mppi_controller/include/nav2_mppi_controller/critic_function.hpp; when false the critic's score() returns immediately.",
+    "impact": "Disabling removes costmap-based obstacle penalisation and collision rejection from the MPPI cost function \u2014 the optimizer will happily select trajectories through obstacles. Only disable if the alternative ObstaclesCritic is used in its place, or in obstacle-free test environments.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/CostCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "cost",
+      "enabled"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
     "param": "follow_path.TwirlingCritic.cost_power",
     "type": "int",
     "default": 1,
@@ -12630,6 +12756,27 @@
       "twirling",
       "cost_weight",
       "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.TwirlingCritic.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enables or disables the TwirlingCritic in the MPPI optimizer. When enabled, TwirlingCritic penalises sampled trajectories by the magnitude of their angular velocities, suppressing unnecessary spinning and heading oscillation. The 'enabled' field is common to all MPPI critics and is declared in nav2_mppi_controller/include/nav2_mppi_controller/critic_function.hpp; when false the critic's score() returns immediately.",
+    "impact": "Disabling removes the damping on rotational motion; the robot may wiggle or spin more, particularly with noisy sampling. This critic is not in the default critics list, so 'enabled' only matters when TwirlingCritic is explicitly added \u2014 disable (or remove the critic) if rotation-heavy behaviours such as spin recoveries are being over-penalised.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/TwirlingCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "rotation",
+      "enabled"
     ],
     "post_set_action": null
   },
