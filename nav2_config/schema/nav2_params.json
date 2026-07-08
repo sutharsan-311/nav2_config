@@ -8802,6 +8802,172 @@
     "post_set_action": null
   },
   {
+    "node": "collision_monitor",
+    "param": "type",
+    "type": "string",
+    "default": "polygon",
+    "range": null,
+    "unit": null,
+    "description": "Shape type of this named zone. Accepted values: 'polygon' (arbitrary vertex list or dynamically subscribed footprint), 'circle' (static radius around the base frame), 'velocity_polygon' (set of sub-polygons selected by the current commanded velocity). Set per zone as <polygon_name>.type.",
+    "impact": "Determines which shape parameters the zone reads ('points' for polygon, 'radius' for circle, 'velocity_polygons' for velocity_polygon). Required with no source default — omitting it or using an unknown value causes node configuration to fail.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "polygon",
+      "shape",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "points",
+    "type": "string",
+    "default": "[[0.3, 0.3], [0.3, -0.3], [0.0, -0.3], [0.0, 0.3]]",
+    "range": null,
+    "unit": "m",
+    "description": "Static vertex list defining the polygon zone shape, given as a string of [x, y] pairs in the base frame (e.g. \"[[0.3, 0.3], [0.3, -0.3], [0.0, -0.3], [0.0, 0.3]]\"). If omitted or unparsable, the polygon falls back to a dynamic subscription (polygon_sub_topic or footprint_topic) for its shape.",
+    "impact": "Larger zones react to obstacles earlier but trigger more often in cluttered spaces. Leave unset to drive the shape at runtime from a topic instead — if neither static points nor a subscription topic is available, configuration fails.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "polygon",
+      "shape",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "radius",
+    "type": "double",
+    "default": 0.3,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "m",
+    "description": "Static radius of a 'circle' type zone, centered on the base frame. If not set, the circle falls back to a dynamic subscription (polygon_sub_topic) publishing the footprint at runtime.",
+    "impact": "Larger radius triggers the safety action further from obstacles, trading responsiveness in tight spaces for earlier reaction. No source default — either this or a subscription topic must be provided or configuration fails.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "circle",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "circle",
+      "shape",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "linear_limit",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "m/s",
+    "description": "Maximum absolute linear velocity allowed while sensor points are inside a LIMIT polygon zone. Incoming velocity commands above this magnitude are clamped. Only used when action_type is 'limit'.",
+    "impact": "Lower values cap the robot to a slower crawl near obstacles. Unlike 'slowdown', this is an absolute cap rather than a proportional scaling, so it behaves consistently regardless of the commanded speed.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "polygon",
+      "limit",
+      "velocity",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "angular_limit",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "rad/s",
+    "description": "Maximum absolute angular velocity allowed while sensor points are inside a LIMIT polygon zone. Incoming rotational commands above this magnitude are clamped. Only used when action_type is 'limit'.",
+    "impact": "Lower values restrict how fast the robot can rotate near obstacles, reducing the chance of sweeping the chassis into something during in-place turns. Tune together with linear_limit for balanced behaviour.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "polygon",
+      "limit",
+      "velocity",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "trigger_consecutive_points",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": null
+    },
+    "unit": null,
+    "description": "Number of consecutive data-processing cycles in which the zone must detect at least min_points before the safety action is triggered. Must be >= 1; a value below 1 fails validation at configuration.",
+    "impact": "Raise above 1 to debounce transient sensor noise so a single spurious frame does not stop the robot — at the cost of slightly delayed reaction to real obstacles. Keep at 1 for the fastest possible response.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": true,
+    "tags": [
+      "collision_monitor",
+      "polygon",
+      "debounce",
+      "noise",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "release_consecutive_points",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": null
+    },
+    "unit": null,
+    "description": "Number of consecutive data-processing cycles in which the zone must observe fewer than min_points before a triggered safety action is released. Must be >= 1; a value below 1 fails validation at configuration.",
+    "impact": "Raise above 1 to add hysteresis so the robot does not rapidly oscillate between stopped and moving when an obstacle sits right at the zone boundary. Higher values keep the action latched longer after the obstacle clears.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": true,
+    "tags": [
+      "collision_monitor",
+      "polygon",
+      "debounce",
+      "hysteresis",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "bt_navigator",
     "param": "bt_search_directories",
     "type": "string_array",
