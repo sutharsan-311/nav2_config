@@ -135,6 +135,46 @@ def test_hot_reload_is_bool(entry: dict):
     )
 
 
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_impact_is_non_empty(entry: dict):
+    """Every param must ship a genuine tuning 'impact' note — it is the schema's core value."""
+    assert (entry.get("impact") or "").strip(), (
+        f"Param '{entry['param']}' has an empty impact note"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_plugin_specific_is_bool(entry: dict):
+    assert isinstance(entry.get("plugin_specific"), bool), (
+        f"Param '{entry['param']}' plugin_specific must be bool, "
+        f"got {type(entry.get('plugin_specific')).__name__}"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_plugin_field_consistency(entry: dict):
+    """plugin_specific and plugin must agree: both set or both unset."""
+    if entry.get("plugin_specific"):
+        assert entry.get("plugin"), (
+            f"Param '{entry['param']}' is plugin_specific but has no plugin name"
+        )
+    else:
+        assert not entry.get("plugin"), (
+            f"Param '{entry['param']}' names plugin '{entry.get('plugin')}' "
+            f"but plugin_specific is false"
+        )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_tags_are_non_empty_strings(entry: dict):
+    tags = entry.get("tags")
+    assert isinstance(tags, list), f"Param '{entry['param']}' tags must be a list"
+    for tag in tags:
+        assert isinstance(tag, str) and tag.strip(), (
+            f"Param '{entry['param']}' has an empty or non-string tag: {tag!r}"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Default value type matching
 # ---------------------------------------------------------------------------
