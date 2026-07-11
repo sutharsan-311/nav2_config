@@ -11817,6 +11817,160 @@
   },
   {
     "node": "docking_server",
+    "param": "charging_threshold",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "A",
+    "description": "Battery current threshold used to detect charging when use_battery_status is true. The plugin subscribes to a sensor_msgs/BatteryState message on the battery_state topic and reports isCharging() = true whenever the current field exceeds this value.",
+    "impact": "Set just above the idle/discharge current reported by your battery driver so that only genuine charge current trips the check. Too low and sensor noise or a near-zero idle current can falsely report charging before contact; too high and a valid but slow charge current never confirms docking, causing wait_charge_timeout failures.",
+    "category": "docking",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "battery",
+      "charging",
+      "threshold"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "stall_joint_names",
+    "type": "string_array",
+    "default": [],
+    "range": null,
+    "unit": "",
+    "description": "Names of the joints (as published on the joint_states topic) whose velocity and effort are averaged for stall detection. Only used when use_stall_detection is true; the plugin logs an error if left empty in that case.",
+    "impact": "List the drive wheel joints that physically press against the dock. Including caster or passive joints dilutes the averaged velocity/effort signal and can prevent the stall condition from ever triggering.",
+    "category": "docking",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "stall",
+      "joints"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "stall_velocity_threshold",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "rad/s",
+    "description": "Average joint velocity (absolute value across stall_joint_names) below which the robot is considered stalled against the dock. Stall is declared when velocity drops below this value while effort simultaneously exceeds stall_effort_threshold.",
+    "impact": "Lower values require the wheels to be nearly stopped before isDocked() triggers, avoiding false positives during slow approach but risking a missed detection if wheels slip on the dock plate. Higher values may declare docking while the robot is still moving.",
+    "category": "docking",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "stall",
+      "velocity",
+      "threshold"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "stall_effort_threshold",
+    "type": "double",
+    "default": 1.0,
+    "range": null,
+    "unit": "",
+    "description": "Average joint effort (absolute value across stall_joint_names) above which the robot is considered pressing against the dock. Units follow whatever the joint state publisher reports in the effort field (commonly motor current or torque, driver-dependent).",
+    "impact": "Tune against the effort your base reports when pushed against the dock versus free driving: too low and normal driving effort falsely triggers isDocked(); too high and the stall is never detected, so the approach runs until dock_approach_timeout.",
+    "category": "docking",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "stall",
+      "effort",
+      "threshold"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "staging_yaw_offset",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": -3.14,
+      "max": 3.14
+    },
+    "unit": "rad",
+    "description": "Yaw offset applied to the dock pose orientation when computing the staging pose. Combined with staging_x_offset, it defines where the robot stops and which way it faces before the final docking approach begins.",
+    "impact": "Leave at 0.0 for docks approached head-on. A non-zero value angles the robot at the staging pose, which can help sensors see the dock fiducial from a better viewpoint, but large offsets force the controller to correct more heading error during the final approach.",
+    "category": "docking",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "staging",
+      "offset",
+      "yaw"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "rotate_to_dock",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Enables backward docking without rear sensor coverage: the robot approaches the staging pose facing the dock so its forward sensors can detect it, then rotates in place and backs onto the dock by dead reckoning from the initially detected pose. Requires dock_direction to be \"backward\"; the plugin throws an error at configure time otherwise.",
+    "impact": "Enable for robots whose charging connector is on the rear but whose dock-detection sensor faces forward. Because the final reverse segment runs open-loop on the last detection, longer approaches accumulate more odometry drift \u2014 keep staging_x_offset magnitude modest and tune rotate_to_dock_timeout and rotation_angular_tolerance on the server.",
+    "category": "docking",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "direction",
+      "backward",
+      "rotation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "subscribe_toggle",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, the plugin subscribes to the detected_dock_pose topic only between startDetectionProcess() and stopDetectionProcess() calls, instead of holding a persistent subscription for its whole lifecycle. Only relevant when use_external_detection_pose is true.",
+    "impact": "Enable when the external dock detector is started on demand (e.g. via detector_service_name) so stale poses from a previous docking attempt are never consumed. Keep false if the detector node runs and publishes continuously, avoiding per-attempt subscription setup latency.",
+    "category": "docking",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "detection",
+      "subscription"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
     "param": "costmap_topic",
     "type": "string",
     "default": "local_costmap/costmap_raw",
