@@ -825,6 +825,201 @@
     "post_set_action": null
   },
   {
+    "node": "planner_server",
+    "param": "GridBased.motion_model_for_search",
+    "type": "string",
+    "default": "DUBIN",
+    "range": null,
+    "unit": "",
+    "description": "Kinematic motion model used for the Hybrid-A* search. Valid options for SmacPlannerHybrid: DUBIN (forward-only, car-like) or REEDS_SHEPP (car-like with reversing).",
+    "impact": "DUBIN forbids reversing, so plans are forward-only; REEDS_SHEPP allows reverse segments for tighter maneuvering at the cost of direction changes. Pick based on whether the platform can (and should) drive backwards.",
+    "category": "kinematics",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "motion_model",
+      "kinematics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.max_planning_time",
+    "type": "double",
+    "default": 5.0,
+    "range": {
+      "min": 0.5,
+      "max": 60.0
+    },
+    "unit": "s",
+    "description": "Maximum wall time allowed for planning, smoothing, and upsampling combined. Smoothing time budget is scaled to whatever remains after the search.",
+    "impact": "Lower values make the planner fail fast in cluttered or large maps instead of stalling the navigation loop; higher values give hard problems more time to find a solution. Reduce for time-critical replanning at high frequency.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "timeout",
+      "performance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.reverse_penalty",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 1.0,
+      "max": 10.0
+    },
+    "unit": "",
+    "description": "Heuristic penalty multiplier applied to reversing motion primitives. Only used with the REEDS_SHEPP motion model; must be >= 1.0.",
+    "impact": "Higher values make the planner strongly prefer forward driving and only reverse when necessary (e.g. tight parking). Setting it near 1.0 lets plans reverse freely, which can look erratic on robots with rear blind spots.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "penalty",
+      "reversing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.change_penalty",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "",
+    "description": "Penalty applied when a motion primitive changes turning direction (e.g. left-to-right); must be >= 0.",
+    "impact": "Raising it above 0 reduces zig-zag steering in the plan, producing smoother S-curves, but can make the search slower or fail in tight spaces since fewer expansions are cheap. Leave at 0 unless paths visibly oscillate.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "penalty",
+      "smoothness"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.non_straight_penalty",
+    "type": "double",
+    "default": 1.2,
+    "range": {
+      "min": 1.0,
+      "max": 5.0
+    },
+    "unit": "",
+    "description": "Penalty multiplier applied to any non-straight (turning) motion primitive; must be >= 1.0.",
+    "impact": "Higher values bias plans toward long straight segments with fewer curves — good for corridors and predictable motion. Too high makes the planner reluctant to turn, lengthening paths around obstacles.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "penalty",
+      "smoothness"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.cost_penalty",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 1.0,
+      "max": 10.0
+    },
+    "unit": "",
+    "description": "Weight applied to costmap cost in the obstacle-heuristic expansion. Higher weights push the search away from high-cost cells toward the middle of passages. Reasonable values are roughly 1.3-3.5.",
+    "impact": "The main knob for how centered paths are: increase it if plans hug obstacles or clip inflation; decrease it if paths take needlessly wide detours in open space. Very high values can make narrow gaps unplannable.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "penalty",
+      "costmap"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.analytic_expansion_ratio",
+    "type": "double",
+    "default": 3.5,
+    "range": {
+      "min": 1.0,
+      "max": 10.0
+    },
+    "unit": "",
+    "description": "Controls how often the planner attempts an analytic (Dubin/Reeds-Shepp curve) expansion straight to the goal during search; attempts scale with proximity to the goal.",
+    "impact": "Lower values try analytic shortcuts more often, speeding up final approach at the risk of slightly less optimal endings; higher values rely more on graph search. Rarely needs changing from the default.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "analytic_expansion"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.analytic_expansion_max_length",
+    "type": "double",
+    "default": 3.0,
+    "range": {
+      "min": 0.5,
+      "max": 20.0
+    },
+    "unit": "m",
+    "description": "Maximum length of an analytic expansion segment considered valid, to prevent unsafe long shortcuts to the goal. Should scale with minimum_turning_radius (roughly 4-5x the radius or more).",
+    "impact": "Too large allows the planner to shortcut across areas the heuristic hasn't fully vetted, producing paths that cut close to obstacles near the goal. Too small disables useful final-approach curves and slows planning.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "analytic_expansion"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "amcl",
     "param": "min_particles",
     "type": "int",
