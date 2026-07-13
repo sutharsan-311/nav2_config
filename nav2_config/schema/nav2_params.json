@@ -1571,10 +1571,10 @@
     "default": 20,
     "range": {
       "min": 1,
-      "max": 300
+      "max": 5000
     },
-    "unit": "s",
-    "description": "Default timeout for BT action server calls that do not specify their own timeout.",
+    "unit": "ms",
+    "description": "Default timeout in milliseconds for BT action server calls that do not specify their own timeout.",
     "impact": "Prevents the BT from hanging indefinitely if a server does not respond. Tune per deployment complexity.",
     "category": "safety",
     "plugin_specific": false,
@@ -1589,14 +1589,14 @@
   {
     "node": "bt_navigator",
     "param": "wait_for_service_timeout",
-    "type": "double",
-    "default": 1.0,
+    "type": "int",
+    "default": 1000,
     "range": {
-      "min": 0.1,
-      "max": 30.0
+      "min": 100,
+      "max": 30000
     },
-    "unit": "s",
-    "description": "How long to wait for a ROS2 service to become available before timing out.",
+    "unit": "ms",
+    "description": "How long in milliseconds BT service/action client nodes wait for their server to become available before timing out.",
     "impact": "Increase in slow-startup environments (arm-embedded hardware). Lower for fast-boot systems.",
     "category": "connectivity",
     "plugin_specific": false,
