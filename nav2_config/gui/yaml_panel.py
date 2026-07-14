@@ -227,8 +227,8 @@ class YamlPanel(QWidget):
             copy_btn.setIcon(_copy_icon)
             copy_btn.setIconSize(QSize(14, 14))
         copy_btn.setStyleSheet(
-            f'QPushButton:pressed {{ background: #3399ff; color: #ffffff; '
-            f'border-color: #2277cc; }}'
+            'QPushButton:pressed { background: #3399ff; color: #ffffff; '
+            'border-color: #2277cc; }'
         )
         copy_btn.clicked.connect(self._copy_to_clipboard)
         layout.addWidget(copy_btn)

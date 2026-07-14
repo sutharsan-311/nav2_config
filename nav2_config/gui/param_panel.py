@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from PyQt6.QtCore import Qt, QSize, QRect, pyqtSignal
+from PyQt6.QtCore import Qt, QRect, pyqtSignal
 from PyQt6.QtGui import QColor, QPainter, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QHBoxLayout,

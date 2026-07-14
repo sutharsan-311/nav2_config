@@ -15,7 +15,7 @@ Preference order:
 
 import os
 
-from PyQt6.QtCore import Qt, QSize, QRect
+from PyQt6.QtCore import Qt, QRect
 from PyQt6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PyQt6.QtWidgets import QApplication, QStyle
 

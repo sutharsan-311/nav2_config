@@ -10,10 +10,4 @@ the cited source, plus a genuine description + tuning `impact`) for one node's p
 
 ## Ideas for review
 
-- **`docking_server` `simulation_step` is a false positive.** The bringup YAML
-  (`nav2_bringup/params/nav2_params.yaml`) uses the stale name
-  `controller.simulation_step`, but the source
-  (`nav2_docking/opennav_docking/src/controller.cpp`) declares
-  `controller.simulation_time_step` (default 0.1) — which the schema already
-  covers. The gap script (`nav2_param_gap.py`, lives outside this repo) could
-  alias/ignore it; the YAML name is also worth reporting upstream to Nav2.
+- The single remaining backlog item, `docking_server` / `controller.simulation_step`, appears to be a stale name in upstream `nav2_bringup/params/nav2_params.yaml`: the actual parameter declared in `nav2_docking/opennav_docking/src/controller.cpp` (L61-62) is `controller.simulation_time_step`, which the schema already covers. Adding `simulation_step` would document a parameter that does not exist. Suggest reporting the yaml typo upstream to ros-navigation/navigation2 rather than adding it to the schema.

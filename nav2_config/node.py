@@ -13,7 +13,6 @@ import threading
 import time
 from typing import Any
 
-import rclpy
 from rclpy.callback_groups import MutuallyExclusiveCallbackGroup, ReentrantCallbackGroup
 from rclpy.node import Node
 from rcl_interfaces.msg import ParameterType

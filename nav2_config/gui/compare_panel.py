@@ -31,7 +31,7 @@ from PyQt6.QtWidgets import (
 )
 
 if TYPE_CHECKING:
-    from nav2_config.core.config_diff import ParamDiffEntry, DiffKind
+    from nav2_config.core.config_diff import ParamDiffEntry
 
 logger = logging.getLogger(__name__)
 

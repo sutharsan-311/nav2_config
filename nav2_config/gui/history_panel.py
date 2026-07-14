@@ -15,7 +15,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QFont
+from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
@@ -134,7 +134,7 @@ class HistoryPanel(QWidget):
         clear_btn.setFixedHeight(20)
         clear_btn.setToolTip("Clear all history entries")
         clear_btn.setStyleSheet(
-            f"QPushButton {{ font-size: 9pt; padding: 0 8px; }}"
+            "QPushButton { font-size: 9pt; padding: 0 8px; }"
         )
         clear_btn.clicked.connect(self.clear)
         layout.addWidget(clear_btn)

@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 from lifecycle_msgs.msg import Transition
 from PyQt6.QtCore import Qt, QSize, QTimer
-from PyQt6.QtGui import QAction, QCloseEvent, QKeySequence, QShortcut
+from PyQt6.QtGui import QAction, QCloseEvent, QKeySequence
 from PyQt6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -1163,7 +1163,7 @@ class MainWindow(QMainWindow):
                 )
                 self.set_status(f'Set {param_name} = {val} — costmaps cleared')
             else:
-                self._status_last_set.setText(f'\u2717 costmap clear failed')
+                self._status_last_set.setText('\u2717 costmap clear failed')
                 self._status_last_set.setStyleSheet(
                     f'color: {_RED}; padding: 0 8px; font-size: 9pt;'
                 )
@@ -1178,7 +1178,7 @@ class MainWindow(QMainWindow):
                 )
                 self.set_status(f'Set {param_name} = {val} — AMCL nomotion update triggered')
             else:
-                self._status_last_set.setText(f'\u2717 AMCL update failed')
+                self._status_last_set.setText('\u2717 AMCL update failed')
                 self._status_last_set.setStyleSheet(
                     f'color: {_RED}; padding: 0 8px; font-size: 9pt;'
                 )

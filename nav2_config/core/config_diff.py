@@ -9,7 +9,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
-from typing import Any, Optional
+from typing import Any
 
 from nav2_config.types.history import ParamRef
 from nav2_config.types.params import ParamValue
