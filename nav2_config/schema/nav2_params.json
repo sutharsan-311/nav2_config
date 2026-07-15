@@ -13784,5 +13784,134 @@
       "performance"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.angular_dist_threshold",
+    "type": "double",
+    "default": 0.785,
+    "range": {
+      "min": 0.1,
+      "max": 3.14
+    },
+    "unit": "rad",
+    "description": "RotationShim: heading error to the sampled path point above which the shim rotates the robot in place before handing control to the primary controller.",
+    "impact": "~45\u00b0 default. Smaller values trigger in-place rotation for smaller path heading changes; larger values let the primary controller absorb bigger heading errors. Be generous rather than strict for a smoother handoff while still rotating.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "RotationShimController",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "rotation_shim",
+      "rotation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.angular_disengage_threshold",
+    "type": "double",
+    "default": 0.3925,
+    "range": {
+      "min": 0.0,
+      "max": 3.14
+    },
+    "unit": "rad",
+    "description": "RotationShim: once already rotating, the heading error must drop below this (instead of angular_dist_threshold) before control passes to the primary controller.",
+    "impact": "Acts as hysteresis: keep it below angular_dist_threshold so the robot finishes aligning instead of oscillating between rotating and path tracking near the engage threshold. Default is half of angular_dist_threshold (~22.5\u00b0).",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "RotationShimController",
+    "hot_reload": false,
+    "tags": [
+      "controller",
+      "rotation_shim",
+      "rotation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.forward_sampling_distance",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.1,
+      "max": 2.0
+    },
+    "unit": "m",
+    "description": "RotationShim: distance ahead along the path at which a point is sampled to estimate the path's rough heading (falls back to the last path pose if the path is shorter).",
+    "impact": "Larger values smooth over local path wiggles when estimating heading; smaller values react to the immediate path direction but can cause noisy heading estimates and unnecessary rotations.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "RotationShimController",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "rotation_shim",
+      "sampling"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.rotate_to_goal_heading",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "RotationShim: when the goal checker reports the XY goal is reached, the shim takes back control and rotates the robot to the goal heading with collision checking.",
+    "impact": "Enable when the primary controller does not rotate to the final orientation itself (e.g. some MPPI/DWB setups) to get a precise, collision-checked final heading. Leave off if the primary controller already handles goal heading.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "RotationShimController",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "rotation_shim",
+      "goal"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.rotate_to_heading_once",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "RotationShim: only rotate to the path heading when a new goal is received, instead of every time the heading error to a newly set path exceeds the threshold.",
+    "impact": "Prevents repeated in-place rotations during frequent replans of the same goal, at the cost of not correcting large heading deviations that appear mid-navigation.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "RotationShimController",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "rotation_shim",
+      "rotation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.closed_loop",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "RotationShim: if true, uses odometry-measured angular velocity as the basis for acceleration-limited rotation commands; if false, uses the last commanded angular velocity.",
+    "impact": "Closed loop tracks the robot's real speed (better under slip or sluggish base controllers) but needs a high-rate, low-latency odometry source. Open loop assumes commands are followed exactly, which is fine with well-tuned acceleration limits.",
+    "category": "control",
+    "plugin_specific": true,
+    "plugin": "RotationShimController",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "rotation_shim",
+      "odometry"
+    ],
+    "post_set_action": null
   }
 ]
