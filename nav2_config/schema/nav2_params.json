@@ -932,7 +932,7 @@
     },
     "unit": "",
     "description": "Penalty multiplier applied to any non-straight (turning) motion primitive; must be >= 1.0.",
-    "impact": "Higher values bias plans toward long straight segments with fewer curves — good for corridors and predictable motion. Too high makes the planner reluctant to turn, lengthening paths around obstacles.",
+    "impact": "Higher values bias plans toward long straight segments with fewer curves \u2014 good for corridors and predictable motion. Too high makes the planner reluctant to turn, lengthening paths around obstacles.",
     "category": "planning",
     "plugin_specific": true,
     "plugin": "SmacPlannerHybrid",
@@ -13784,6 +13784,161 @@
       "performance"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "prune_goal",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Whether to prune the final route edge when the requested goal pose projects onto it, so the route ends at the goal's projection rather than continuing to the last graph node. Only applies to pose-based requests (use_poses).",
+    "impact": "Enabled, the robot stops at the goal instead of overshooting to the terminal graph node. Disable when the route must always terminate exactly on a graph node (e.g. dock or station nodes).",
+    "category": "goal_handling",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "goal",
+      "pruning"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
+    "param": "max_prune_dist_from_edge",
+    "type": "double",
+    "default": 8.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "m",
+    "description": "Maximum distance the start or goal pose may be from the closest point on the first/last route edge for that edge to be pruned. Beyond this distance the pose is considered off-route and the full edge is kept.",
+    "impact": "Larger values prune edges even when the robot or goal is far from the graph, shortening routes aggressively; smaller values keep full edges unless the pose is clearly along them, avoiding pruning from spurious projections.",
+    "category": "goal_handling",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "goal",
+      "pruning"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
+    "param": "min_prune_dist_from_goal",
+    "type": "double",
+    "default": 0.15,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Minimum distance the goal pose must be from the last graph node before the final edge is pruned. Prevents pruning an entire edge when the goal already sits essentially on the terminal node.",
+    "impact": "Raising this keeps the final edge in the route unless the goal is meaningfully short of the node; lowering it allows pruning even for goals nearly on the node, which can drop a needed final segment.",
+    "category": "goal_handling",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "goal",
+      "pruning"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
+    "param": "min_prune_dist_from_start",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Minimum distance the start pose must be from the first graph node before the first edge is pruned. Prevents pruning an entire edge when the robot is already essentially on the starting node.",
+    "impact": "Raising this preserves the first edge unless the robot has clearly progressed along it; lowering it prunes sooner, which can skip the initial segment when the robot starts on or near the first node.",
+    "category": "goal_handling",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "goal",
+      "pruning"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
+    "param": "enable_nn_search",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "When multiple nearest graph-node candidates exist, use a costmap breadth-first search to select the closest traversable node to the start/goal instead of the pure Euclidean nearest. Falls back to Euclidean nearest if the costmap is unavailable.",
+    "impact": "Enabled, avoids selecting a Euclidean-nearest node that is behind a wall or obstacle, at the cost of a BFS over the costmap per request. Disable to save CPU in open environments where the nearest node is always reachable.",
+    "category": "planning",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "planning",
+      "goal"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
+    "param": "max_nn_search_iterations",
+    "type": "int",
+    "default": 10000,
+    "range": {
+      "min": 1,
+      "max": 1000000
+    },
+    "unit": "iterations",
+    "description": "Maximum number of breadth-first-search iterations over the costmap when finding the closest traversable graph node to the start pose (used only when enable_nn_search is true).",
+    "impact": "Higher values allow the search to succeed across larger costmap areas but increase worst-case planning latency; too low a value can make the search give up and fall back to the Euclidean-nearest node.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "planning",
+      "performance"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
+    "param": "num_nearest_nodes",
+    "type": "int",
+    "default": 5,
+    "range": {
+      "min": 1,
+      "max": 100
+    },
+    "unit": "",
+    "description": "Number of nearest graph-node candidates returned by the kd-tree spatial lookup for the start and goal poses. Candidates beyond the first are only evaluated when enable_nn_search is true.",
+    "impact": "More candidates give the traversability search more alternatives when the nearest node is occluded, at slightly higher lookup and search cost; 1 effectively reduces selection to the single Euclidean-nearest node.",
+    "category": "planning",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "planning",
+      "goal"
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "controller_server",
