@@ -12166,6 +12166,51 @@
   },
   {
     "node": "docking_server",
+    "param": "detector_service_name",
+    "type": "string",
+    "default": "",
+    "range": null,
+    "unit": "",
+    "description": "Name of an optional std_srvs/Trigger service used to start and stop an external dock-pose detector. When non-empty, the plugin creates a service client and calls it once in startDetectionProcess() (before approaching the dock) and again in stopDetectionProcess() (after docking/undocking completes). When empty (default), no detector service is called and detection is assumed to be always running.",
+    "impact": "Set this when your dock detector (e.g. an AprilTag or marker pipeline) is expensive to run continuously and exposes a Trigger service to toggle itself. If the service fails to respond or returns success=false, the docking attempt is aborted, so only configure it when the detector node is guaranteed to be up. Pair with subscribe_toggle=true so stale poses from a previous attempt are not consumed.",
+    "category": "perception",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "detection",
+      "service",
+      "external_detection"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "detector_service_timeout",
+    "type": "double",
+    "default": 5.0,
+    "range": {
+      "min": 0.1,
+      "max": 60.0
+    },
+    "unit": "s",
+    "description": "Maximum time to wait for the detector start/stop Trigger service (detector_service_name) to respond when activating or deactivating the external dock detector. Only used when detector_service_name is non-empty.",
+    "impact": "Increase if the detector node takes long to initialize its pipeline (e.g. loading a vision model), otherwise the docking action fails before detection even begins. Keep small when the detector responds quickly so a dead detector service aborts the docking attempt promptly instead of stalling it.",
+    "category": "perception",
+    "plugin_specific": true,
+    "plugin": "SimpleChargingDock",
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "detection",
+      "service",
+      "timeout"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
     "param": "costmap_topic",
     "type": "string",
     "default": "local_costmap/costmap_raw",
