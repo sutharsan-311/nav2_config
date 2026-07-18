@@ -166,6 +166,20 @@ def test_plugin_field_consistency(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_unit_is_string(entry: dict):
+    """unit must always be a string ('' for unitless params, never null/absent).
+
+    Nav2ParamDef declares ``unit: str``; a JSON null slips through
+    ``data.get("unit", "")`` as None and violates that contract downstream
+    (e.g. param_row passes ``defn.unit`` on as a string).
+    """
+    assert "unit" in entry, f"Param '{entry['param']}' missing unit field (use \"\" for unitless)"
+    assert isinstance(entry["unit"], str), (
+        f"Param '{entry['param']}' unit must be a string, got {type(entry['unit']).__name__}"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_tags_are_non_empty_strings(entry: dict):
     tags = entry.get("tags")
     assert isinstance(tags, list), f"Param '{entry['param']}' tags must be a list"

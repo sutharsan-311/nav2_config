@@ -9,10 +9,8 @@ the cited source, plus a genuine description + tuning `impact`) for one node's p
 - [ ] `simulation_step` (default `0.1`, double)
 
 ## Ideas for review
-
-- The remaining backlog item `docking_server / simulation_step` is a **phantom**: the
-  upstream `nav2_bringup/params/nav2_params.yaml` (line ~585) uses the stale name
-  `controller.simulation_step`, but the source only declares
-  `controller.simulation_time_step` (`nav2_docking/opennav_docking/src/controller.cpp:61-62`),
-  which the schema already covers. Options: teach `nav2_param_gap.py` an alias/ignore list,
-  and/or upstream a fix to navigation2's example yaml.
+- Upstream discrepancy: `nav2_bringup/params/nav2_params.yaml` (line ~585) uses the key
+  `controller.simulation_step` for docking_server, but the actual declaration in
+  `nav2_docking/opennav_docking/src/controller.cpp` is `controller.simulation_time_step`
+  (already covered by the schema). The yaml key appears stale — worth an upstream
+  navigation2 PR/issue, and the gap script reports it as a false-positive missing param.
