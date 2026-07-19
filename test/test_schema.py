@@ -35,6 +35,7 @@ KNOWN_NODES = {
     "map_saver",
     "collision_monitor",
     "docking_server",
+    "following_server",
     "loopback_simulator",
     "route_server",
     "keepout_costmap_filter_info_server",

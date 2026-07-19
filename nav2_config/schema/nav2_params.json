@@ -14173,5 +14173,179 @@
       "odometry"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "controller_frequency",
+    "type": "double",
+    "default": 50.0,
+    "range": {
+      "min": 1.0,
+      "max": 100.0
+    },
+    "unit": "Hz",
+    "description": "Rate of the control loop that computes velocity commands while following a dynamic object.",
+    "impact": "Higher rates track a moving object more smoothly but cost CPU. Values <= 0 are rejected by the server's parameter validation.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "frequency",
+      "performance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "detection_timeout",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.1,
+      "max": 60.0
+    },
+    "unit": "s",
+    "description": "Maximum time to wait for a (new) detection of the tracked object on the dynamic pose topic before the current attempt fails.",
+    "impact": "Too short causes spurious retries when the detector drops frames; too long makes the robot chase a stale pose. Must be > 0 (enforced by parameter validation).",
+    "category": "perception",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "detection",
+      "timeout"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "static_object_timeout",
+    "type": "double",
+    "default": -1.0,
+    "range": null,
+    "unit": "s",
+    "description": "If > 0, the follow action succeeds once the robot has reached the object and the object has remained static for this long. Values <= 0 disable the timeout so the robot keeps following indefinitely.",
+    "impact": "Set a positive value to make following a terminating action (e.g. escorting to a stop point); leave at -1.0 for continuous following until the action is canceled.",
+    "category": "behavior",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "timeout",
+      "behavior"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "desired_distance",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Distance the robot tries to maintain from the tracked object; the approach target pose is projected this far back from the detected object pose.",
+    "impact": "Smaller values follow more closely but leave less margin to brake when the object stops; larger values keep a safer gap at the cost of weaker tracking of sharp maneuvers.",
+    "category": "behavior",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "distance",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "linear_tolerance",
+    "type": "double",
+    "default": 0.15,
+    "range": {
+      "min": 0.01,
+      "max": 1.0
+    },
+    "unit": "m",
+    "description": "Linear distance to the target pose below which the robot is considered to have reached the object and stops.",
+    "impact": "Tighter tolerance parks the robot closer to the desired distance but can cause hunting around the goal with noisy detections; looser tolerance settles faster but less precisely.",
+    "category": "tolerances",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "tolerance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "angular_tolerance",
+    "type": "double",
+    "default": 0.15,
+    "range": {
+      "min": 0.01,
+      "max": 3.14
+    },
+    "unit": "rad",
+    "description": "Yaw error below which the robot is considered aligned, both when reaching the target pose and when finishing an in-place rotation toward the object.",
+    "impact": "Tighter tolerance improves final heading accuracy but may cause oscillation with noisy perception yaw; loosen it (or enable skip_orientation) if the robot wiggles near the goal.",
+    "category": "tolerances",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "tolerance",
+      "rotation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "skip_orientation",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "If true, ignores the orientation reported by the detector and instead points the target pose along the vector from the robot to the object.",
+    "impact": "Keep enabled when the detector's yaw estimate is missing or noisy — the control law can oscillate on bad orientations. Disable only if the detector provides a reliable object heading you want the robot to match.",
+    "category": "perception",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "perception",
+      "orientation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "search_by_rotating",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "If true, after losing the object the robot performs an in-place rotation (sweeping +/- search_angle from its heading) to reacquire the detection before retrying; if false, it retries using the last known heading.",
+    "impact": "Enable for detectors with a narrow field of view so the robot can re-find an object that moved out of frame; each search rotation is bounded by rotate_to_object_timeout.",
+    "category": "recovery",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "recovery",
+      "search"
+    ],
+    "post_set_action": null
   }
 ]
