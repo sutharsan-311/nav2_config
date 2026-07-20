@@ -14347,5 +14347,182 @@
       "search"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "rotate_to_object_timeout",
+    "type": "double",
+    "default": 10.0,
+    "range": {
+      "min": 0.1,
+      "max": 60.0
+    },
+    "unit": "s",
+    "description": "Maximum duration of the in-place rotation search performed after losing the object (only used when search_by_rotating is enabled). The robot sweeps +/- search_angle from its initial heading while checking for a new detection; if the timeout elapses without reacquiring the object, the retry fails.",
+    "impact": "Increase for slow-rotating robots or wide search angles so the sweep can complete; decrease to fail over faster to the next retry. Must be > 0 (enforced by parameter validation).",
+    "category": "recovery",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "recovery",
+      "search",
+      "timeout"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "search_angle",
+    "type": "double",
+    "default": 1.5707963267948966,
+    "range": {
+      "min": 0.0,
+      "max": 3.14159
+    },
+    "unit": "rad",
+    "description": "Angular offset swept to each side of the robot's initial heading during the rotation search for a lost object (search_by_rotating). The server rotates toward initial_yaw + search_angle, then initial_yaw - search_angle, stopping as soon as a detection arrives.",
+    "impact": "Match to your detector's field of view: a wider angle covers more area but takes longer per retry (bounded by rotate_to_object_timeout). The default of pi/2 sweeps a full half-turn to each side.",
+    "category": "recovery",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "recovery",
+      "search"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "max_retries",
+    "type": "int",
+    "default": 3,
+    "range": {
+      "min": 0,
+      "max": 10
+    },
+    "unit": "",
+    "description": "Maximum number of retry attempts after a recoverable following error (DockingException, e.g. losing the object) before the action server reports failure. Each retry optionally performs a rotation search (search_by_rotating) or reuses the last known heading.",
+    "impact": "Higher values make following more persistent through intermittent detection dropouts at the cost of longer time before reporting failure. Set to 0 to fail on the first loss.",
+    "category": "recovery",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "following",
+      "retry",
+      "recovery"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "base_frame",
+    "type": "string",
+    "default": "base_link",
+    "range": null,
+    "unit": "",
+    "description": "Name of the robot's base TF frame, used to look up the current robot pose and to transform detected object poses into the base frame for velocity computation.",
+    "impact": "Must match the base link frame published by your robot URDF / TF tree. Mismatches cause TF lookup failures and prevent following from functioning.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "frame",
+      "tf"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "fixed_frame",
+    "type": "string",
+    "default": "odom",
+    "range": null,
+    "unit": "",
+    "description": "Fixed reference TF frame into which detected object poses are transformed and filtered while following. Object poses arriving in other frames are re-expressed in this frame before use.",
+    "impact": "Use a smooth, continuous frame (odom is the usual choice) so the filtered object pose does not jump on localization corrections; a map frame can introduce discrete jumps into the follow target.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "frame",
+      "tf"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "transform_tolerance",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "s",
+    "description": "Maximum acceptable age of a TF transform when looking up the robot pose and transforming object poses between the detection frame, fixed frame and base frame. Applied at every control cycle via tf2::durationFromSec.",
+    "impact": "Increase when the TF tree publishes at a low rate or with network latency to avoid lookup failures that abort the follow attempt; too tight a tolerance causes spurious failures on well-configured systems.",
+    "category": "transforms",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "tf",
+      "transforms",
+      "tolerance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "odom_topic",
+    "type": "string",
+    "default": "odom",
+    "range": null,
+    "unit": "",
+    "description": "Topic name for the odometry messages consumed by the server's odometry smoother to estimate the robot's current velocity while following.",
+    "impact": "Must match the odometry source actually being published; an incorrect topic leaves the server with zero velocity estimates for its control computations.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "following",
+      "odometry",
+      "topic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "odom_duration",
+    "type": "double",
+    "default": 0.3,
+    "range": {
+      "min": 0.05,
+      "max": 2.0
+    },
+    "unit": "s",
+    "description": "Duration of the rolling window of odometry messages retained by the odometry smoother for velocity estimation while following.",
+    "impact": "Longer windows smooth out noisy odometry but add latency to the velocity estimate; shorter windows are more responsive but noisier. Only read at node configure time.",
+    "category": "perception",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "following",
+      "odometry",
+      "velocity"
+    ],
+    "post_set_action": null
   }
 ]
