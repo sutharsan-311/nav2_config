@@ -14,7 +14,7 @@ import logging
 
 
 from PyQt5.QtCore import Qt, QPoint, QRect, QSize, pyqtSignal
-from PyQt5.QtGui import QColor, QPainter, QKeySequence
+from PyQt5.QtGui import QColor, QPainter, QKeySequence, QFont
 from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QShortcut
 from PyQt5.QtWidgets import (

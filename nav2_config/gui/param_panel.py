@@ -834,7 +834,7 @@ class ParamPanel(QWidget):
             self._scroll_layout.addWidget(section)
 
         if self._pending_load_categories:
-            from PyQt6.QtCore import QTimer
+            from PyQt5.QtCore import QTimer
             QTimer.singleShot(0, self._load_next_batch)
         else:
             self._scroll_layout.addStretch()
@@ -887,7 +887,7 @@ class ParamPanel(QWidget):
 
     def highlight_external_change(self, param_name: str) -> None:
         """Flash a param row with RViz2 blue to indicate an externally-set change."""
-        from PyQt6.QtCore import QTimer
+        from PyQt5.QtCore import QTimer
         for row in self._all_rows:
             if row._param_value.definition.param == param_name:
                 row.setStyleSheet('QWidget { background: #3399ff33; }')
