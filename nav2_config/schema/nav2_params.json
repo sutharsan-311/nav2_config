@@ -483,6 +483,191 @@
   },
   {
     "node": "controller_server",
+    "param": "FollowPath.cost_scaling_dist",
+    "type": "double",
+    "default": 0.6,
+    "range": {
+      "min": 0.1,
+      "max": 3.0
+    },
+    "unit": "m",
+    "description": "Distance from an obstacle (via the inflated costmap) at which cost-regulated linear velocity scaling begins to slow the robot. Only active when use_cost_regulated_linear_velocity_scaling is true.",
+    "impact": "Larger values make the robot start slowing down further from obstacles, giving smoother, more cautious motion near clutter. Smaller values keep speed up until closer to obstacles.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "RegulatedPurePursuitController",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "rpp",
+      "regulation",
+      "obstacle"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.cost_scaling_gain",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Multiplier (should be <= 1.0) applied when scaling linear velocity for proximity cost inside cost_scaling_dist. Lower values produce a more aggressive speed reduction near obstacles.",
+    "impact": "Reduce below 1.0 to slow the robot more strongly as it approaches obstacles within cost_scaling_dist. A value of 1.0 applies the standard cost-based scaling.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "RegulatedPurePursuitController",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "rpp",
+      "regulation",
+      "obstacle"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.inflation_cost_scaling_factor",
+    "type": "double",
+    "default": 3.0,
+    "range": {
+      "min": 0.1,
+      "max": 20.0
+    },
+    "unit": "",
+    "description": "The inflation layer's cost_scaling_factor, mirrored here so the controller can recover distance-to-obstacle from costmap cost values for cost-regulated velocity scaling. Must be > 0.0 and should match the costmap inflation layer's cost_scaling_factor.",
+    "impact": "Set this to the exact same value as the costmap inflation_layer.cost_scaling_factor; a mismatch makes the controller misestimate obstacle distance and scale speed incorrectly.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "RegulatedPurePursuitController",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "rpp",
+      "regulation",
+      "obstacle"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.use_fixed_curvature_lookahead",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Use a fixed curvature_lookahead_dist to compute path curvature for velocity regulation instead of the (possibly velocity-scaled) lookahead point used for the carrot.",
+    "impact": "Enable for more consistent curvature-based slowdown that is decoupled from the lookahead distance. When disabled, curvature is measured at the same point used to steer.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "RegulatedPurePursuitController",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "rpp",
+      "regulation",
+      "curvature"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.curvature_lookahead_dist",
+    "type": "double",
+    "default": 0.6,
+    "range": {
+      "min": 0.1,
+      "max": 3.0
+    },
+    "unit": "m",
+    "description": "Distance ahead along the path used to sample the point whose curvature drives regulated velocity scaling. Only used when use_fixed_curvature_lookahead is true.",
+    "impact": "Larger values look further ahead and react earlier and more smoothly to upcoming curves; smaller values react later and more sharply to local curvature.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "RegulatedPurePursuitController",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "rpp",
+      "regulation",
+      "curvature"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.use_cancel_deceleration",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When a controller task is cancelled, decelerate the robot at the fixed cancel_deceleration rate instead of relying on the normal acceleration limits.",
+    "impact": "Enable for a predictable, controlled stop on cancellation; the deceleration magnitude is then set by cancel_deceleration. When disabled, cancellation stops using the usual velocity/acceleration limits.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "RegulatedPurePursuitController",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "rpp",
+      "cancel"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.cancel_deceleration",
+    "type": "double",
+    "default": 3.2,
+    "range": {
+      "min": 0.1,
+      "max": 20.0
+    },
+    "unit": "m/s²",
+    "description": "Deceleration rate applied to bring the robot to a stop when a controller task is cancelled. Only used when use_cancel_deceleration is true.",
+    "impact": "Higher values stop the robot more abruptly on cancellation; lower values give a gentler, longer stop. Keep within the robot's physical braking capability to avoid slipping or tipping.",
+    "category": "dynamics",
+    "plugin_specific": true,
+    "plugin": "RegulatedPurePursuitController",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "rpp",
+      "cancel",
+      "dynamics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "FollowPath.min_distance_to_obstacle",
+    "type": "double",
+    "default": -1.0,
+    "range": {
+      "min": -1.0,
+      "max": 5.0
+    },
+    "unit": "m",
+    "description": "Minimum distance the robot is allowed to approach an obstacle along the projected path during collision checking. A negative value (the default) disables this check.",
+    "impact": "Set a positive value to stop the robot before it gets closer than this distance to obstacles. It must be smaller than lookahead_dist/max_lookahead_dist or it is ignored with a warning, and enabling allow_obstacle_checking_beyond_goal requires this to be > 0.0.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "RegulatedPurePursuitController",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "rpp",
+      "collision",
+      "obstacle"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
     "param": "FollowPath.max_angular_accel",
     "type": "double",
     "default": 3.2,
