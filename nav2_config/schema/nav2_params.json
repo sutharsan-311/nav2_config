@@ -13754,6 +13754,169 @@
     "post_set_action": null
   },
   {
+    "node": "waypoint_follower",
+    "param": "global_frame_id",
+    "type": "string",
+    "default": "map",
+    "range": null,
+    "unit": "",
+    "description": "TF frame that incoming FollowWaypoints goal poses are transformed into before they are dispatched to the navigation stack. Each waypoint is looked up from its own header frame into this frame at execution time.",
+    "impact": "Must match the global frame used by the rest of the stack (typically 'map'). Setting it to a frame that has no valid transform to the waypoint headers causes the lookup to fail and the waypoint to be skipped or the mission to abort.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "waypoint_follower",
+      "frames",
+      "tf"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "waypoint_follower",
+    "param": "input_at_waypoint.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enable or disable the InputAtWaypoint task executor, which pauses at each waypoint until an external std_msgs/Empty message is received on its input topic (or a timeout elapses).",
+    "impact": "Disable to make the executor a no-op so the robot proceeds through waypoints without waiting for operator input. Read once when the plugin is configured; changing it at runtime has no effect until the server is re-configured.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "InputAtWaypoint",
+    "hot_reload": false,
+    "tags": [
+      "waypoint_follower",
+      "input",
+      "behavior"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "waypoint_follower",
+    "param": "input_at_waypoint.input_topic",
+    "type": "string",
+    "default": "input_at_waypoint/input",
+    "range": null,
+    "unit": "",
+    "description": "Topic (std_msgs/Empty) the InputAtWaypoint executor subscribes to; publishing a message on it signals the robot to continue from the current waypoint.",
+    "impact": "Set to the topic your operator interface or button publishes on. Read once at plugin configuration, so changes require a re-configure to take effect.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "InputAtWaypoint",
+    "hot_reload": false,
+    "tags": [
+      "waypoint_follower",
+      "input",
+      "topic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "waypoint_follower",
+    "param": "input_at_waypoint.timeout",
+    "type": "double",
+    "default": 10.0,
+    "range": {
+      "min": 0.0,
+      "max": 600.0
+    },
+    "unit": "s",
+    "description": "Maximum time the InputAtWaypoint executor waits for an input message at a waypoint before giving up and allowing the mission to continue.",
+    "impact": "Increase to give operators more time to respond at each waypoint; decrease so unattended missions are not blocked for long. A value of 0 effectively skips waiting.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "InputAtWaypoint",
+    "hot_reload": false,
+    "tags": [
+      "waypoint_follower",
+      "input",
+      "timeout"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "waypoint_follower",
+    "param": "photo_at_waypoint.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enable or disable the PhotoAtWaypoint task executor, which captures an image from a camera topic and saves it to disk each time the robot reaches a waypoint.",
+    "impact": "Disable to skip photo capture at waypoints. Read once when the plugin is configured; changing it at runtime has no effect until the server is re-configured.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "PhotoAtWaypoint",
+    "hot_reload": false,
+    "tags": [
+      "waypoint_follower",
+      "photo",
+      "behavior"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "waypoint_follower",
+    "param": "photo_at_waypoint.save_dir",
+    "type": "string",
+    "default": "/tmp/waypoint_images",
+    "range": null,
+    "unit": "",
+    "description": "Filesystem directory where the PhotoAtWaypoint executor writes captured images. The directory is created at configuration time if it does not already exist.",
+    "impact": "Point to persistent storage if you need the images after reboot; the default under /tmp may be cleared by the system. Ensure the process has write permission or configuration fails.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "PhotoAtWaypoint",
+    "hot_reload": false,
+    "tags": [
+      "waypoint_follower",
+      "photo",
+      "storage"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "waypoint_follower",
+    "param": "photo_at_waypoint.image_topic",
+    "type": "string",
+    "default": "/camera/color/image_raw",
+    "range": null,
+    "unit": "",
+    "description": "Camera topic (sensor_msgs/Image) the PhotoAtWaypoint executor subscribes to; the most recently received frame is saved when a waypoint is reached.",
+    "impact": "Set to your robot's actual image topic. If no message has arrived on this topic by the time a waypoint is reached, there is no frame to save.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "PhotoAtWaypoint",
+    "hot_reload": false,
+    "tags": [
+      "waypoint_follower",
+      "photo",
+      "topic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "waypoint_follower",
+    "param": "photo_at_waypoint.image_format",
+    "type": "string",
+    "default": "png",
+    "range": null,
+    "unit": "",
+    "description": "File extension / encoding format used when the PhotoAtWaypoint executor saves captured images (passed to OpenCV imwrite, e.g. 'png' or 'jpeg').",
+    "impact": "Choose 'png' for lossless captures or a compressed format like 'jpeg' to save disk space. Must be a format OpenCV can write, otherwise the save fails.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "PhotoAtWaypoint",
+    "hot_reload": false,
+    "tags": [
+      "waypoint_follower",
+      "photo",
+      "format"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "loopback_simulator",
     "param": "base_frame_id",
     "type": "string",
