@@ -40,12 +40,20 @@ class Nav2ParamDef:
     # "FollowPath.max_vel_x").  Defaults to ``param`` when not set in JSON,
     # which is correct for all top-level parameters that need no namespace.
     ros2_name: str = field(default="")
-    # Service to call after a successful param set.
+    # Follow-up action after a successful param set. Values used by the schema:
     # None: takes effect immediately; no follow-up needed.
     # "clear_costmaps": call clear_entirely on both costmaps.
     # "load_map": call /map_server/load_map with the new value.
     # "nomotion_update": call /request_nomotion_update on AMCL.
-    # "restart_stack": requires Nav2 restart; show notification instead.
+    # "restart_stack": requires a full Nav2 restart; show notification instead.
+    # "restart_node": the owning node must be restarted for the change to take
+    #   effect (e.g. behavior_server re-subscribing to a costmap/footprint topic).
+    # "restart_controller": the controller plugin is only read at configure time,
+    #   so controller_server must be restarted to apply (e.g. follow_path.model_dt,
+    #   motion_model, critics).
+    # NOTE: node.py currently dispatches only clear_costmaps/load_map/
+    # nomotion_update/restart_stack; restart_node and restart_controller are not
+    # yet wired to a restart notification (see BACKLOG.md "Ideas for review").
     post_set_action: str | None = None
 
     def __post_init__(self) -> None:
