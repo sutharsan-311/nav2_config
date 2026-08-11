@@ -9,11 +9,8 @@ the cited source, plus a genuine description + tuning `impact`) for one node's p
 - [ ] `simulation_step` (default `0.1`, double)
 
 ## Ideas for review
-- [ ] `post_set_action` dispatch gap: the schema uses `restart_node` (4 params, e.g.
-  behavior_server `*_costmap_topic`/`*_footprint_topic`) and `restart_controller`
-  (5 params, e.g. controller_server `follow_path.model_dt`, `motion_model`, `critics`),
-  but `node.py::_apply_post_set_action` only handles `clear_costmaps`, `load_map`,
-  `nomotion_update`, and `restart_stack`. Those 9 params are set live with no follow-up,
-  so the change silently does not take effect until a manual restart. Consider wiring
-  `restart_node`/`restart_controller` to a restart-suggestion notification like
-  `restart_stack` already does. (Runtime-behavior change — needs Sutharsan's sign-off.)
+
+_Appended for Sutharsan to triage — not auto-generated._
+
+- **Stale `simulation_step` false positive in the gap tool.** `nav2_bringup/params/nav2_params.yaml` lists `controller.simulation_step: 0.1` under `docking_server`, but the real declared parameter (opennav_docking `src/controller.cpp`) is `controller.simulation_time_step` — already in the schema. The example yaml name is outdated, so `nav2_param_gap.py` reports a permanent phantom gap. Consider adding a small alias/ignore map in the gap script so this one entry stops showing up.
+- **Inconsistent `category` values in the schema.** Several near-duplicate categories exist (`debug`/`debugging`, `sensor`/`sensors`, `filter`/`filtering`, `goal`/`goal_handling`/`goal_tolerance`). Consolidating would improve GUI grouping, but it touches many entries and may affect how the GUI groups params, so it needs your review before doing it in bulk.

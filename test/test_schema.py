@@ -201,6 +201,16 @@ TYPE_PYTHON_MAP = {
     "bool": bool,
     "string": str,
     "string_array": list,
+    "double_array": list,
+    "int_array": list,
+}
+
+# Expected Python element type for each array param type. bool is deliberately
+# excluded from the numeric arrays even though it subclasses int.
+ARRAY_ELEMENT_TYPE = {
+    "string_array": (str,),
+    "double_array": (int, float),
+    "int_array": (int,),
 }
 
 
@@ -221,6 +231,35 @@ def test_default_type_matches_declared_type(entry: dict):
     else:
         assert isinstance(default, expected_py_type), (
             f"Param '{entry['param']}' declared {declared} but default is {type(default).__name__}"
+        )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_array_default_elements_match_type(entry: dict):
+    """Array-typed params must default to a list whose elements match the scalar type.
+
+    ``bool`` is rejected for the numeric arrays even though it subclasses ``int``,
+    so a stray ``true`` in a ``double_array``/``int_array`` default is caught.
+    """
+    declared = entry["type"]
+    elem_types = ARRAY_ELEMENT_TYPE.get(declared)
+    if elem_types is None:
+        return
+    default = entry["default"]
+    assert isinstance(default, list), (
+        f"Param '{entry['param']}' declared {declared} but default is "
+        f"{type(default).__name__}, not a list"
+    )
+    numeric = declared in ("double_array", "int_array")
+    for i, value in enumerate(default):
+        if numeric and isinstance(value, bool):
+            raise AssertionError(
+                f"Param '{entry['param']}' {declared} default has a bool at index {i}"
+            )
+        assert isinstance(value, elem_types), (
+            f"Param '{entry['param']}' {declared} default has "
+            f"{type(value).__name__} at index {i}, expected "
+            f"{'/'.join(t.__name__ for t in elem_types)}"
         )
 
 
