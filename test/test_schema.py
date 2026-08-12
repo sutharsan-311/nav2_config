@@ -190,6 +190,36 @@ def test_tags_are_non_empty_strings(entry: dict):
         )
 
 
+# The closed set of follow-up actions understood by the app. Keep in sync with
+# the ``post_set_action`` docstring in nav2_config/types/params.py and the
+# dispatch in node.py. A typo here (e.g. "restart_stak") would silently be
+# treated as "no action", so the value must come from this vocabulary.
+VALID_POST_SET_ACTIONS = {
+    None,
+    "clear_costmaps",
+    "load_map",
+    "nomotion_update",
+    "restart_stack",
+    "restart_node",
+    "restart_controller",
+}
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_post_set_action_is_valid(entry: dict):
+    """post_set_action must be null or one of the known follow-up actions.
+
+    The value is dispatched by string comparison in node.py; an unrecognised
+    string is silently ignored, so the change would appear to take effect while
+    its required service call / restart notification never fires.
+    """
+    action = entry.get("post_set_action")
+    assert action in VALID_POST_SET_ACTIONS, (
+        f"Param '{entry['param']}' has unknown post_set_action {action!r}; "
+        f"expected null or one of {sorted(a for a in VALID_POST_SET_ACTIONS if a)}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Default value type matching
 # ---------------------------------------------------------------------------
