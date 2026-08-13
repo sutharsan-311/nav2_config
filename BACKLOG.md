@@ -7,10 +7,3 @@ the cited source, plus a genuine description + tuning `impact`) for one node's p
 
 ## docking_server (1)
 - [ ] `simulation_step` (default `0.1`, double)
-
-## Ideas for review
-
-_Appended for Sutharsan to triage — not auto-generated._
-
-- **Stale `simulation_step` false positive in the gap tool.** `nav2_bringup/params/nav2_params.yaml` lists `controller.simulation_step: 0.1` under `docking_server`, but the real declared parameter (opennav_docking `src/controller.cpp`) is `controller.simulation_time_step` — already in the schema. The example yaml name is outdated, so `nav2_param_gap.py` reports a permanent phantom gap. Consider adding a small alias/ignore map in the gap script so this one entry stops showing up.
-- **Inconsistent `category` values in the schema.** Several near-duplicate categories exist (`debug`/`debugging`, `sensor`/`sensors`, `filter`/`filtering`, `goal`/`goal_handling`/`goal_tolerance`). Consolidating would improve GUI grouping, but it touches many entries and may affect how the GUI groups params, so it needs your review before doing it in bulk.

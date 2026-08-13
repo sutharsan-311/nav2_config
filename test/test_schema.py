@@ -377,6 +377,37 @@ def test_node_param_uniqueness(parsed_params):
 
 
 # ---------------------------------------------------------------------------
+# Category taxonomy consistency
+# ---------------------------------------------------------------------------
+
+
+# Near-duplicate category spellings that fragment the GUI grouping: the param
+# panel builds one collapsible section per distinct ``category`` string
+# (param_panel.py groups by ``definition.category``), so a singular/plural or
+# noun/gerund split of the same concept renders as two separate sections. Map
+# each known alias to its canonical form and forbid the alias from reappearing.
+CATEGORY_ALIASES = {
+    "sensors": "sensor",
+    "filtering": "filter",
+    "debugging": "debug",
+}
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_category_uses_canonical_spelling(entry: dict):
+    """Categories must use the canonical spelling, not a known duplicate alias.
+
+    Two spellings of the same concept (e.g. 'sensor' and 'sensors') split the
+    parameter panel into two sections for what is logically one group.
+    """
+    category = entry.get("category")
+    assert category not in CATEGORY_ALIASES, (
+        f"Param '{entry['param']}' uses non-canonical category '{category}'; "
+        f"use '{CATEGORY_ALIASES.get(category)}' instead"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Plugins JSON structure
 # ---------------------------------------------------------------------------
 
