@@ -11393,8 +11393,8 @@
       "max": 1.0
     },
     "unit": "s",
-    "description": "Discrete time step used when simulating the docking trajectory for collision checking.",
-    "impact": "Smaller steps improve collision detection resolution at the cost of more costmap lookups per cycle. Larger steps reduce CPU load but may miss narrow obstacles between sampled poses.",
+    "description": "Discrete time step used to forward-simulate the docking trajectory for collision checking. Declared as controller.simulation_time_step in the source; it is the integration dt passed to the smooth control law's calculateNextPose at each step. The number of simulated poses is ceil(projection_time / simulation_time_step).",
+    "impact": "Smaller steps improve collision detection resolution and control integration accuracy at the cost of more simulated poses and costmap lookups per cycle (iteration count scales with projection_time / simulation_time_step). Larger steps reduce CPU load but may miss narrow obstacles between sampled poses.",
     "category": "safety",
     "plugin_specific": false,
     "plugin": null,
