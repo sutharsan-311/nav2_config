@@ -332,6 +332,57 @@ def test_numeric_default_within_range(entry: dict):
         )
 
 
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_numeric_range_bounds_are_numeric(entry: dict):
+    """A numeric range's min/max bounds must themselves be numbers.
+
+    ``ParamRange`` feeds these into the slider widget and into the
+    ``min < max`` / default-within-range comparisons above. A stray string
+    bound (e.g. ``"0.0"``) would raise a ``TypeError`` at comparison time or
+    silently mis-clamp the slider, so bounds must be real numbers. ``bool`` is
+    rejected even though it subclasses ``int``.
+    """
+    raw_range = entry.get("range")
+    if not raw_range:
+        return
+    for key in ("min", "max"):
+        value = raw_range.get(key)
+        if value is None:
+            continue
+        assert not isinstance(value, bool) and isinstance(value, (int, float)), (
+            f"Param '{entry['param']}' range {key} must be a number, "
+            f"got {type(value).__name__} ({value!r})"
+        )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_enum_options_valid_and_contain_default(entry: dict):
+    """Discrete ``range.options`` must be a non-empty list of non-empty strings,
+    and a string default must be one of those options.
+
+    ``param_select.ParamSelect`` populates a QComboBox from ``range.options``;
+    if the schema default is absent from that list the widget opens on a value
+    the dropdown cannot represent, so the two must stay in sync.
+    """
+    raw_range = entry.get("range")
+    if not raw_range or "options" not in raw_range:
+        return
+    options = raw_range["options"]
+    assert isinstance(options, list) and options, (
+        f"Param '{entry['param']}' range.options must be a non-empty list"
+    )
+    for opt in options:
+        assert isinstance(opt, str) and opt.strip(), (
+            f"Param '{entry['param']}' has an empty or non-string option: {opt!r}"
+        )
+    default = entry.get("default")
+    if isinstance(default, str):
+        assert default in options, (
+            f"Param '{entry['param']}' default {default!r} is not among its "
+            f"range.options {options}"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Parsed dataclass tests
 # ---------------------------------------------------------------------------
