@@ -383,6 +383,29 @@ def test_enum_options_valid_and_contain_default(entry: dict):
         )
 
 
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_enum_options_only_on_string_type(entry: dict):
+    """``range.options`` may only appear on ``string``-typed params.
+
+    ``param_row._make_input_widget`` dispatches on options *before* the numeric
+    slider branch: any param carrying ``range.options`` becomes a ``ParamSelect``
+    dropdown (param_row.py), and ``ParamSelect`` emits/returns the raw option
+    *string* (its ``value_changed`` signal is typed ``str`` and ``get_value``
+    returns ``currentText()``). If a ``double``/``int``/``bool`` param were given
+    options it would silently render as a string dropdown whose selections the
+    numeric/bool set-path cannot faithfully convert, so options must stay on
+    string params only.
+    """
+    raw_range = entry.get("range")
+    if not raw_range or raw_range.get("options") is None:
+        return
+    assert entry["type"] == "string", (
+        f"Param '{entry['param']}' is type '{entry['type']}' but defines "
+        f"range.options; discrete options are only supported on string params "
+        f"(they render as a string ParamSelect dropdown)"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Parsed dataclass tests
 # ---------------------------------------------------------------------------
