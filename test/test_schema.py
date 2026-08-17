@@ -265,6 +265,25 @@ def test_default_type_matches_declared_type(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_numeric_scalar_default_is_not_bool(entry: dict):
+    """A scalar ``int``/``double`` default must not be a JSON boolean.
+
+    ``test_default_type_matches_declared_type`` checks ``isinstance(default, int)``
+    for numeric scalars, but ``bool`` subclasses ``int`` so a stray ``true``/``false``
+    default slips through — the same trap the array test explicitly guards against
+    (see ``test_array_default_elements_match_type``). A bool where a number is
+    expected would flow into the slider/numeric set-path as ``0``/``1`` and mis-render
+    the param, so reject it here to keep the scalar and array checks symmetric.
+    """
+    if entry["type"] not in ("int", "double"):
+        return
+    assert not isinstance(entry["default"], bool), (
+        f"Param '{entry['param']}' declared {entry['type']} but default is a bool "
+        f"({entry['default']!r}); use a numeric literal"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_array_default_elements_match_type(entry: dict):
     """Array-typed params must default to a list whose elements match the scalar type.
 
