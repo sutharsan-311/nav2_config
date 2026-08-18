@@ -9614,7 +9614,7 @@
       "min": 10,
       "max": 200
     },
-    "unit": "steps",
+    "unit": "timesteps",
     "description": "Number of time steps in each sampled trajectory. Horizon length = time_steps * model_dt (e.g. 56 * 0.05 s = 2.8 s look-ahead).",
     "impact": "More steps extend the planning horizon, improving anticipation of distant obstacles and curves at the cost of higher memory and compute per control cycle. Too few steps causes the optimizer to react too late.",
     "category": "performance",
@@ -10223,7 +10223,7 @@
       "min": 1,
       "max": 10
     },
-    "unit": "steps",
+    "unit": "timesteps",
     "description": "Stride used when iterating over trajectory time-steps inside CostCritic: only every Nth point is evaluated against the costmap. Reduces the number of costmap lookups per trajectory.",
     "impact": "Larger strides speed up the critic at the risk of missing narrow obstacle crossings between sampled points. A step of 1 evaluates every point (maximum safety); 2-4 is a common trade-off for real-time performance.",
     "category": "performance",
@@ -11752,7 +11752,7 @@
       "min": 1,
       "max": 20
     },
-    "unit": "time steps",
+    "unit": "timesteps",
     "description": "Stride used when sampling poses along each published trajectory. Only every Nth time step within each visualised trajectory is drawn as a marker point, controlling the density of points along the trajectory line strip published to ~/candidate_trajectories.",
     "impact": "Smaller values draw more points per trajectory, producing smoother visualised arcs at the cost of more RViz markers. Larger values produce sparser lines. Like trajectory_step, this has no effect on actual controller behaviour.",
     "category": "debug",
