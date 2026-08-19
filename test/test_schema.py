@@ -487,6 +487,25 @@ CATEGORY_ALIASES = {
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_category_is_non_empty_string(entry: dict):
+    """Every param must carry a non-empty string ``category``.
+
+    ``param_panel`` groups rows by ``definition.category`` (param_panel.py builds
+    one ``_CategorySection`` per distinct value) and the section header renders it
+    via ``category.replace("_", " ").title()``. A ``None`` category would raise
+    ``AttributeError`` on that ``.replace`` call, and an empty string would produce
+    a blank, unlabelled section. ``Nav2ParamDef`` also declares ``category: str``,
+    so the raw JSON must honour that contract rather than relying on the
+    ``data.get("category", "general")`` fallback in ``load_schema``.
+    """
+    category = entry.get("category")
+    assert isinstance(category, str) and category.strip(), (
+        f"Param '{entry['param']}' must have a non-empty string category, "
+        f"got {category!r}"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_category_uses_canonical_spelling(entry: dict):
     """Categories must use the canonical spelling, not a known duplicate alias.
 
