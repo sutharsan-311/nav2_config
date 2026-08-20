@@ -375,6 +375,29 @@ def test_numeric_range_bounds_are_numeric(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_numeric_range_bounds_only_on_scalar_numeric_type(entry: dict):
+    """A numeric ``range.min``/``range.max`` may only appear on scalar ``double``/``int`` params.
+
+    ``param_row._make_input_widget`` only builds a ``ParamSlider`` when
+    ``defn.type in ('double', 'int')`` *and* both ``range.min`` and ``range.max``
+    are set (param_row.py). For any other type — ``bool``, ``string``, or the
+    array types (which have no slider path) — the min/max bounds are silently
+    ignored and the param falls through to a free-form ``ParamInput`` text box,
+    so the declared range never constrains the value the user can enter. This is
+    the numeric mirror of ``test_enum_options_only_on_string_type``: keep bounds
+    on the types that can actually honour them.
+    """
+    raw_range = entry.get("range") or {}
+    if raw_range.get("min") is None and raw_range.get("max") is None:
+        return
+    assert entry["type"] in ("double", "int"), (
+        f"Param '{entry['param']}' is type '{entry['type']}' but defines a numeric "
+        f"range.min/range.max; slider bounds are only honoured on scalar double/int "
+        f"params (other types render as a free-form ParamInput that ignores the range)"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_enum_options_valid_and_contain_default(entry: dict):
     """Discrete ``range.options`` must be a non-empty list of non-empty strings,
     and a string default must be one of those options.
