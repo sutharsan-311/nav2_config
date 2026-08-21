@@ -25,7 +25,9 @@ class Nav2ParamDef:
 
     node: str
     param: str
-    type: str  # "double", "int", "bool", "string", "string_array"
+    # One of the seven canonical types validated by test_schema.VALID_TYPES:
+    # "double", "int", "bool", "string", "string_array", "double_array", "int_array".
+    type: str
     default: Any
     range: ParamRange | None
     unit: str
