@@ -374,6 +374,35 @@ def test_numeric_range_bounds_are_numeric(entry: dict):
         )
 
 
+# The only keys ``ParamRange.from_dict`` reads out of a ``range`` object
+# (nav2_config/types/params.py). Any other key in the JSON is silently dropped
+# during parsing.
+VALID_RANGE_KEYS = {"min", "max", "options"}
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_range_has_only_known_keys(entry: dict):
+    """A ``range`` object may only contain the keys ParamRange understands.
+
+    ``Nav2ParamDef.from_dict`` builds ``ParamRange`` from exactly
+    ``range.get("min")``, ``range.get("max")`` and ``range.get("options")``
+    (nav2_config/types/params.py); any other key is silently ignored. So a
+    typo'd bound (e.g. ``"maximum"``, ``"mn"``) or an unsupported concept (e.g.
+    ``"step"``) would parse without error while the intended constraint never
+    reaches the slider/dropdown — the param would render as if that bound were
+    absent. Reject stray keys here so the mistake surfaces at test time.
+    """
+    raw_range = entry.get("range")
+    if not isinstance(raw_range, dict):
+        return
+    extra = set(raw_range) - VALID_RANGE_KEYS
+    assert not extra, (
+        f"Param '{entry['param']}' range has unrecognised key(s) {sorted(extra)}; "
+        f"only {sorted(VALID_RANGE_KEYS)} are read by ParamRange (others are "
+        f"silently dropped during parsing)"
+    )
+
+
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_numeric_range_bounds_only_on_scalar_numeric_type(entry: dict):
     """A numeric ``range.min``/``range.max`` may only appear on scalar ``double``/``int`` params.
