@@ -2959,6 +2959,26 @@
     "post_set_action": null
   },
   {
+    "node": "velocity_smoother",
+    "param": "use_realtime_priority",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Request soft real-time scheduling priority for the velocity smoother's processing thread. Read once during on_configure; requires the process to have the appropriate OS capabilities (e.g. CAP_SYS_NICE), otherwise configuration fails.",
+    "impact": "Enabling reduces jitter in the smoothing timer on loaded systems, giving more consistent velocity ramp updates. Has no effect (and aborts configuration) if the process lacks the required privilege.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "velocity_smoother",
+      "realtime",
+      "performance"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
     "node": "waypoint_follower",
     "param": "loop_rate",
     "type": "int",
@@ -9406,6 +9426,26 @@
       "safety"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "use_realtime_priority",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Request soft real-time scheduling priority for the collision monitor's processing thread. Read once during on_configure; requires the process to have the appropriate OS capabilities (e.g. CAP_SYS_NICE), otherwise configuration fails.",
+    "impact": "Enabling reduces latency and jitter in the safety-critical collision-checking loop on loaded systems, so stop/slowdown actions fire more promptly. Has no effect (and aborts configuration) if the process lacks the required privilege.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "realtime",
+      "performance"
+    ],
+    "post_set_action": "restart_stack"
   },
   {
     "node": "bt_navigator",
