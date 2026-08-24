@@ -14188,6 +14188,69 @@
   },
   {
     "node": "route_server",
+    "param": "costmap_topic",
+    "type": "string",
+    "default": "global_costmap/costmap_raw",
+    "range": null,
+    "unit": "",
+    "description": "Costmap topic subscribed by the route server for collision-aware routing. Used when enable_nn_search is true to project the start pose onto a traversable node, and shared by the collision monitor route operation and the costmap edge scorer when they reference the same topic.",
+    "impact": "Point this at the costmap that reflects the obstacles you want the route graph to respect. A wrong or unpublished topic disables nearest-node search and any costmap-based edge scoring, so routes fall back to the raw graph without live obstacle awareness.",
+    "category": "topics",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "topics",
+      "costmap"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
+    "param": "max_iterations",
+    "type": "int",
+    "default": 0,
+    "range": {
+      "min": 0,
+      "max": 1000000
+    },
+    "unit": "iterations",
+    "description": "Maximum number of search iterations the route planner's graph search may perform before giving up. A value of 0 (or any non-positive value) is treated as unlimited (INT_MAX).",
+    "impact": "Bounding the search caps worst-case planning latency on very large graphs at the risk of failing to find a valid route; leave at 0 for unlimited search when planning time is not a concern.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "planning",
+      "performance"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
+    "param": "aggregate_blocked_ids",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Whether blocked edge/node IDs reported by route operations are aggregated over the lifespan of the navigation request, or only the currently reported blocked IDs are used, when rerouting during ComputeAndTrackRoute.",
+    "impact": "Enabled, edges flagged as blocked stay avoided for the whole request so the robot does not oscillate back onto them; disabled, only presently-blocked edges are avoided, allowing re-use of an edge once it clears at the cost of possible thrashing.",
+    "category": "tracking",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "tracking",
+      "recovery"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
     "param": "path_density",
     "type": "double",
     "default": 0.05,
