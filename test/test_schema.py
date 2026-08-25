@@ -190,6 +190,32 @@ def test_tags_are_non_empty_strings(entry: dict):
         )
 
 
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_ros2_name_is_non_empty_string_when_present(entry: dict):
+    """An explicit ``ros2_name`` must be a non-empty string.
+
+    ``param_client.fetch_node_params`` intersects the schema against the names
+    the running node actually reports using ``ros2_name`` — it builds
+    ``ros2_names = [d.ros2_name for d in node_defs if d.ros2_name in existing_names]``
+    and then looks up each live value by ``d.ros2_name`` (param_client.py). A
+    JSON ``null`` slips through ``data.get("ros2_name", data["param"])`` as
+    ``None`` (the default only applies when the key is absent), and a non-string
+    (e.g. a number) is passed through verbatim; either one fails the
+    ``in existing_names`` set membership silently, so the param would never bind
+    to its live value and would always render as its schema default. ``from_dict``
+    only falls back to ``param`` when the value is falsy (``__post_init__``), so a
+    truthy non-string would survive — reject it here. Omit the key entirely to get
+    the correct ``param`` fallback.
+    """
+    if "ros2_name" not in entry:
+        return
+    value = entry["ros2_name"]
+    assert isinstance(value, str) and value.strip(), (
+        f"Param '{entry['param']}' ros2_name must be a non-empty string when set, "
+        f"got {value!r}; omit the key to fall back to the param name"
+    )
+
+
 # The closed set of follow-up actions understood by the app. Keep in sync with
 # the ``post_set_action`` docstring in nav2_config/types/params.py and the
 # dispatch in node.py. A typo here (e.g. "restart_stak") would silently be
