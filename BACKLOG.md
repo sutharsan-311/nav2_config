@@ -7,3 +7,37 @@ the cited source, plus a genuine description + tuning `impact`) for one node's p
 
 ## docking_server (1)
 - [ ] `simulation_step` (default `0.1`, double)
+
+> Note: this gap is a false positive. The bringup example config
+> (`nav2_bringup/params/nav2_params.yaml:585`) lists `controller.simulation_step`,
+> but the docking controller actually declares
+> `controller.simulation_time_step` (`nav2_docking/opennav_docking/src/controller.cpp:61`),
+> which is already in the schema. There is no real `simulation_step` param to add.
+
+## Ideas for review
+
+_Findings for Sutharsan to triage. Do not auto-implement — these change runtime
+behaviour or need a design decision. (This section is hand-maintained; note that
+`nav2_param_gap.py` rewrites the auto-generated portion of this file above.)_
+
+- **docking_server controller-group params never bind to live values.** The 18
+  params declared by the docking controller under the `controller.` namespace —
+  `k_phi`, `k_delta`, `beta`, `lambda`, `v_linear_min`, `v_linear_max`,
+  `v_angular_max`, `slowdown_radius`, `deceleration_max`,
+  `rotate_to_heading_angular_vel`, `rotate_to_heading_max_angular_accel`,
+  `use_collision_detection`, `costmap_topic`, `footprint_topic`,
+  `transform_tolerance`, `projection_time`, `simulation_time_step`,
+  `dock_collision_threshold` — are stored in the schema under their bare names
+  (e.g. `k_phi`), with no `ros2_name`. But the running `docking_server` reports
+  them namespaced as `controller.k_phi` etc. (source:
+  `nav2_docking/opennav_docking/src/controller.cpp:38-64`, which calls
+  `node->declare_or_get_parameter("controller.k_phi", ...)`). Because
+  `param_client.fetch_node_params` intersects `d.ros2_name` against the live
+  names (`core/param_client.py:390`) and `ros2_name` falls back to the bare
+  `param`, `k_phi` is never found in `existing_names`, so these params are never
+  fetched and always render as their schema default instead of the live value.
+  Other nested params already handle this correctly by carrying the full dotted
+  name (e.g. `FollowPath.desired_linear_vel`, `voxel_layer.scan.max_obstacle_height`).
+  Suggested fix: add `"ros2_name": "controller.<param>"` to each of the 18
+  docking controller entries (data-only change, no code). Flagged rather than
+  applied because it changes what the GUI displays for a live docking_server.
