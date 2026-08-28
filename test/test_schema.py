@@ -246,6 +246,33 @@ def test_post_set_action_is_valid(entry: dict):
     )
 
 
+# A post_set_action that only takes effect after a restart is logically
+# incompatible with a live hot-reload: the value cannot both apply immediately
+# and require the owning node/stack/controller to be restarted first.
+RESTART_POST_SET_ACTIONS = {"restart_stack", "restart_node", "restart_controller"}
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_hot_reload_not_contradicted_by_restart_action(entry: dict):
+    """A ``hot_reload: true`` param must not carry a restart ``post_set_action``.
+
+    ``post_set_action`` values ``restart_stack``/``restart_node``/
+    ``restart_controller`` all document (types/params.py) that the new value does
+    *not* take effect until the owning stack/node/controller is restarted —
+    ``restart_stack`` even suppresses the auto-apply and only emits
+    ``restart_suggested`` (node.py). ``hot_reload`` asserts the opposite: the
+    change applies live. A param claiming both would tell the GUI it reloaded hot
+    while the value silently sits inert until a restart, so the two must not
+    coexist.
+    """
+    if entry.get("post_set_action") in RESTART_POST_SET_ACTIONS:
+        assert entry.get("hot_reload") is not True, (
+            f"Param '{entry['param']}' has post_set_action "
+            f"'{entry.get('post_set_action')}' (needs a restart to apply) but is "
+            f"marked hot_reload: true; a restart-gated value cannot reload live"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Default value type matching
 # ---------------------------------------------------------------------------
