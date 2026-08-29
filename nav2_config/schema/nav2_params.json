@@ -10815,6 +10815,190 @@
   },
   {
     "node": "docking_server",
+    "param": "controller.k_phi",
+    "type": "double",
+    "default": 3.0,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "",
+    "description": "Gain of the graceful (SmoothControlLaw) motion controller used during dock approach. Sets the ratio of the rate of change in the heading angle phi to the rate of change in the radial distance r, shaping how the curvature converges toward the dock pose.",
+    "impact": "Higher values make the controller turn more aggressively to align with the target heading, giving tighter convergence but risking overshoot or oscillation near the dock. Lower values produce gentler, wider approach curves. Must be positive.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "control",
+      "graceful"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.k_delta",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "",
+    "description": "Constant factor applied to the heading-error feedback term in the graceful (SmoothControlLaw) controller used during dock approach. Governs how strongly the commanded curvature reacts to the difference between the robot's heading and the direction toward the dock.",
+    "impact": "Larger values increase responsiveness to heading error, correcting misalignment faster but potentially inducing oscillation. Smaller values give smoother, more damped heading corrections. Must be positive.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "control",
+      "graceful"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.beta",
+    "type": "double",
+    "default": 0.4,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "",
+    "description": "Constant factor applied to the path curvature in the graceful (SmoothControlLaw) controller that determines how quickly the linear velocity is dropped as curvature increases during dock approach. Must be positive.",
+    "impact": "Higher values slow the robot down more sharply on curved sections of the approach, improving accuracy on tight alignments at the cost of speed. Lower values keep speed up through curves. Must be greater than 0.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "control",
+      "graceful"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.lambda",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 1.0,
+      "max": null
+    },
+    "unit": "",
+    "description": "Constant factor applied to the path curvature in the graceful (SmoothControlLaw) controller that determines the sharpness of the approach curve. Higher lambda implies sharper curves. Must be greater than or equal to 1.",
+    "impact": "Larger values produce sharper, more aggressive convergence curves toward the dock; smaller values (down to 1) give smoother, more gradual curves. Must be at least 1.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "control",
+      "graceful"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.v_linear_min",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "m/s",
+    "description": "Minimum linear velocity commanded by the graceful (SmoothControlLaw) controller during dock approach. Prevents the commanded speed from dropping below this floor while the robot is still moving toward the dock.",
+    "impact": "Raising it keeps the robot moving through slow sections and avoids stalling but reduces fine control very close to the dock. Lowering it toward 0 allows slower, more precise final approach. Should be less than v_linear_max.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "control",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.v_linear_max",
+    "type": "double",
+    "default": 0.25,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "m/s",
+    "description": "Maximum linear velocity commanded by the graceful (SmoothControlLaw) controller during dock approach. Caps how fast the robot drives toward the dock before curvature and slowdown rules further reduce speed.",
+    "impact": "Higher values speed up docking but leave less margin for accurate alignment and collision avoidance near the dock. Lower values give a slower, safer, more precise approach. Should be greater than v_linear_min.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "control",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.v_angular_max",
+    "type": "double",
+    "default": 0.75,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "rad/s",
+    "description": "Maximum angular velocity commanded by the graceful (SmoothControlLaw) controller during dock approach. Limits how fast the robot may rotate while converging on the dock pose.",
+    "impact": "Higher values allow quicker heading corrections and tighter turns but can cause jerky motion or overshoot near the dock. Lower values yield smoother rotation at the cost of slower alignment.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "control",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.slowdown_radius",
+    "type": "double",
+    "default": 0.25,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "m",
+    "description": "Radial threshold applied to the slowdown rule of the graceful (SmoothControlLaw) controller. When the robot is within this distance of the dock, the commanded linear velocity is progressively scaled down toward v_linear_min.",
+    "impact": "Larger values start the deceleration earlier, giving a gentler, more accurate final approach but a longer docking time. Smaller values keep the robot faster for longer, which can reduce precision at contact.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "control",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
     "param": "initial_perception_timeout",
     "type": "double",
     "default": 5.0,
