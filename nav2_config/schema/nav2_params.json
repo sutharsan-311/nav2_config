@@ -14975,5 +14975,49 @@
       "velocity"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "filter_coef",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Low-pass filter coefficient applied to the detected object (dynamic) pose before it is used as the follow target. Uses the shared PoseFilter: filt = (1 - coef) * filt + coef * measurement. A value of 0.0 or below disables filtering and passes raw detections through; 1.0 removes all smoothing. The filter is constructed once at node configure time from this coefficient and detection_timeout.",
+    "impact": "Lower values smooth a noisy detector and stabilise the follow trajectory at the cost of lag when the followed object moves quickly; higher values track fast object motion faster but let detector noise through. Read only at configure time, so the node must be reconfigured/restarted to apply a change.",
+    "category": "perception",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "following",
+      "detection",
+      "filter",
+      "pose"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "use_collision_detection",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Declared as controller.use_collision_detection in the source. Collision detection is not implemented in the following server: if this is set to true the node logs an error and fails to configure, so it must be left at false.",
+    "impact": "Leave at the default false. Enabling it does not add collision checking (the feature is unsupported in the following server) and instead aborts activation of the node. Read once at configure time.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "following",
+      "collision",
+      "safety"
+    ],
+    "post_set_action": null
   }
 ]
