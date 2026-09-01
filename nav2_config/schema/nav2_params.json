@@ -10113,6 +10113,79 @@
   },
   {
     "node": "controller_server",
+    "param": "follow_path.retry_attempt_limit",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 10
+    },
+    "unit": "attempts",
+    "description": "Number of soft-reset retry attempts MPPI makes to find a feasible trajectory when optimization fails before reporting a controller failure. Declared in nav2_mppi_controller/src/optimizer.cpp.",
+    "impact": "Higher values give the optimizer more chances to recover from transient infeasibility (e.g. momentary obstacle occupancy) before aborting, at the cost of extra compute on failing cycles. Keep low (1) for fast failure detection.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "recovery",
+      "behavior"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.sgf_order",
+    "type": "int",
+    "default": 2,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "unit": "",
+    "description": "Polynomial order of the Savitzky-Golay filter applied to smooth the optimal control sequence before it is executed. Only 1 or 2 are valid; other values are clamped to 2. Declared in nav2_mppi_controller/src/optimizer.cpp.",
+    "impact": "Order 2 preserves sharper features of the control profile while smoothing noise; order 1 produces smoother but more heavily averaged commands. Adjust only if control output is too jerky or too sluggish.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "smoothing",
+      "behavior"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.critic_index_to_visualize",
+    "type": "int",
+    "default": 0,
+    "range": {
+      "min": 0,
+      "max": 100
+    },
+    "unit": "",
+    "description": "Selects which critic's cost is shown when 'visualize' is true. 0 displays the total cost summed across all critics; 1..N selects an individual critic by its index in the critics list. Declared in nav2_mppi_controller/src/controller.cpp.",
+    "impact": "A debugging aid for inspecting how a specific critic shapes trajectory costs in RViz. Has no effect unless 'visualize' is enabled. Leave at 0 for the aggregate cost view.",
+    "category": "debug",
+    "plugin_specific": true,
+    "plugin": "MPPIController",
+    "hot_reload": true,
+    "tags": [
+      "mppi",
+      "controller",
+      "visualize",
+      "debugging",
+      "rviz"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
     "param": "follow_path.publish_optimal_trajectory",
     "type": "bool",
     "default": false,
