@@ -574,6 +574,32 @@ def test_node_param_uniqueness(parsed_params):
         seen.add(key)
 
 
+def test_effective_ros2_name_unique_per_node(parsed_params):
+    """Each node's effective ``ros2_name`` (explicit ``ros2_name`` or the ``param``
+    fallback) must be unique.
+
+    ``param_client.fetch_node_params`` binds schema entries to live values by
+    ``ros2_name``: it builds ``ros2_names = [d.ros2_name for d in node_defs if
+    d.ros2_name in existing_names]`` and then keys the fetched values by that same
+    ``ros2_name`` (param_client.py). If two entries under one node resolve to the
+    same ``ros2_name`` — e.g. one param sets an explicit ``ros2_name`` that equals
+    another param's bare name — both rows would read back the *same* live value and
+    a set/undo on one would silently target the other. ``test_node_param_uniqueness``
+    only guards the display-side ``(node, param)`` key, so the ROS-facing name needs
+    its own check. ``Nav2ParamDef.__post_init__`` already falls back to ``param``
+    when ``ros2_name`` is falsy, so ``p.ros2_name`` here is the effective name.
+    """
+    seen: dict[tuple[str, str], str] = {}
+    for p in parsed_params:
+        key = (p.node, p.ros2_name)
+        assert key not in seen, (
+            f"Node '{p.node}' has two params resolving to the same live "
+            f"ros2_name '{p.ros2_name}': '{seen[key]}' and '{p.param}'; "
+            f"they would bind to the same value on the running node"
+        )
+        seen[key] = p.param
+
+
 # ---------------------------------------------------------------------------
 # Category taxonomy consistency
 # ---------------------------------------------------------------------------
