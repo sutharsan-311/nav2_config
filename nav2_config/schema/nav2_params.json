@@ -9448,6 +9448,92 @@
     "post_set_action": "restart_stack"
   },
   {
+    "node": "collision_monitor",
+    "param": "polygon_pub_topic",
+    "type": "string",
+    "default": "",
+    "range": null,
+    "unit": "",
+    "description": "Topic on which the zone's PolygonStamped marker is published for visualisation. Only declared and used when visualize is true; if left empty it defaults to the zone's own name (<polygon_name>). Set per zone as <polygon_name>.polygon_pub_topic.",
+    "impact": "Set a custom topic to disambiguate multiple zones in RViz or to match an existing visualisation pipeline. Has no effect unless visualize is true.",
+    "category": "debug",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "polygon",
+      "visualize",
+      "topic",
+      "debug"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "polygon_sub_topic",
+    "type": "string",
+    "default": "",
+    "range": null,
+    "unit": "",
+    "description": "Topic carrying a PolygonStamped that drives this zone's shape at runtime. Declared only for non-APPROACH zones that have no static 'points' list (dynamic subscription mode); APPROACH zones subscribe to footprint_topic instead. Set per zone as <polygon_name>.polygon_sub_topic.",
+    "impact": "Point this at a publisher to reshape the zone on the fly (e.g. from a payload or perception module). Required for a dynamic non-approach zone with no static points and no footprint topic — configuration fails if none of the three shape sources is available.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "polygon",
+      "shape",
+      "topic",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "polygon_subscribe_transient_local",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "QoS durability for the dynamic polygon subscription (polygon_sub_topic). When true the subscription uses transient-local durability so it receives the last latched shape published before it connected. Set per zone as <polygon_name>.polygon_subscribe_transient_local.",
+    "impact": "Enable when the shape publisher latches its message once (transient-local) rather than publishing continuously, so a late-starting monitor still receives the current zone shape. Must match the publisher's durability QoS or the subscription will not connect.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "polygon",
+      "qos",
+      "topic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "sources_names",
+    "type": "string_array",
+    "default": [],
+    "range": null,
+    "unit": "",
+    "description": "Subset of the node's observation_sources whose data this zone consumes. If empty it defaults to all configured observation_sources. Every name listed must appear in observation_sources or configuration fails. Set per zone as <polygon_name>.sources_names.",
+    "impact": "Restrict a zone to specific sensors (e.g. only a rear scan for a rear zone) to avoid unrelated detections triggering it and to reduce per-cycle work. Leave empty to have the zone react to every source.",
+    "category": "sensor",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "polygon",
+      "sensor",
+      "sources"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "bt_navigator",
     "param": "bt_search_directories",
     "type": "string_array",
