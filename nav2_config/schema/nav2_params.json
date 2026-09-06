@@ -9241,6 +9241,180 @@
   },
   {
     "node": "collision_monitor",
+    "param": "velocity_polygons",
+    "type": "string_array",
+    "default": [],
+    "range": null,
+    "unit": "",
+    "description": "Ordered list of sub-polygon names for a 'velocity_polygon' zone. Each name refers to a nested parameter block (points, linear_min/max, theta_min/max) defining a shape that is active over a particular velocity range. At runtime the first sub-polygon in this list whose velocity range covers the current command velocity is used as the zone shape. Required when type is 'velocity_polygon'.",
+    "impact": "Order matters: overlapping velocity ranges resolve to the first matching entry, so list narrower/faster zones before the catch-all. The last entry should cover the robot's full velocity range to act as the stopped/fallback zone; velocities not covered by any sub-polygon are left unguarded (a throttled warning is logged).",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "velocity_polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "velocity_polygon",
+      "safety",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "holonomic",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Selects how a 'velocity_polygon' zone matches the command velocity. When false (differential/Ackermann), sub-polygon selection compares the forward x velocity against linear_min/linear_max. When true (holonomic), it instead compares the linear speed magnitude (hypot(x, y)) and additionally checks the motion direction against direction_start_angle/direction_end_angle.",
+    "impact": "Set true only for robots that can translate sideways; enabling it activates the direction_start_angle/direction_end_angle checks and switches linear matching from signed x to speed magnitude, which changes which sub-polygon is chosen for a given command.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "velocity_polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "velocity_polygon",
+      "safety",
+      "kinematics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "linear_min",
+    "type": "double",
+    "default": 0.0,
+    "range": null,
+    "unit": "m/s",
+    "description": "Lower bound of the linear velocity range over which a velocity_polygon sub-polygon is active. For non-holonomic robots this is compared against the forward x velocity (may be negative for reverse zones); for holonomic robots it bounds the linear speed magnitude. A sub-polygon matches when the velocity is >= linear_min and <= linear_max. Required per sub-polygon.",
+    "impact": "Defines the low edge of a zone's speed band. Set contiguous bands across sub-polygons so every reachable velocity falls in exactly one zone; gaps leave that speed unguarded and overlaps resolve to the earlier entry in velocity_polygons.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "velocity_polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "velocity_polygon",
+      "safety",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "linear_max",
+    "type": "double",
+    "default": 1.0,
+    "range": null,
+    "unit": "m/s",
+    "description": "Upper bound of the linear velocity range over which a velocity_polygon sub-polygon is active. For non-holonomic robots this is compared against the forward x velocity; for holonomic robots it bounds the linear speed magnitude. A sub-polygon matches when the velocity is >= linear_min and <= linear_max. Required per sub-polygon.",
+    "impact": "Defines the high edge of a zone's speed band. Larger bands mean one shape covers a wider speed range; make the final sub-polygon's band span the robot's full velocity range so it acts as the stopped/fallback zone.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "velocity_polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "velocity_polygon",
+      "safety",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "theta_min",
+    "type": "double",
+    "default": -1.0,
+    "range": null,
+    "unit": "rad/s",
+    "description": "Lower bound of the angular (yaw) velocity range over which a velocity_polygon sub-polygon is active. The command's angular velocity must satisfy theta_min <= tw <= theta_max for the sub-polygon to match, in addition to the linear range check. Required per sub-polygon.",
+    "impact": "Constrains a zone to a band of turning rates. Widen the band to make a shape active across more rotational speeds, or narrow it to switch to a dedicated rotation zone (typically a larger, more symmetric polygon) when the robot spins in place.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "velocity_polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "velocity_polygon",
+      "safety",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "theta_max",
+    "type": "double",
+    "default": 1.0,
+    "range": null,
+    "unit": "rad/s",
+    "description": "Upper bound of the angular (yaw) velocity range over which a velocity_polygon sub-polygon is active. The command's angular velocity must satisfy theta_min <= tw <= theta_max for the sub-polygon to match, in addition to the linear range check. Required per sub-polygon.",
+    "impact": "Sets the high edge of a zone's turning-rate band. Ensure the sub-polygons' theta bands jointly cover the robot's full angular velocity range so fast rotations are still guarded by an appropriate shape.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "velocity_polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "velocity_polygon",
+      "safety",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "direction_start_angle",
+    "type": "double",
+    "default": -3.141592653589793,
+    "range": {
+      "min": -3.141592653589793,
+      "max": 3.141592653589793
+    },
+    "unit": "rad",
+    "description": "Start angle of the motion-direction window used to select a velocity_polygon sub-polygon on holonomic robots (only read when holonomic is true). The command's motion direction, atan2(vy, vx), must fall in the arc from direction_start_angle to direction_end_angle. If start <= end the arc is the interval [start, end]; if start > end the arc wraps through +/-pi.",
+    "impact": "Lets a holonomic robot use different safety shapes for different travel directions (e.g. a longer zone ahead when moving forward). Defaults to -pi so, with direction_end_angle at +pi, the full circle is covered and direction filtering is effectively disabled.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "velocity_polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "velocity_polygon",
+      "safety",
+      "kinematics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "direction_end_angle",
+    "type": "double",
+    "default": 3.141592653589793,
+    "range": {
+      "min": -3.141592653589793,
+      "max": 3.141592653589793
+    },
+    "unit": "rad",
+    "description": "End angle of the motion-direction window used to select a velocity_polygon sub-polygon on holonomic robots (only read when holonomic is true). The command's motion direction, atan2(vy, vx), must fall in the arc from direction_start_angle to direction_end_angle. If start <= end the arc is the interval [start, end]; if start > end the arc wraps through +/-pi.",
+    "impact": "Together with direction_start_angle, restricts a shape to a heading sector. Defaults to +pi so, with direction_start_angle at -pi, every direction matches and the sub-polygon is chosen on velocity alone.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "velocity_polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "velocity_polygon",
+      "safety",
+      "kinematics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
     "param": "footprint_topic",
     "type": "string",
     "default": "local_costmap/published_footprint",
