@@ -191,6 +191,22 @@ def test_tags_are_non_empty_strings(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_tags_have_no_duplicates(entry: dict):
+    """Tags on a single entry must be unique.
+
+    Tags drive search/filtering in the GUI; a repeated tag adds no filtering
+    value and reads as a copy-paste slip when authoring an entry. Comparing on
+    the stripped, case-folded form also catches near-duplicates like
+    ``"Safety"`` vs ``"safety"`` that would otherwise render as two chips.
+    """
+    tags = entry.get("tags") or []
+    normalised = [t.strip().casefold() for t in tags if isinstance(t, str)]
+    assert len(normalised) == len(set(normalised)), (
+        f"Param '{entry['param']}' has duplicate tags: {tags}"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_ros2_name_is_non_empty_string_when_present(entry: dict):
     """An explicit ``ros2_name`` must be a non-empty string.
 
