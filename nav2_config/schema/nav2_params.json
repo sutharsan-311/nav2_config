@@ -14478,6 +14478,66 @@
   },
   {
     "node": "route_server",
+    "param": "graph_filepath",
+    "type": "string",
+    "default": "",
+    "range": null,
+    "unit": "",
+    "description": "Filesystem path to the route graph file loaded at configuration (and the default target when saving via the SaveGraph service). An empty string means no graph is loaded on startup; a graph can still be supplied later through the LoadGraph service.",
+    "impact": "Set this to the graph file the robot should route on so it is available immediately after activation; leaving it empty defers loading to a runtime service call, so a ComputeRoute request before any graph is loaded will fail.",
+    "category": "graph",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "graph",
+      "file"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
+    "param": "graph_file_loader",
+    "type": "string",
+    "default": "GeoJsonGraphFileLoader",
+    "range": null,
+    "unit": "",
+    "description": "Plugin id of the GraphFileLoader used to parse the route graph file into the internal graph representation. When left at the default id, the server auto-declares its plugin type as nav2_route::GeoJsonGraphFileLoader; a custom id must have a matching '<id>.plugin' type declared in YAML.",
+    "impact": "Requires restart. Change this only to load graphs stored in a non-GeoJSON format via a custom loader plugin; an id without a corresponding '.plugin' type declaration fails plugin creation at configure time.",
+    "category": "graph",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "graph",
+      "plugin"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
+    "param": "graph_file_saver",
+    "type": "string",
+    "default": "GeoJsonGraphFileSaver",
+    "range": null,
+    "unit": "",
+    "description": "Plugin id of the GraphFileSaver used to serialize the in-memory route graph back to disk when the SaveGraph service is called. When left at the default id, the server auto-declares its plugin type as nav2_route::GeoJsonGraphFileSaver; a custom id must have a matching '<id>.plugin' type declared in YAML.",
+    "impact": "Requires restart. Change this only to persist graphs in a non-GeoJSON format via a custom saver plugin; an id without a corresponding '.plugin' type declaration fails plugin creation at configure time.",
+    "category": "graph",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "graph",
+      "plugin"
+    ],
+    "post_set_action": "restart_stack"
+  },
+  {
+    "node": "route_server",
     "param": "base_frame",
     "type": "string",
     "default": "base_link",
