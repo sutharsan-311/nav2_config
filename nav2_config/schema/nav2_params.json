@@ -15412,5 +15412,154 @@
       "safety"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "CostmapScorer.weight",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "Proportional weight applied to the CostmapScorer edge cost function. The scorer's normalised costmap cost (max or average cell cost along the edge divided by max_cost) is multiplied by this weight before being summed with the other configured edge cost functions.",
+    "impact": "Raise it to make the router prefer lower-cost (further from obstacles) edges more strongly relative to distance/time scorers; lower it to let shorter routes win even when they run closer to obstacles. Only used when multiple edge cost functions are combined. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "CostmapScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "costmap",
+      "scoring"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "CostmapScorer.max_cost",
+    "type": "double",
+    "default": 253.0,
+    "range": {
+      "min": 0.0,
+      "max": 255.0
+    },
+    "unit": "",
+    "description": "Costmap cost value (0-254) at or above which an edge is considered in collision when invalid_on_collision is true, and the normalising divisor for the scorer's returned cost. The special value 255 (unknown) is exempt from the collision test.",
+    "impact": "Lower it to reject edges that graze medium-cost inflated regions, keeping routes further from obstacles; raise it toward 253/254 to only reject edges that touch lethal cells. Also scales the normalised cost, so changing it shifts the weighting relative to other scorers. Read once at configure time.",
+    "category": "collision",
+    "plugin_specific": true,
+    "plugin": "CostmapScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "costmap",
+      "collision"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "CostmapScorer.use_maximum",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "When true the CostmapScorer scores each edge by the maximum costmap cell cost sampled along it; when false it uses the average of the sampled cell costs. In both cases the result is normalised by max_cost and multiplied by weight.",
+    "impact": "Keep true for a conservative, worst-case score that penalises an edge for its single most dangerous cell. Set false to average the cost so a mostly-clear edge with one high-cost cell is penalised less, which can produce smoother preferences but is less cautious. Read once at configure time.",
+    "category": "collision",
+    "plugin_specific": true,
+    "plugin": "CostmapScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "costmap",
+      "scoring"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "CostmapScorer.invalid_on_collision",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "When true an edge whose sampled costmap cost reaches max_cost (excluding the 255 unknown value) is marked invalid, so the router will not route over it. When false such edges are still scored (and returned as traversable) rather than rejected.",
+    "impact": "Leave true to guarantee routes avoid lethal/high-cost cells in the costmap. Set false only when you want the costmap to bias route selection without hard-excluding any edge (e.g. sparse or unreliable costmap coverage). Read once at configure time.",
+    "category": "collision",
+    "plugin_specific": true,
+    "plugin": "CostmapScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "costmap",
+      "collision"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "CostmapScorer.invalid_off_map",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "When true an edge with an endpoint that falls outside the costmap bounds is marked invalid and excluded from routing. When false such off-map edges are treated as valid (scored as traversable) instead of being rejected.",
+    "impact": "Keep true when the costmap is expected to cover the whole graph so edges leaving the mapped area are pruned. Set false for graphs that intentionally extend beyond the current costmap window, otherwise valid long-range edges would be discarded. Read once at configure time.",
+    "category": "collision",
+    "plugin_specific": true,
+    "plugin": "CostmapScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "costmap",
+      "collision"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "CostmapScorer.check_resolution",
+    "type": "int",
+    "default": 2,
+    "range": {
+      "min": 1,
+      "max": 100
+    },
+    "unit": "cells",
+    "description": "Stride, in costmap cells, at which the line between an edge's endpoints is sampled: 1 checks every cell, 2 every other cell, and so on. Larger strides skip cells to reduce the number of costmap lookups per edge.",
+    "impact": "Increase it to speed up scoring on large graphs or fine-resolution costmaps at the risk of stepping over small obstacles between samples; set to 1 for exhaustive checking when accuracy matters more than speed. Read once at configure time.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "CostmapScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "costmap",
+      "performance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "CostmapScorer.costmap_topic",
+    "type": "string",
+    "default": "global_costmap/costmap_raw",
+    "range": null,
+    "unit": "",
+    "description": "Topic (nav2_msgs/Costmap raw) the CostmapScorer subscribes to for the costs it evaluates edges against. If this matches the route_server's own costmap_topic the shared server subscription is reused; otherwise the scorer creates its own subscriber to this topic.",
+    "impact": "Point it at a dedicated or higher-inflation costmap to score routes against a different obstacle view than the server default. Setting a topic different from the server's costmap_topic spins up an extra subscription, so leave it aligned unless a separate costmap is intended. Read once at configure time.",
+    "category": "topics",
+    "plugin_specific": true,
+    "plugin": "CostmapScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "costmap",
+      "topics"
+    ],
+    "post_set_action": null
   }
 ]
