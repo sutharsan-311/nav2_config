@@ -524,6 +524,27 @@ def test_enum_options_valid_and_contain_default(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_enum_options_have_no_duplicates(entry: dict):
+    """``range.options`` must not repeat a value.
+
+    ``param_select.ParamSelect`` adds every option to its QComboBox verbatim, so
+    a duplicated entry produces two identical rows in the dropdown. Beyond the
+    cosmetic clutter, selecting "the" value becomes ambiguous and index-based
+    logic can land on the wrong row, so the discrete choices must be distinct.
+    This is the enum mirror of ``test_tags_have_no_duplicates``.
+    """
+    raw_range = entry.get("range")
+    if not raw_range or not isinstance(raw_range.get("options"), list):
+        return
+    options = raw_range["options"]
+    duplicates = sorted({opt for opt in options if options.count(opt) > 1})
+    assert not duplicates, (
+        f"Param '{entry['param']}' range.options contains duplicate value(s) "
+        f"{duplicates}; each discrete choice must appear once"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_enum_options_only_on_string_type(entry: dict):
     """``range.options`` may only appear on ``string``-typed params.
 
