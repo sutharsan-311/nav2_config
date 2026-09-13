@@ -443,6 +443,37 @@ def test_numeric_range_bounds_are_numeric(entry: dict):
         )
 
 
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_int_range_bounds_are_integers(entry: dict):
+    """An ``int``-typed param's ``range.min``/``range.max`` must be whole numbers.
+
+    ``ParamSlider`` builds its integer path from these bounds (param_slider.py):
+    with ``is_int=True`` the QSpinBox uses ``setMinimum(int(self._min))`` /
+    ``setMaximum(int(self._max))`` — so a fractional bound like ``0.5`` is
+    silently truncated to ``0`` and the declared limit is lost. Worse,
+    ``_pos_to_value`` returns ``self._min + pos``: a fractional ``min`` makes the
+    slider emit non-integer values (``0.5``, ``1.5`` …) for a param the schema
+    declares as ``int``, which the integer set-path cannot faithfully represent.
+    ``test_numeric_range_bounds_are_numeric`` only checks the bounds are numbers;
+    this narrows that for int params so a stray float bound surfaces at test time.
+    ``bool`` is rejected even though it subclasses ``int``.
+    """
+    if entry["type"] != "int":
+        return
+    raw_range = entry.get("range")
+    if not isinstance(raw_range, dict):
+        return
+    for key in ("min", "max"):
+        value = raw_range.get(key)
+        if value is None:
+            continue
+        assert not isinstance(value, bool) and isinstance(value, int), (
+            f"Param '{entry['param']}' is type int but range {key} is "
+            f"{type(value).__name__} ({value!r}); use a whole-number bound "
+            f"(fractional bounds are truncated by the int ParamSlider)"
+        )
+
+
 # The only keys ``ParamRange.from_dict`` reads out of a ``range`` object
 # (nav2_config/types/params.py). Any other key in the JSON is silently dropped
 # during parsing.
