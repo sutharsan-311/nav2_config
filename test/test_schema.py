@@ -191,6 +191,28 @@ def test_tags_are_non_empty_strings(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_tags_are_non_empty(entry: dict):
+    """Every entry must carry at least one tag.
+
+    ``param_row.matches_search`` adds ``any(q in tag.lower() for tag in
+    defn.tags)`` to its match test (param_row.py) — tags are a curated,
+    cross-cutting search vector (e.g. ``"safety"``, ``"performance"``) that the
+    param name/description/category often do not contain. An entry that ships an
+    empty ``tags`` list silently loses that recall path, so a user searching by a
+    concept keyword would never surface it even though the param is conceptually a
+    match. ``test_tags_are_non_empty_strings`` only validates the *elements* of the
+    list (an empty list passes its element loop vacuously); this guards the list
+    itself so every param stays tag-searchable, mirroring how
+    ``test_impact_is_non_empty`` protects the schema's other core-value field.
+    """
+    tags = entry.get("tags")
+    assert isinstance(tags, list) and tags, (
+        f"Param '{entry['param']}' must have at least one tag "
+        f"(tags feed param_row search); got {tags!r}"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_tags_have_no_duplicates(entry: dict):
     """Tags on a single entry must be unique.
 
