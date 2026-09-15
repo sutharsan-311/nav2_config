@@ -145,6 +145,28 @@ def test_impact_is_non_empty(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_impact_differs_from_description(entry: dict):
+    """The tuning ``impact`` note must not merely restate the ``description``.
+
+    ``description`` answers *what the param is*; ``impact`` answers *what happens
+    when you change it* — the tuning trade-off that is the whole reason this
+    schema exists over the raw Nav2 docs. Both surface in the GUI as separate
+    fields, so an entry whose ``impact`` is a verbatim copy of its ``description``
+    ships an empty-of-value tuning note that ``test_impact_is_non_empty`` cannot
+    catch (a non-blank copy passes that check). Comparison is on the stripped,
+    case-folded text so a whitespace/casing-only difference still counts as a
+    duplicate. Keep the two fields genuinely distinct.
+    """
+    description = (entry.get("description") or "").strip().casefold()
+    impact = (entry.get("impact") or "").strip().casefold()
+    assert impact != description, (
+        f"Param '{entry['param']}' has an impact note identical to its "
+        f"description; impact must describe the tuning trade-off, not restate "
+        f"what the param is"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_plugin_specific_is_bool(entry: dict):
     assert isinstance(entry.get("plugin_specific"), bool), (
         f"Param '{entry['param']}' plugin_specific must be bool, "
