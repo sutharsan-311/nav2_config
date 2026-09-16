@@ -14331,6 +14331,162 @@
     "post_set_action": null
   },
   {
+    "node": "loopback_simulator",
+    "param": "odom_publish_dur",
+    "type": "double",
+    "default": 0.01,
+    "range": {
+      "min": 0.001,
+      "max": 1.0
+    },
+    "unit": "s",
+    "description": "Period of the dedicated odometry publish timer. Controls how frequently the simulator publishes the Odometry message and the odom→base TF, independently of the main update_duration integration timer. Defaults to the value of update_duration when unset. Declared in nav2_loopback_sim/src/loopback_simulator.cpp.",
+    "impact": "Smaller values publish odometry more often (smoother TF/odom for consumers) at higher CPU cost; larger values reduce load but coarsen the odom stream. Setting it far above update_duration means pose is integrated more often than it is reported.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "timing",
+      "odometry"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "scan_publish_dur",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.01,
+      "max": 5.0
+    },
+    "unit": "s",
+    "description": "Period of the simulated laser scan publish timer, and the value written to the scan_time field of the published LaserScan. Only active when publish_scan is true. Declared in nav2_loopback_sim/src/loopback_simulator.cpp.",
+    "impact": "Smaller values raise the simulated LiDAR update rate (more current obstacle data for the local costmap) at higher ray-casting CPU cost; larger values lighten load but make obstacle detection lag the robot's motion. Match to the real sensor's scan rate.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "lidar",
+      "sensor",
+      "timing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "publish_map_odom_tf",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Whether the simulator broadcasts the map→odom TF transform. When true it publishes a static-like map→odom transform so the full map→odom→base chain is available without AMCL. Declared in nav2_loopback_sim/src/loopback_simulator.cpp.",
+    "impact": "Leave true for a self-contained loopback run. Set false when another node (e.g. AMCL or an external localiser) already publishes map→odom, otherwise the two publishers fight over the same transform and produce a jittering or conflicting TF tree.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "tf",
+      "frames"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "scan_noise_std",
+    "type": "double",
+    "default": 0.01,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "m",
+    "description": "Standard deviation of the zero-mean Gaussian noise added to each simulated laser range reading. Noise is only applied when the value is greater than 0.0. Declared in nav2_loopback_sim/src/loopback_simulator.cpp.",
+    "impact": "Larger values make the simulated scan noisier, exercising the costmap's inflation and filtering more like a real sensor; 0.0 produces perfectly clean rays. Set to a realistic sensor sigma when testing perception robustness, or 0.0 for deterministic runs.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "lidar",
+      "sensor",
+      "noise"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "publish_scan",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Whether the simulator raycasts against the map and publishes a simulated LaserScan on the scan topic. When false, no scan publisher, map client, or TF listener is created. Declared in nav2_loopback_sim/src/loopback_simulator.cpp.",
+    "impact": "Leave true to feed the local costmap with simulated obstacles. Set false to skip scan simulation entirely, which removes the ray-casting and map-fetch overhead when only odometry/motion behaviour is being tested. Read only at configure time.",
+    "category": "sensor",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "lidar",
+      "sensor"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "publish_clock",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Whether the simulator publishes the /clock topic to drive ROS simulation time, scaled by speed_factor. Declared in nav2_loopback_sim/src/loopback_simulator.cpp.",
+    "impact": "Enable (with use_sim_time set on the other nodes) to run the whole stack on simulated time so speed_factor can slow down or speed up playback. Disable to use wall-clock time; publishing /clock while other nodes expect wall time causes timing and TF-timeout errors.",
+    "category": "timing",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "loopback_simulator",
+      "timing",
+      "clock",
+      "simulation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "loopback_simulator",
+    "param": "speed_factor",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.1,
+      "max": 10.0
+    },
+    "unit": "",
+    "description": "Multiplier applied to the published simulation clock: values above 1.0 advance /clock faster than wall time and values below 1.0 slower. Only effective when publish_clock is true. Must be positive. Declared in nav2_loopback_sim/src/loopback_simulator.cpp.",
+    "impact": "Raise above 1.0 to fast-forward long navigation runs; lower below 1.0 to slow playback for debugging. A non-positive value is rejected by the parameter validation callback. This is the one loopback parameter applied live via the post-set callback.",
+    "category": "timing",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "loopback_simulator",
+      "timing",
+      "clock",
+      "simulation"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "keepout_filter_mask_server",
     "param": "topic_name",
     "type": "string",
