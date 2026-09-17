@@ -9168,6 +9168,72 @@
   },
   {
     "node": "collision_monitor",
+    "param": "min_range",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "m",
+    "description": "Minimum range from the sensor origin below which PointCloud2 points are discarded. Range is computed as the Euclidean distance of the raw point in the sensor frame before it is transformed into the base frame. Applies to a PointCloud observation source.",
+    "impact": "Raise to reject self-returns and spurious near-field points (e.g. reflections off the robot body or a protective dome) that would otherwise trigger the zone. Leave at 0.0 to keep all points; setting it too high blinds the monitor to genuinely close obstacles.",
+    "category": "filter",
+    "plugin_specific": true,
+    "plugin": "PointCloud",
+    "hot_reload": true,
+    "tags": [
+      "collision_monitor",
+      "pointcloud",
+      "filter",
+      "range"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "use_global_height",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "For a PointCloud observation source, take each point's height from a dedicated 'height' field in the message rather than from its transformed z coordinate. Intended for pipelines that supply ground-contoured height (e.g. terrain-relative elevation). If true but the cloud has no 'height' field, the source errors out and returns no data.",
+    "impact": "Enable only when the incoming cloud actually carries a 'height' field with the desired above-ground value; otherwise the source will fail to produce obstacle points. When false, min_height/max_height are applied to the base-frame z of each point.",
+    "category": "filter",
+    "plugin_specific": true,
+    "plugin": "PointCloud",
+    "hot_reload": true,
+    "tags": [
+      "collision_monitor",
+      "pointcloud",
+      "filter",
+      "height"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "transport_type",
+    "type": "string",
+    "default": "raw",
+    "range": null,
+    "unit": "",
+    "description": "point_cloud_transport transport hint used when subscribing to a PointCloud observation source, e.g. 'raw' for uncompressed PointCloud2 or a compressed transport plugin name such as 'draco'/'zlib' when available. Only used on distributions built with point_cloud_transport support.",
+    "impact": "Match this to the transport the publisher uses. A compressed transport reduces bandwidth for high-rate dense clouds at the cost of encode/decode CPU; 'raw' avoids that overhead. A mismatch or missing transport plugin means no data is received. Read at subscription time, so changing it is not hot-reloadable.",
+    "category": "topics",
+    "plugin_specific": true,
+    "plugin": "PointCloud",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "pointcloud",
+      "transport",
+      "topics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
     "param": "time_before_collision",
     "type": "double",
     "default": 2.0,
