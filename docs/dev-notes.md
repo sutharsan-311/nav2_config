@@ -19,6 +19,35 @@ overwrites), this file is hand-maintained and safe for long-lived notes.
   `signals.restart_suggested` (or a dedicated notification) for these two
   actions. Behavioural change — leave for Sutharsan to triage.
 
+- **`docking_server` controller params never bind to the live node.** All 18
+  parameters the docking controller declares under the `controller.` prefix in
+  `nav2_docking/opennav_docking/src/controller.cpp`
+  (`k_phi`, `k_delta`, `beta`, `lambda`, `v_linear_min`, `v_linear_max`,
+  `v_angular_max`, `slowdown_radius`, `deceleration_max`,
+  `rotate_to_heading_angular_vel`, `rotate_to_heading_max_angular_accel`,
+  `use_collision_detection`, `costmap_topic`, `footprint_topic`,
+  `transform_tolerance`, `projection_time`, `simulation_time_step`,
+  `dock_collision_threshold`) are declared via
+  `declare_or_get_parameter("controller.<name>", ...)`, so the running node
+  reports them as `controller.<name>`. In the schema these entries store the
+  bare name (e.g. `param: "k_phi"`) with no `ros2_name`, so
+  `Nav2ParamDef.ros2_name` falls back to `"k_phi"`.
+  `param_client.get_all_nav2_params` binds live values by intersecting
+  `d.ros2_name` against the node's reported names
+  (`ros2_names = [d.ros2_name for d in node_defs if d.ros2_name in existing_names]`,
+  param_client.py). `"k_phi"` is never in `existing_names` (which holds
+  `"controller.k_phi"`), so these params are never fetched and never set — they
+  always render the schema default and silently no-op on write. Contrast the
+  established nested-param convention (e.g. `controller_server`
+  `FollowPath.desired_linear_vel`), where the full dotted name lives in `param`
+  itself and `ros2_name` is null. Suggested fix: make the docking controller
+  entries match that convention — either rename `param` to `controller.<name>`
+  (changes the GUI display label and the `(node, param)` key, matching
+  `FollowPath.*`) or add an explicit `ros2_name: "controller.<name>"` (keeps the
+  short display label but diverges from the convention). Behavioural change
+  touching 18 entries plus a display/convention decision — leave for Sutharsan
+  to triage.
+
 ## Known false positives in the coverage backlog
 
 - **`docking_server` `simulation_step`.** `scripts/nav2_param_gap.py` derives
