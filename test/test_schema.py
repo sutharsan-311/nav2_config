@@ -642,6 +642,33 @@ def test_enum_options_only_on_string_type(entry: dict):
     )
 
 
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_range_options_and_bounds_are_mutually_exclusive(entry: dict):
+    """A ``range`` must not carry both ``options`` and a numeric ``min``/``max``.
+
+    ``param_row._make_input_widget`` tests ``defn.range.options`` *before* the
+    numeric slider branch (param_row.py): the first ``if`` builds a ``ParamSelect``
+    dropdown and returns, so the ``min``/``max`` slider branch below it is never
+    reached. An entry that declares both would therefore render as a dropdown and
+    silently discard its declared bounds — the two are alternative widget
+    representations, never combined. Reject the overlap here so the intent (enum
+    *or* slider) is unambiguous at authoring time. This is the range-object mirror
+    of the type-guard tests ``test_enum_options_only_on_string_type`` and
+    ``test_numeric_range_bounds_only_on_scalar_numeric_type``.
+    """
+    raw_range = entry.get("range")
+    if not isinstance(raw_range, dict):
+        return
+    if raw_range.get("options") is None:
+        return
+    has_bound = raw_range.get("min") is not None or raw_range.get("max") is not None
+    assert not has_bound, (
+        f"Param '{entry['param']}' range defines both options and min/max; a param "
+        f"is rendered as either a ParamSelect dropdown (options) or a ParamSlider "
+        f"(min/max), never both — the options branch wins and the bounds are dropped"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Parsed dataclass tests
 # ---------------------------------------------------------------------------
