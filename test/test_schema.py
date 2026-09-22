@@ -5,6 +5,7 @@
 
 import json
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -786,6 +787,39 @@ def test_category_uses_canonical_spelling(entry: dict):
     assert category not in CATEGORY_ALIASES, (
         f"Param '{entry['param']}' uses non-canonical category '{category}'; "
         f"use '{CATEGORY_ALIASES.get(category)}' instead"
+    )
+
+
+# Canonical category form: lowercase, words joined by single underscores
+# (e.g. ``critic_weights``, ``goal_tolerance``). Every one of the schema's
+# existing categories already matches this.
+_CATEGORY_FORMAT = re.compile(r"[a-z0-9]+(?:_[a-z0-9]+)*")
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_category_is_canonical_format(entry: dict):
+    """A ``category`` must be lowercase ``snake_case`` (no spaces, no capitals).
+
+    ``param_panel`` groups rows by the *raw* ``definition.category`` string
+    (param_panel.py: ``categories.setdefault(pv.definition.category, [])``) but
+    the section header is rendered through ``category.replace("_", " ").title()``
+    (``_CategorySection._update_header``). So two categories that differ only in
+    case or in whitespace-vs-underscore — e.g. ``"Safety"`` vs ``"safety"``, or
+    ``"critic weights"`` vs ``"critic_weights"`` — form two *separate*
+    collapsible sections yet collapse to the *same* visible header
+    (``"Safety"``, ``"Critic Weights"``), so the panel shows what looks like one
+    group duplicated. ``test_category_uses_canonical_spelling`` only guards a
+    hand-listed set of singular/plural aliases; this guards the textual form
+    itself so a stray capital or space can never silently fragment a group.
+    """
+    category = entry.get("category")
+    if not isinstance(category, str):
+        return  # non-string categories are caught by test_category_is_non_empty_string
+    assert _CATEGORY_FORMAT.fullmatch(category), (
+        f"Param '{entry['param']}' category {category!r} is not canonical "
+        f"lowercase snake_case; use e.g. 'critic_weights' (a stray capital or "
+        f"space fragments the param panel's grouping vs an otherwise-identical "
+        f"category)"
     )
 
 
