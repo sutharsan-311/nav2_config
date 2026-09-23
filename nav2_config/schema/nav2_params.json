@@ -12556,6 +12556,26 @@
   },
   {
     "node": "docking_server",
+    "param": "dock_backwards",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Deprecated global override for the docking approach direction. It is declared without a default and only takes effect if you explicitly set it: when present and true the robot docks backward, when present and false it docks forward, overriding the direction the dock plugin reports via getDockDirection(). When left unset (the normal case) the direction is taken from the per-dock 'dock_direction' plugin parameter instead. Setting it logs a deprecation warning; prefer 'dock_direction'.",
+    "impact": "Do not set this on new configurations — use the dock plugin's 'dock_direction' parameter, which supports per-dock directions and is the supported path. If a legacy config sets dock_backwards it forces the same direction for every dock regardless of each plugin's declared direction, which can drive the robot the wrong way into docks that expect the opposite approach.",
+    "category": "docking",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "direction",
+      "deprecated"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
     "param": "external_detection_rotation_yaw",
     "type": "double",
     "default": 0.0,
