@@ -15803,5 +15803,91 @@
       "topics"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "TimeScorer.weight",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "Proportional weight applied to the TimeScorer edge cost function. The scorer estimates the traversal time of an edge (a previously measured time when available, otherwise edge length divided by the edge's speed limit or max_vel) and multiplies it by this weight before it is summed with the other configured edge cost functions.",
+    "impact": "Raise it to make the router favour faster (higher speed-limit or shorter-time) edges more strongly relative to distance/costmap scorers; lower it to let those other scorers dominate. Only meaningful when multiple edge cost functions are combined. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "TimeScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "time"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "TimeScorer.max_vel",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "m/s",
+    "description": "Fallback maximum velocity the TimeScorer uses to convert an edge's length into a traversal time when the edge carries neither a previously measured time (time_tag) nor a per-edge speed limit (speed_tag). Estimated time is edge length divided by this velocity.",
+    "impact": "Set it to the robot's realistic cruising speed so unannotated edges are scored with a sensible time estimate. Too high underestimates traversal time and biases the router toward long edges; too low overestimates it. Ignored on any edge that supplies its own speed limit or measured time. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "TimeScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "time"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "TimeScorer.speed_tag",
+    "type": "string",
+    "default": "abs_speed_limit",
+    "range": null,
+    "unit": "",
+    "description": "Name of the graph edge metadata tag the TimeScorer reads a per-edge speed limit from. When an edge defines this tag with a positive value, the scorer divides the edge length by that speed to estimate traversal time; otherwise it falls back to max_vel.",
+    "impact": "Change it to match the tag name used when authoring the route graph's speed annotations. A mismatch means the scorer never finds a speed limit and always falls back to max_vel, so per-edge speed data is silently ignored. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "TimeScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "graph"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "TimeScorer.time_tag",
+    "type": "string",
+    "default": "abs_time_taken",
+    "range": null,
+    "unit": "",
+    "description": "Name of the graph edge metadata tag the TimeScorer reads a previously measured traversal time from. When an edge defines this tag with a positive value the scorer uses that measured time directly (weight times time) instead of estimating from length and speed.",
+    "impact": "Change it to match the tag name your system writes real traversal times under so the scorer prefers empirical timings over the length/speed estimate. A mismatch means measured times are never used and every edge falls back to the speed-based estimate. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "TimeScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "graph"
+    ],
+    "post_set_action": null
   }
 ]
