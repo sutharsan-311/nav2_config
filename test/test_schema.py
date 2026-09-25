@@ -168,6 +168,29 @@ def test_impact_differs_from_description(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_prose_fields_end_with_terminal_punctuation(entry: dict):
+    """``description`` and ``impact`` must read as complete sentences.
+
+    Both fields render as prose in the GUI details pane, and every entry in the
+    schema today ends them with sentence-terminating punctuation. A field that
+    stops mid-sentence usually signals a truncated or accidentally clipped note
+    (e.g. a trailing clause dropped during editing) — a class of defect that the
+    non-empty and differs-from-description guards cannot catch. Accept the common
+    terminators plus a closing bracket/quote/percent that legitimately ends a
+    clause (e.g. "...within [0, 1].", "...set to 100%").
+    """
+    terminators = (".", "!", "?", ")", "]", '"', "%")
+    for field_name in ("description", "impact"):
+        text = (entry.get(field_name) or "").strip()
+        if not text:
+            continue  # emptiness is caught by the dedicated non-empty guards
+        assert text.endswith(terminators), (
+            f"Param '{entry['param']}' {field_name} does not end with terminal "
+            f"punctuation (looks truncated): ...{text[-40:]!r}"
+        )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_plugin_specific_is_bool(entry: dict):
     assert isinstance(entry.get("plugin_specific"), bool), (
         f"Param '{entry['param']}' plugin_specific must be bool, "
