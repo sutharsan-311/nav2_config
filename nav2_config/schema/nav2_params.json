@@ -15889,5 +15889,91 @@
       "graph"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "DistanceScorer.weight",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "Proportional weight applied to the DistanceScorer edge cost function. The scorer computes the Euclidean length of an edge (optionally divided by a per-edge speed limit) and multiplies it by this weight before it is summed with the other configured edge cost functions.",
+    "impact": "Raise it to make the router prefer shorter routes more strongly relative to the time/costmap scorers; lower it to let those other scorers dominate. Only meaningful when multiple edge cost functions are combined. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "DistanceScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "distance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "DistanceScorer.speed_tag",
+    "type": "string",
+    "default": "speed_limit",
+    "range": null,
+    "unit": "",
+    "description": "Name of the graph edge metadata tag the DistanceScorer reads a per-edge speed limit from. When an edge defines this tag with a positive value the scorer divides the edge length by that speed, so faster edges score lower; otherwise a speed of 1.0 is assumed and the raw edge length is used.",
+    "impact": "Change it to match the tag name used when authoring the route graph's speed annotations. A mismatch means the scorer never finds a speed limit and always scores by raw length, so per-edge speed data is silently ignored. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "DistanceScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "graph"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "PenaltyScorer.weight",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "Proportional weight applied to the PenaltyScorer edge cost function. The scorer reads a manually authored penalty value from an edge's metadata and multiplies it by this weight before it is summed with the other configured edge cost functions.",
+    "impact": "Raise it to make authored per-edge penalties (or bonuses) dominate route selection more strongly relative to the distance/time/costmap scorers; lower it to make them a gentle bias. Only meaningful when multiple edge cost functions are combined. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "PenaltyScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "penalty"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "PenaltyScorer.penalty_tag",
+    "type": "string",
+    "default": "penalty",
+    "range": null,
+    "unit": "",
+    "description": "Name of the graph edge metadata tag the PenaltyScorer reads a per-edge penalty value from. When an edge defines this tag the scorer returns weight times that value (which defaults to 0.0 when absent); a positive penalty discourages routing over the edge, a negative value encourages it.",
+    "impact": "Change it to match the tag name used when authoring the route graph's penalty annotations. A mismatch means every edge is treated as having zero penalty, so hand-authored routing preferences are silently ignored. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "PenaltyScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "graph"
+    ],
+    "post_set_action": null
   }
 ]
