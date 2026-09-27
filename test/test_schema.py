@@ -123,6 +123,41 @@ def test_node_is_known(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_param_name_is_valid_ros2_identifier(entry: dict):
+    """``param`` (and any explicit ``ros2_name``) must be a well-formed ROS 2
+    parameter name: a non-empty string of dot-separated identifier characters
+    with no whitespace.
+
+    A ROS 2 parameter name is a dotted identifier drawn from
+    ``[A-Za-z0-9_.]`` — it never contains spaces. The effective live-lookup key
+    is ``ros2_name or param`` (``Nav2ParamDef.__post_init__``), and
+    ``param_client.fetch_node_params`` binds schema entries to running values by
+    testing that key for membership in the node's reported names
+    (``d.ros2_name in existing_names``, param_client.py). A stray leading/trailing
+    space or an interior space — the kind of copy-paste slip
+    ``test_required_fields_present`` (presence only) and the uniqueness guards
+    cannot catch — would silently fail that set membership, so the param would
+    never bind and would always render as its schema default. This guards the
+    *shape* of the name so every entry stays bindable.
+    """
+    name_re = re.compile(r"^[A-Za-z0-9_.]+$")
+    param = entry.get("param")
+    assert isinstance(param, str) and param.strip(), (
+        f"Param name must be a non-empty string, got {param!r}"
+    )
+    assert name_re.match(param), (
+        f"Param '{param}' is not a valid ROS 2 parameter name "
+        f"(expected dot-separated [A-Za-z0-9_.], no whitespace)"
+    )
+    ros2_name = entry.get("ros2_name")
+    if ros2_name is not None:
+        assert isinstance(ros2_name, str) and name_re.match(ros2_name), (
+            f"Param '{param}' has an ros2_name that is not a valid ROS 2 "
+            f"parameter name: {ros2_name!r}"
+        )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_description_is_non_empty(entry: dict):
     assert entry.get("description", "").strip(), (
         f"Param '{entry['param']}' has an empty description"
