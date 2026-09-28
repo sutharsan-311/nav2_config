@@ -128,8 +128,10 @@ def test_param_name_is_valid_ros2_identifier(entry: dict):
     parameter name: a non-empty string of dot-separated identifier characters
     with no whitespace.
 
-    A ROS 2 parameter name is a dotted identifier drawn from
-    ``[A-Za-z0-9_.]`` — it never contains spaces. The effective live-lookup key
+    A ROS 2 parameter name is one or more identifier segments drawn from
+    ``[A-Za-z0-9_]`` joined by single dots — it never contains spaces, and
+    never has a leading/trailing dot or an empty segment. The effective
+    live-lookup key
     is ``ros2_name or param`` (``Nav2ParamDef.__post_init__``), and
     ``param_client.fetch_node_params`` binds schema entries to running values by
     testing that key for membership in the node's reported names
@@ -140,14 +142,25 @@ def test_param_name_is_valid_ros2_identifier(entry: dict):
     never bind and would always render as its schema default. This guards the
     *shape* of the name so every entry stays bindable.
     """
-    name_re = re.compile(r"^[A-Za-z0-9_.]+$")
+    # Anchored, per-segment pattern: one or more identifier segments
+    # ([A-Za-z0-9_]+) joined by single dots, with no leading/trailing dot and
+    # no empty segment. A flat character class like ``^[A-Za-z0-9_.]+$`` would
+    # also accept malformed names such as ``controller.`` (trailing dot),
+    # ``.foo`` (leading dot) or ``a..b`` (empty segment) — none of which is a
+    # valid ROS 2 parameter name, and each would fail the same
+    # ``ros2_name in existing_names`` set membership in
+    # ``param_client.fetch_node_params`` that the whitespace slip does, so the
+    # param would never bind to its live value. This narrows the check to the
+    # real dotted-identifier grammar.
+    name_re = re.compile(r"^[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*$")
     param = entry.get("param")
     assert isinstance(param, str) and param.strip(), (
         f"Param name must be a non-empty string, got {param!r}"
     )
     assert name_re.match(param), (
         f"Param '{param}' is not a valid ROS 2 parameter name "
-        f"(expected dot-separated [A-Za-z0-9_.], no whitespace)"
+        f"(expected dot-separated [A-Za-z0-9_] segments, no whitespace, "
+        f"no leading/trailing dot, no empty segment)"
     )
     ros2_name = entry.get("ros2_name")
     if ros2_name is not None:
