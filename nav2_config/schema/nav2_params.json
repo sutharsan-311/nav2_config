@@ -1205,6 +1205,178 @@
     "post_set_action": null
   },
   {
+    "node": "planner_server",
+    "param": "GridBased.downsample_costmap",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Whether to downsample the costmap to a coarser resolution before searching. Works together with downsampling_factor.",
+    "impact": "Enabling this speeds up planning on large or high-resolution maps at the cost of spatial precision, so paths may not thread the tightest gaps. Leave off unless planning time is a bottleneck.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "costmap"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.downsampling_factor",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 10
+    },
+    "unit": "",
+    "description": "Integer multiplier applied to the costmap resolution when downsample_costmap is true (e.g. a factor of 2 on a 5cm costmap searches at 10cm).",
+    "impact": "Larger factors coarsen the search grid, cutting planning time but reducing the ability to plan through narrow passages. Only takes effect when downsample_costmap is enabled.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "costmap"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.max_on_approach_iterations",
+    "type": "int",
+    "default": 1000,
+    "range": null,
+    "unit": "",
+    "description": "Maximum number of search iterations to keep attempting once the search is already within the goal tolerance, looking for a closer solution.",
+    "impact": "Higher values let the planner refine the final approach for a pose closer to the exact goal at the cost of extra search time; lower values return as soon as a within-tolerance solution is found.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.terminal_checking_interval",
+    "type": "int",
+    "default": 5000,
+    "range": null,
+    "unit": "",
+    "description": "Number of search iterations between checks for goal cancellation or planner timeout.",
+    "impact": "Smaller values make the planner react faster to cancel requests and timeouts but add per-check overhead; larger values reduce overhead at the cost of slower responsiveness to cancellation.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.cache_obstacle_heuristic",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Cache the obstacle-map dynamic-programming distance heuristic between successive replans to the same goal, rather than recomputing it each cycle.",
+    "impact": "Dramatically speeds up replanning (reported up to ~40x) when the costmap is largely static and the goal is unchanged. Leave off if the costmap changes substantially between plans, since a stale cached heuristic can misguide the search.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "heuristic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.retrospective_penalty",
+    "type": "double",
+    "default": 0.015,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Penalty that biases the search to prefer maneuvers later along the path rather than earlier, delaying expansion of early nodes until necessary.",
+    "impact": "Raising it saves search time by expanding fewer early nodes, but pushing it too high can degrade path quality; must stay within 0.0-1.0. The default is a light bias that rarely needs tuning.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "penalty"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.lookup_table_size",
+    "type": "double",
+    "default": 20.0,
+    "range": null,
+    "unit": "m",
+    "description": "Size, in meters, of the Dubin/Reeds-Shepp distance window that is precomputed and cached for the heuristic.",
+    "impact": "A larger table caches heuristic distances over a wider window (helpful for long-range plans) at the cost of more memory and setup time; a smaller table saves memory but may recompute distances more often on long paths.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "heuristic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.debug_visualizations",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Publish search expansions on the /expansions topic (as an array of poses) and planned footprints on /planned_footprints, for debugging the search.",
+    "impact": "Useful for visualizing why the planner produces a given path, but heavy to compute and render; enabling it degrades planning performance, so keep it off outside of debugging.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "hybrid",
+      "debug"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "amcl",
     "param": "min_particles",
     "type": "int",
