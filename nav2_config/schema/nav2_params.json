@@ -9207,7 +9207,15 @@
     "param": "action_type",
     "type": "string",
     "default": "stop",
-    "range": null,
+    "range": {
+      "options": [
+        "stop",
+        "slowdown",
+        "limit",
+        "approach",
+        "none"
+      ]
+    },
     "unit": "",
     "description": "Safety action taken when the polygon zone is triggered. Accepted values: 'stop' (zero velocity), 'slowdown' (scale velocity by slowdown_ratio), 'limit' (cap linear/angular velocity), 'approach' (project trajectory and stop before collision), 'none' (no action, monitoring only).",
     "impact": "Determines how aggressively the robot reacts to objects in the zone. 'stop' is safest but most disruptive. 'approach' allows smooth deceleration but requires accurate odometry. Required \u2014 omitting this parameter causes node startup to fail.",
@@ -9678,7 +9686,13 @@
     "param": "type",
     "type": "string",
     "default": "polygon",
-    "range": null,
+    "range": {
+      "options": [
+        "polygon",
+        "circle",
+        "velocity_polygon"
+      ]
+    },
     "unit": "",
     "description": "Shape type of this named zone. Accepted values: 'polygon' (arbitrary vertex list or dynamically subscribed footprint), 'circle' (static radius around the base frame), 'velocity_polygon' (set of sub-polygons selected by the current commanded velocity). Set per zone as <polygon_name>.type.",
     "impact": "Determines which shape parameters the zone reads ('points' for polygon, 'radius' for circle, 'velocity_polygons' for velocity_polygon). Required with no source default \u2014 omitting it or using an unknown value causes node configuration to fail.",
