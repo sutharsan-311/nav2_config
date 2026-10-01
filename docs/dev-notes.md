@@ -48,6 +48,27 @@ overwrites), this file is hand-maintained and safe for long-lived notes.
   touching 18 entries plus a display/convention decision — leave for Sutharsan
   to triage.
 
+- **One-sided numeric ranges never reach a slider and are silently unenforced.**
+  `param_row._make_input_widget` (nav2_config/gui/widgets/param_row.py) only
+  builds a `ParamSlider` when a `double`/`int` param has **both** bounds set
+  (`defn.range.min is not None and defn.range.max is not None`); otherwise it
+  falls through to the free-form `ParamInput` at the end of the method.
+  `ParamInput` carries no validator/clamp logic, so a param that declares only
+  one bound gets a plain text box that accepts any value. 10 schema entries do
+  this today — all `collision_monitor`, each with a `min` and `max: null`:
+  `min_points`, `min_height`, `max_height`, `min_range`, `time_before_collision`,
+  `radius`, `linear_limit`, `angular_limit`, `trigger_consecutive_points`,
+  `release_consecutive_points`. For these the declared lower bound (e.g.
+  `radius >= 0.0`, `min_points >= 1`) is documented and still used by
+  `test_numeric_default_within_range` to validate the schema default, but it does
+  **not** constrain what the user can type in the GUI — a negative radius or a
+  zero `min_points` can be entered and sent to the node. The one-sided bound is
+  deliberate (these params have a natural floor but no meaningful ceiling), so the
+  values are correct; it is only the GUI enforcement that is missing. Possible
+  fixes: give `ParamInput` an optional `QDoubleValidator`/`QIntValidator` seeded
+  from a one-sided `range`, or let `ParamSlider` accept a single bound with a
+  sensible open other end. GUI/behavioural change — leave for Sutharsan to triage.
+
 ## Known false positives in the coverage backlog
 
 - **`docking_server` `simulation_step`.** `scripts/nav2_param_gap.py` derives
