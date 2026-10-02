@@ -275,6 +275,28 @@ def test_unit_is_string(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_compound_unit_only_on_array_type(entry: dict):
+    """A comma-separated (compound) unit may only appear on an array-typed param.
+
+    A few params take a fixed-length vector whose elements carry different units,
+    so the schema encodes them as a per-element, comma-separated string — e.g.
+    ``velocity_smoother.max_velocity`` is a ``double_array`` of ``[vx, vy, vtheta]``
+    with unit ``"m/s, m/s, rad/s"``. The comma count mirrors the element count. On
+    a scalar param a comma in the unit would be meaningless (a scalar has a single
+    unit), so it almost certainly signals a typo or a type/unit mismatch. This
+    guards that correspondence: if the unit lists multiple comma-separated parts,
+    the declared type must be one of the ``*_array`` types.
+    """
+    unit = entry.get("unit", "")
+    if isinstance(unit, str) and "," in unit:
+        assert entry["type"] in ARRAY_ELEMENT_TYPE, (
+            f"Param '{entry['param']}' has a compound unit {unit!r} but non-array "
+            f"type {entry['type']!r}; comma-separated per-element units are only "
+            f"valid on array types ({sorted(ARRAY_ELEMENT_TYPE)})"
+        )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_tags_are_non_empty_strings(entry: dict):
     tags = entry.get("tags")
     assert isinstance(tags, list), f"Param '{entry['param']}' tags must be a list"
