@@ -297,6 +297,30 @@ def test_compound_unit_only_on_array_type(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_bool_param_has_no_unit(entry: dict):
+    """A ``bool``-typed param must not carry a physical ``unit``.
+
+    A boolean is a flag — it has no magnitude, so a unit like ``"s"`` or ``"m"``
+    on a bool param is meaningless and almost certainly a copy-paste slip from a
+    neighbouring numeric entry. The GUI renders the unit as a suffix label beside
+    the input (param_row passes ``defn.unit`` through verbatim), so a stray unit
+    would print next to a checkbox. ``test_compound_unit_only_on_array_type``
+    guards the array side of the type/unit correspondence and
+    ``test_unit_is_string`` guards the field's type; this guards the scalar-bool
+    side, where *any* non-empty unit is wrong (unlike ``string`` params such as
+    ``collision_monitor.points``, whose value legitimately encodes metres). The
+    unit must be the empty string for every boolean flag.
+    """
+    if entry.get("type") != "bool":
+        return
+    unit = entry.get("unit", "")
+    assert isinstance(unit, str) and not unit.strip(), (
+        f"Param '{entry['param']}' is type bool but carries unit {unit!r}; a "
+        f"boolean flag has no physical unit (use \"\")"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_tags_are_non_empty_strings(entry: dict):
     tags = entry.get("tags")
     assert isinstance(tags, list), f"Param '{entry['param']}' tags must be a list"
