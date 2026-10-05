@@ -16273,5 +16273,131 @@
       "graph"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.smoother.tolerance",
+    "type": "double",
+    "default": 1e-10,
+    "range": null,
+    "unit": "",
+    "description": "Convergence threshold for the Smac planner's gradient-descent path smoother. Each smoothing pass sums the absolute position change applied to every path point, and the loop repeats until that total change falls below this tolerance.",
+    "impact": "Lower it to let the smoother run more passes toward a tighter, smoother result at the cost of extra planning time; raise it to stop earlier for faster but coarser smoothing. Used by both SmacPlannerHybrid and SmacPlannerLattice; only re-read when the smoother is rebuilt.",
+    "category": "path_smoothing",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": false,
+    "tags": [
+      "planner",
+      "smac",
+      "smoother",
+      "convergence"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.smoother.max_iterations",
+    "type": "int",
+    "default": 1000,
+    "range": null,
+    "unit": "",
+    "description": "Maximum number of gradient-descent iterations the Smac path smoother will run. If the iteration limit is hit before the tolerance is met the smoother returns the last valid path; setting it to 0 disables smoothing entirely.",
+    "impact": "Raise it to allow fuller convergence on long or sharply-curved paths at the cost of more planning time; lower it to bound smoothing time. Set to 0 to skip smoothing altogether. Used by both Hybrid and Lattice Smac planners.",
+    "category": "path_smoothing",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": false,
+    "tags": [
+      "planner",
+      "smac",
+      "smoother",
+      "iterations"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.smoother.w_data",
+    "type": "double",
+    "default": 0.2,
+    "range": null,
+    "unit": "",
+    "description": "Weight of the data term in the Smac smoother's update, which pulls each smoothed point back toward its original planned position. It trades off against w_smooth in the per-point update applied every iteration.",
+    "impact": "Increase it to keep the smoothed path faithful to the original A* path (less corner-cutting and deviation) at the expense of smoothness; decrease it to let points move more freely for a smoother curve, which risks straying from the planned route.",
+    "category": "path_smoothing",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": false,
+    "tags": [
+      "planner",
+      "smac",
+      "smoother",
+      "weights"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.smoother.w_smooth",
+    "type": "double",
+    "default": 0.3,
+    "range": null,
+    "unit": "",
+    "description": "Weight of the smoothing term in the Smac smoother's update, which pulls each point toward the midpoint of its two neighbours. It trades off against w_data in the per-point update applied every iteration.",
+    "impact": "Increase it for a smoother, straighter path at the cost of greater deviation from the original plan and a higher chance of an infeasible (in-collision) result that the smoother then rejects; decrease it to smooth more conservatively.",
+    "category": "path_smoothing",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": false,
+    "tags": [
+      "planner",
+      "smac",
+      "smoother",
+      "weights"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.smoother.do_refinement",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Whether the Smac path smoother performs additional recursive refinement passes over the already-smoothed path after it converges, to further improve path quality.",
+    "impact": "Leave enabled for noticeably higher final path quality at a small extra runtime (a few milliseconds per the source); disable it to shave that time when planning latency is critical. Works together with refinement_num.",
+    "category": "path_smoothing",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": false,
+    "tags": [
+      "planner",
+      "smac",
+      "smoother",
+      "refinement"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.smoother.refinement_num",
+    "type": "int",
+    "default": 2,
+    "range": null,
+    "unit": "",
+    "description": "Number of recursive refinement passes the Smac path smoother runs when do_refinement is enabled. Each pass re-smooths the output of the previous one.",
+    "impact": "Increase it for a progressively smoother path with diminishing returns and added compute per plan; decrease it to spend less time refining. Has no effect unless do_refinement is true.",
+    "category": "path_smoothing",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerHybrid",
+    "hot_reload": false,
+    "tags": [
+      "planner",
+      "smac",
+      "smoother",
+      "refinement"
+    ],
+    "post_set_action": null
   }
 ]
