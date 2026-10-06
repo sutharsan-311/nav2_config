@@ -321,6 +321,35 @@ def test_bool_param_has_no_unit(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_unit_has_no_surrounding_whitespace(entry: dict):
+    """A non-empty ``unit`` must carry no leading/trailing (or whitespace-only) padding.
+
+    ``ParamSlider`` renders ``defn.unit`` verbatim into a QLabel of fixed width
+    32px placed immediately after the spinbox (param_slider.py ``_build_ui``:
+    ``unit_label = QLabel(unit); unit_label.setFixedWidth(32)``), and that label
+    is created only ``if unit`` — so the label's content is the raw string with no
+    trimming. A unit like ``" m"`` or ``"m "`` would therefore render misaligned
+    inside that narrow fixed-width cell, and a *whitespace-only* unit such as
+    ``"  "`` is truthy enough to spawn a blank label yet carries no information.
+    The existing unit guards miss both cases: ``test_unit_is_string`` only checks
+    the field's type, ``test_compound_unit_only_on_array_type`` only fires when a
+    comma is present, and ``test_bool_param_has_no_unit`` only covers bool params
+    (its ``not unit.strip()`` check would reject ``"  "`` for a bool but a numeric
+    slider param slips through). Requiring ``unit == unit.strip()`` closes both the
+    padding and the whitespace-only holes for every type at once. Use ``""`` for a
+    unitless param.
+    """
+    unit = entry.get("unit", "")
+    if not isinstance(unit, str) or unit == "":
+        return  # type is guarded by test_unit_is_string; "" is the unitless form
+    assert unit == unit.strip(), (
+        f"Param '{entry['param']}' unit {unit!r} has leading/trailing whitespace "
+        f"(or is whitespace-only); it renders verbatim in a fixed-width label, so "
+        f"use the trimmed form (or \"\" if unitless)"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_tags_are_non_empty_strings(entry: dict):
     tags = entry.get("tags")
     assert isinstance(tags, list), f"Param '{entry['param']}' tags must be a list"
