@@ -239,6 +239,33 @@ def test_prose_fields_end_with_terminal_punctuation(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_prose_fields_have_no_surrounding_whitespace(entry: dict):
+    """``description`` and ``impact`` must carry no leading/trailing whitespace.
+
+    Both fields render as prose in the GUI details pane, so stray padding prints
+    as a blank gap before/after the text. More importantly, the surrounding
+    guards all ``.strip()`` the value before inspecting it — ``test_impact_is_non_empty``,
+    ``test_impact_differs_from_description`` and
+    ``test_prose_fields_end_with_terminal_punctuation`` would each silently accept
+    a note like ``"...wider horizon.  "`` whose trailing whitespace hides the real
+    end of the sentence (and would let a genuinely truncated note masquerade as
+    terminated once the clipped tail happens to be whitespace). This mirrors
+    ``test_unit_has_no_surrounding_whitespace`` for the prose fields: require the
+    stored text to equal its stripped form so what the schema ships is exactly
+    what renders. Emptiness itself is left to the dedicated non-empty guards.
+    """
+    for field_name in ("description", "impact"):
+        text = entry.get(field_name)
+        if not isinstance(text, str) or text == "":
+            continue
+        assert text == text.strip(), (
+            f"Param '{entry['param']}' {field_name} has leading/trailing "
+            f"whitespace; it renders verbatim in the GUI and would hide the real "
+            f"sentence end from the stripping guards: ...{text[-40:]!r}"
+        )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_plugin_specific_is_bool(entry: dict):
     assert isinstance(entry.get("plugin_specific"), bool), (
         f"Param '{entry['param']}' plugin_specific must be bool, "
