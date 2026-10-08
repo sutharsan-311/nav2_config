@@ -843,6 +843,37 @@ def test_range_options_and_bounds_are_mutually_exclusive(entry: dict):
     )
 
 
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_enum_options_have_no_surrounding_whitespace(entry: dict):
+    """A ``range.options`` value must carry no leading/trailing whitespace.
+
+    ``param_select.ParamSelect`` adds each option verbatim to its QComboBox
+    (``addItems(options)``) and ``get_value`` returns ``currentText()`` unchanged,
+    so a padded option like ``" GridBased"`` would both render misaligned in the
+    dropdown and be written back to the live param with its padding intact. It is
+    also matched by equality against the schema ``default`` in
+    ``test_enum_options_valid_and_contain_default``: a default stored trimmed but
+    an option stored padded (or vice versa) would silently fail the
+    default-in-options contract. ``test_enum_options_valid_and_contain_default``
+    only checks each option is non-empty (``opt.strip()`` is truthy for ``" x "``),
+    so padding slips through it. This is the enum-option mirror of
+    ``test_unit_has_no_surrounding_whitespace`` and
+    ``test_prose_fields_have_no_surrounding_whitespace``; store every option in its
+    trimmed form.
+    """
+    raw_range = entry.get("range")
+    if not isinstance(raw_range, dict) or not isinstance(raw_range.get("options"), list):
+        return
+    for opt in raw_range["options"]:
+        if not isinstance(opt, str):
+            continue  # type is guarded by test_enum_options_valid_and_contain_default
+        assert opt == opt.strip(), (
+            f"Param '{entry['param']}' range option {opt!r} has leading/trailing "
+            f"whitespace; options render verbatim in the ParamSelect dropdown and "
+            f"are matched by equality to the default, so store the trimmed form"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Parsed dataclass tests
 # ---------------------------------------------------------------------------
