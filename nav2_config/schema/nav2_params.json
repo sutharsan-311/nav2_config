@@ -6658,6 +6658,116 @@
     "post_set_action": null
   },
   {
+    "node": "smoother_server",
+    "param": "savitzky_golay_smoother.do_refinement",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "When true, runs refinement_num additional Savitzky-Golay smoothing passes over the already-smoothed path.",
+    "impact": "Each extra pass further reduces residual jaggedness at the cost of more CPU. Disable to minimise smoothing latency when a single pass is smooth enough.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SavitzkyGolaySmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "savitzky_golay_smoother",
+      "refinement"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "savitzky_golay_smoother.refinement_num",
+    "type": "int",
+    "default": 2,
+    "range": {
+      "min": 1,
+      "max": 20
+    },
+    "unit": "",
+    "description": "Number of extra Savitzky-Golay smoothing passes applied when do_refinement is true.",
+    "impact": "More passes smooth the path further but add CPU cost; values above 4-5 give diminishing returns. Read once at configure time, so a restart of smoother_server is needed to apply a change.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SavitzkyGolaySmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "savitzky_golay_smoother",
+      "refinement"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "savitzky_golay_smoother.enforce_path_inversion",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "When true, splits the path at directional-reversal (cusp) points and smooths each forward/backward segment independently.",
+    "impact": "Prevents the filter from blending across reversal points, preserving cusps from Hybrid A* or State Lattice planners. Set false only if the planner never produces reversing paths.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SavitzkyGolaySmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "savitzky_golay_smoother",
+      "inversion",
+      "reversing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "savitzky_golay_smoother.window_size",
+    "type": "int",
+    "default": 7,
+    "range": {
+      "min": 3,
+      "max": 21
+    },
+    "unit": "",
+    "description": "Number of path points in the sliding Savitzky-Golay filter window. Must be an odd number of 3 or greater (the plugin throws on an even value or a value of 2 or less).",
+    "impact": "Larger windows smooth over more points, producing straighter paths but rounding off genuine features and corners; smaller windows follow the original path more closely. Must stay odd.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SavitzkyGolaySmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "savitzky_golay_smoother",
+      "window"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "savitzky_golay_smoother.poly_order",
+    "type": "int",
+    "default": 3,
+    "range": {
+      "min": 1,
+      "max": 9
+    },
+    "unit": "",
+    "description": "Order of the polynomial least-squares fitted within each Savitzky-Golay window. Must be smaller than window_size.",
+    "impact": "Higher orders preserve sharper path features (less aggressive smoothing) but can reintroduce oscillations; lower orders smooth more strongly. Keep below window_size for a well-posed fit.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SavitzkyGolaySmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "savitzky_golay_smoother",
+      "polynomial"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "waypoint_follower",
     "param": "wait_at_waypoint.plugin",
     "type": "string",
