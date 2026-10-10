@@ -14513,6 +14513,105 @@
     "post_set_action": null
   },
   {
+    "node": "controller_server",
+    "param": "follow_path.VelocityDeadbandCritic.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enables or disables the VelocityDeadbandCritic in the MPPI optimizer. When enabled, this critic penalises sampled trajectories whose velocity falls inside a configured per-axis deadband, pushing the optimizer to either command a velocity above the deadband or stop rather than issue tiny commands the base cannot physically execute. The 'enabled' field is common to all MPPI critics (declared in nav2_mppi_controller/include/nav2_mppi_controller/critic_function.hpp); when false the critic's score() returns immediately. VelocityDeadbandCritic is declared in nav2_mppi_controller/src/critics/velocity_deadband_critic.cpp.",
+    "impact": "Only relevant for robots whose drivetrain has a velocity deadband (small commanded velocities produce no motion). Enable and set deadband_velocities to the motor deadband so the controller stops commanding velocities it cannot realise; disabling lets the optimizer emit arbitrarily small velocities. This critic is not in the default critics list, so enabling it also requires adding it to the critics parameter.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/VelocityDeadbandCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "velocity",
+      "deadband",
+      "enabled"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.VelocityDeadbandCritic.cost_power",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 2
+    },
+    "unit": "",
+    "description": "Exponent applied to the VelocityDeadbandCritic penalty before it is added to the MPPI trajectory score. The critic sums, per trajectory, how far each axis velocity lies inside the deadband (times model_dt) scaled by cost_weight, then raises that to cost_power. An exponent of 1 is linear; 2 squares the penalty. Declared in nav2_mppi_controller/src/critics/velocity_deadband_critic.cpp (getParam(power_, \"cost_power\", 1)).",
+    "impact": "Keep at 1 for a linear penalty proportional to how deep inside the deadband a trajectory's velocity sits. Increase to 2 to disproportionately punish trajectories that sit well inside the deadband while barely penalising those near its edge, sharpening the push away from the no-motion band.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/VelocityDeadbandCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "velocity",
+      "deadband",
+      "cost_power",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.VelocityDeadbandCritic.cost_weight",
+    "type": "double",
+    "default": 35.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "Scalar weight multiplied by the summed per-axis velocity-deadband violation (integrated over model_dt) for each sampled trajectory in VelocityDeadbandCritic before the cost_power exponent is applied. Larger weights make the optimizer avoid commanding velocities inside the deadband more strongly. Declared in nav2_mppi_controller/src/critics/velocity_deadband_critic.cpp (getParam(weight_, \"cost_weight\", 35.0)).",
+    "impact": "Raise to more aggressively force commanded velocities out of the deadband (either above it or to a full stop), which helps on bases that stall at very low velocity commands. Too high can dominate the cost function and cause jerky start/stop behaviour or overshoot as the robot avoids the low-velocity band; too low lets near-zero velocity commands slip through.",
+    "category": "critic_weights",
+    "plugin_specific": true,
+    "plugin": "MPPIController/VelocityDeadbandCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "velocity",
+      "deadband",
+      "cost_weight",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.VelocityDeadbandCritic.deadband_velocities",
+    "type": "double_array",
+    "default": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "range": null,
+    "unit": "m/s, m/s, rad/s",
+    "description": "Per-axis velocity deadband [vx, vy, wz] that VelocityDeadbandCritic enforces. Any sampled trajectory whose axis velocity magnitude is below the corresponding deadband is penalised by how far it lies inside the band; for non-holonomic robots the vy term is ignored. Defaults to [0.0, 0.0, 0.0], which produces no penalty. Declared in nav2_mppi_controller/src/critics/velocity_deadband_critic.cpp (getParam(deadband_velocities, \"deadband_velocities\", std::vector<double>{0.0, 0.0, 0.0})).",
+    "impact": "Set each element to the robot's measured velocity deadband so the controller avoids commanding velocities the drivetrain ignores (e.g. [0.08, 0.0, 0.08] for a diff-drive base that stalls below 0.08 m/s and 0.08 rad/s). Values that are too large carve out a wide no-go velocity band and can make slow, precise maneuvers near obstacles or goals impossible; leaving them at 0.0 disables the critic's effect even when enabled.",
+    "category": "velocity",
+    "plugin_specific": true,
+    "plugin": "MPPIController/VelocityDeadbandCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "velocity",
+      "deadband"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "amcl",
     "param": "introspection_mode",
     "type": "string",
