@@ -903,7 +903,16 @@ def test_parsed_param_tags_are_list(parsed_params):
 
 
 def test_all_nodes_covered(parsed_params):
-    """All 11 canonical Nav2 nodes must have at least one parameter."""
+    """Every node in ``KNOWN_NODES`` must have at least one parameter.
+
+    ``KNOWN_NODES`` is the closed set of Nav2 lifecycle nodes the schema claims
+    to cover (``test_node_is_known`` also rejects any entry whose ``node`` is not
+    in it). This guards the other direction: that none of those nodes is left
+    with *zero* parameters — a node that silently dropped out of the schema would
+    render as an empty section in the GUI. The expected count is ``len(KNOWN_NODES)``
+    rather than a hardcoded number so adding a node to the set cannot leave this
+    docstring stale.
+    """
     covered = {p.node for p in parsed_params}
     missing = KNOWN_NODES - covered
     assert not missing, f"These Nav2 nodes have no parameters in the schema: {missing}"
