@@ -605,6 +605,36 @@ def test_array_default_elements_match_type(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_range_is_object_when_present(entry: dict):
+    """A ``range``, when present, must be a JSON object (dict), never a list/scalar.
+
+    ``Nav2ParamDef.from_dict`` builds ``ParamRange`` from ``range.get("min")`` /
+    ``range.get("max")`` / ``range.get("options")`` (nav2_config/types/params.py) —
+    the ``.get`` calls presuppose a mapping. Nearly every range guard in this suite
+    reaches for ``range.get(...)`` too: ``test_range_min_less_than_max`` and
+    ``test_numeric_default_within_range`` call it unconditionally, so a ``range``
+    that was authored as a JSON array (e.g. ``[0.0, 1.0]`` instead of
+    ``{"min": 0.0, "max": 1.0}``) or a bare scalar would raise an opaque
+    ``AttributeError: 'list' object has no attribute 'get'`` mid-test rather than a
+    clear schema-shape failure — while the guards that *do* defend with
+    ``isinstance(raw_range, dict)`` (``test_range_has_only_known_keys``) would
+    silently skip it. This asserts the container shape up front so a malformed
+    ``range`` surfaces as a legible error pointing at the offending param. A missing
+    or null ``range`` is valid (the param simply has no bounds/options) and is left
+    to the dedicated guards.
+    """
+    raw_range = entry.get("range")
+    if raw_range is None:
+        return  # absence of a range is valid; nothing to constrain
+    assert isinstance(raw_range, dict), (
+        f"Param '{entry['param']}' range must be a JSON object with min/max/options "
+        f"keys, got {type(raw_range).__name__} ({raw_range!r}); the ParamRange "
+        f"parser and every range guard call range.get(...), which only works on a "
+        f"mapping"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_range_min_less_than_max(entry: dict):
     raw_range = entry.get("range")
     if not raw_range:
