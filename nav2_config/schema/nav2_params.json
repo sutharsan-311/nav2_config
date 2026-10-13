@@ -16442,6 +16442,138 @@
   },
   {
     "node": "route_server",
+    "param": "GoalOrientationScorer.orientation_weight",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "Proportional weight applied to the GoalOrientationScorer edge cost function. On the final (END) edge the scorer measures the absolute shortest angular difference between the edge's heading and the requested goal pose orientation, then multiplies that angle (in radians) by this weight before it is summed with the other configured edge cost functions.",
+    "impact": "Raise it to make the router prefer final edges whose heading lines up with the goal orientation more strongly relative to the distance/time/costmap scorers; lower it to make goal-heading alignment a gentle bias. Only meaningful when the request supplies a goal pose and multiple edge cost functions are combined. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "GoalOrientationScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "orientation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "GoalOrientationScorer.orientation_tolerance",
+    "type": "double",
+    "default": 1.5707963267948966,
+    "range": {
+      "min": 0.0,
+      "max": 3.1416
+    },
+    "unit": "rad",
+    "description": "Maximum absolute angular difference between the final edge's heading and the goal pose orientation that the GoalOrientationScorer will accept. It is only enforced when use_orientation_threshold is true; an END edge whose heading deviates by more than this tolerance is rejected (the edge is scored as invalid and cannot be used).",
+    "impact": "Only takes effect when use_orientation_threshold is true. Narrow it to force the route to approach the goal from a tightly constrained heading (fewer valid final edges, risk of planning failure if none qualify); widen it to admit more approach directions. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "GoalOrientationScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "orientation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "GoalOrientationScorer.use_orientation_threshold",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true the GoalOrientationScorer enforces orientation_tolerance as a hard constraint, rejecting any final (END) edge whose heading deviates from the goal pose orientation by more than that tolerance. When false the heading difference only contributes a weighted cost and no edge is rejected on orientation alone.",
+    "impact": "Enable it to guarantee the robot arrives at the goal within a bounded heading error at the cost of possible planning failure when no final edge satisfies the tolerance. Leave it false to treat goal-heading alignment as a soft preference via orientation_weight. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "GoalOrientationScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "orientation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "StartPoseOrientationScorer.orientation_weight",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "Proportional weight applied to the StartPoseOrientationScorer edge cost function. On the first (START) edge the scorer measures the absolute shortest angular difference between the edge's heading and the requested start pose orientation, then multiplies that angle (in radians) by this weight before it is summed with the other configured edge cost functions.",
+    "impact": "Raise it to make the router prefer first edges whose heading matches the robot's current (start) orientation more strongly relative to the distance/time/costmap scorers, reducing sharp turns at the route's start; lower it to make start-heading alignment a gentle bias. Only meaningful when the request supplies a start pose and multiple edge cost functions are combined. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "StartPoseOrientationScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "orientation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "StartPoseOrientationScorer.orientation_tolerance",
+    "type": "double",
+    "default": 1.5707963267948966,
+    "range": {
+      "min": 0.0,
+      "max": 3.1416
+    },
+    "unit": "rad",
+    "description": "Maximum absolute angular difference between the first edge's heading and the start pose orientation that the StartPoseOrientationScorer will accept. It is only enforced when use_orientation_threshold is true; a START edge whose heading deviates by more than this tolerance is rejected (the edge is scored as invalid and cannot be used).",
+    "impact": "Only takes effect when use_orientation_threshold is true. Narrow it to force the route to leave the start pose along a heading close to the robot's current orientation (fewer valid first edges, risk of planning failure if none qualify); widen it to admit more departure directions. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "StartPoseOrientationScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "orientation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "StartPoseOrientationScorer.use_orientation_threshold",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true the StartPoseOrientationScorer enforces orientation_tolerance as a hard constraint, rejecting any first (START) edge whose heading deviates from the start pose orientation by more than that tolerance. When false the heading difference only contributes a weighted cost and no edge is rejected on orientation alone.",
+    "impact": "Enable it to guarantee the route departs the start pose within a bounded heading error (avoiding an immediate large turn) at the cost of possible planning failure when no first edge satisfies the tolerance. Leave it false to treat start-heading alignment as a soft preference via orientation_weight. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "StartPoseOrientationScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "orientation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
     "param": "PenaltyScorer.weight",
     "type": "double",
     "default": 1.0,
