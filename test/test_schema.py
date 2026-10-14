@@ -425,6 +425,37 @@ def test_tags_have_no_duplicates(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_tags_have_no_surrounding_whitespace(entry: dict):
+    """A tag must carry no leading/trailing (or whitespace-only) padding.
+
+    ``test_tags_have_no_duplicates`` normalises every tag with
+    ``.strip().casefold()`` before comparing, so the schema already treats
+    ``"safety"`` and ``" safety "`` as the *same* tag — i.e. the intended stored
+    form is the trimmed one, and a padded variant only escapes the duplicate
+    guard when it happens to be the lone spelling of that concept. The element
+    guard ``test_tags_are_non_empty_strings`` then lets it through, because
+    ``" safety ".strip()`` is still truthy. This closes that gap for the single
+    surviving case: require each tag to equal its stripped form so what the schema
+    stores is exactly the canonical token the duplicate guard already assumes, and
+    a whitespace-only tag (``"  "``) — truthy under ``.strip()``'s truthiness check
+    but carrying no searchable text for ``param_row.matches_search``'s
+    ``q in tag.lower()`` — is rejected rather than silently shipped. This is the
+    tags mirror of ``test_unit_has_no_surrounding_whitespace``,
+    ``test_prose_fields_have_no_surrounding_whitespace`` and
+    ``test_enum_options_have_no_surrounding_whitespace``; store every tag trimmed.
+    """
+    tags = entry.get("tags") or []
+    for tag in tags:
+        if not isinstance(tag, str):
+            continue  # element type is guarded by test_tags_are_non_empty_strings
+        assert tag == tag.strip() and tag.strip(), (
+            f"Param '{entry['param']}' has a tag {tag!r} with leading/trailing "
+            f"whitespace (or whitespace-only); tags are normalised by strip() in "
+            f"the duplicate guard and searched verbatim, so store the trimmed form"
+        )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_ros2_name_is_non_empty_string_when_present(entry: dict):
     """An explicit ``ros2_name`` must be a non-empty string.
 
