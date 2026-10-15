@@ -783,6 +783,40 @@ def test_range_has_only_known_keys(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_range_declares_at_least_one_constraint(entry: dict):
+    """A ``range`` object, when present, must declare at least one of min/max/options.
+
+    ``Nav2ParamDef.from_dict`` only builds a ``ParamRange`` when ``raw_range`` is
+    truthy (nav2_config/types/params.py: ``if raw_range:``), then reads exactly
+    ``min``/``max``/``options`` out of it. A range that carries none of those three
+    meaningful keys — either an empty object ``{}`` or one where all three are
+    explicitly ``null`` — is pure noise: the empty-object form is falsy and parses
+    to ``range=None`` (so the author's intent to bound the param is silently lost),
+    while the all-null form constructs a ``ParamRange`` whose every field is ``None``
+    and which therefore constrains nothing in the slider/dropdown yet still reads as
+    a "has a range" entry. ``test_range_is_object_when_present`` and
+    ``test_range_has_only_known_keys`` both accept these shapes, so neither catches
+    the mistake. Require a present range to actually say something so a stripped or
+    typo'd range (e.g. the bounds were meant to be ``min``/``max`` but got dropped)
+    surfaces at test time instead of rendering as an unbounded free-form input.
+    """
+    raw_range = entry.get("range")
+    if raw_range is None:
+        return  # absence of a range is valid; nothing to constrain
+    if not isinstance(raw_range, dict):
+        return  # shape is enforced by test_range_is_object_when_present
+    has_constraint = any(
+        raw_range.get(key) is not None for key in ("min", "max", "options")
+    )
+    assert has_constraint, (
+        f"Param '{entry['param']}' declares a range object with no meaningful "
+        f"min/max/options ({raw_range!r}); either give it a real bound/options list "
+        f"or drop the range entirely (an empty or all-null range constrains nothing "
+        f"and is silently discarded or ignored by ParamRange)"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_numeric_range_bounds_only_on_scalar_numeric_type(entry: dict):
     """A numeric ``range.min``/``range.max`` may only appear on scalar ``double``/``int`` params.
 
