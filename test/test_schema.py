@@ -288,6 +288,36 @@ def test_plugin_field_consistency(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_plugin_name_has_no_surrounding_whitespace(entry: dict):
+    """A ``plugin`` name, when present, must carry no leading/trailing whitespace.
+
+    ``param_panel._CategorySection.apply_plugin_filter`` shows a plugin-specific
+    row only when ``defn.plugin == plugin`` (param_panel.py) — an *exact* string
+    comparison against the currently selected plugin. The selected value comes
+    from the live node's reported plugin class, not from this field, so a padded
+    schema value like ``"DWB "`` can never equal the trimmed selection ``"DWB"``:
+    the row would be silently hidden whenever its own plugin is chosen, i.e. the
+    param disappears from exactly the view where it belongs.
+    ``test_plugin_field_consistency`` only checks that a plugin name is *truthy*
+    when ``plugin_specific`` is set (``" DWB "`` passes), so it never catches the
+    padding. This is the ``plugin`` mirror of
+    ``test_tags_have_no_surrounding_whitespace`` and
+    ``test_unit_has_no_surrounding_whitespace``: store the plugin name trimmed.
+    """
+    plugin = entry.get("plugin")
+    if plugin is None:
+        return  # absence is valid; consistency with plugin_specific is guarded elsewhere
+    if not isinstance(plugin, str):
+        return  # non-string plugin is caught by test_plugin_field_consistency's truthiness
+    assert plugin == plugin.strip() and plugin.strip(), (
+        f"Param '{entry['param']}' has plugin name {plugin!r} with leading/trailing "
+        f"whitespace (or whitespace-only); apply_plugin_filter compares it with "
+        f"'==' against the trimmed selected plugin, so any padding silently hides "
+        f"the row from its own plugin view — store the trimmed form"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_unit_is_string(entry: dict):
     """unit must always be a string ('' for unitless params, never null/absent).
 
