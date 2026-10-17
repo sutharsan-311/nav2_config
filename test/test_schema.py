@@ -486,6 +486,39 @@ def test_tags_have_no_surrounding_whitespace(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_tags_are_lowercase(entry: dict):
+    """A tag must be stored in its case-folded (lowercase) form.
+
+    ``test_tags_have_no_duplicates`` compares tags on their ``.strip().casefold()``
+    form, so the schema's canonical stored spelling of a tag is the case-folded
+    one — yet that guard only *fires* when two spellings of the same concept
+    coexist on one entry (e.g. ``"MPPI"`` alongside ``"mppi"``). A tag that ships
+    as the lone, upper-/mixed-case spelling of its concept (``"MPPI"`` with no
+    ``"mppi"`` present) passes the duplicate guard vacuously and the element guard
+    ``test_tags_are_non_empty_strings`` (``"MPPI"`` is a truthy string), so it
+    slips through. ``param_row.matches_search`` already lowercases every tag for
+    matching (``q in tag.lower()``), so a stored capital buys nothing for search
+    and only risks two entries tagging the same concept with different casing —
+    one ``"MPPI"``, one ``"mppi"`` — which the casefolding duplicate guard would
+    *not* flag across entries, fragmenting a would-be shared search vector. This
+    requires each tag to already equal its case-folded form so what the schema
+    stores is exactly the normalized token the duplicate guard assumes, mirroring
+    ``test_category_is_canonical_format``'s lowercase rule for categories. All 296
+    distinct tags in the schema already satisfy this.
+    """
+    tags = entry.get("tags") or []
+    for tag in tags:
+        if not isinstance(tag, str):
+            continue  # element type is guarded by test_tags_are_non_empty_strings
+        assert tag == tag.casefold(), (
+            f"Param '{entry['param']}' has a tag {tag!r} that is not lowercase; "
+            f"store the case-folded form {tag.casefold()!r} (tags are casefolded "
+            f"by the duplicate guard and lowercased for search, so a stored "
+            f"capital only risks a cross-entry case mismatch)"
+        )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_ros2_name_is_non_empty_string_when_present(entry: dict):
     """An explicit ``ros2_name`` must be a non-empty string.
 
