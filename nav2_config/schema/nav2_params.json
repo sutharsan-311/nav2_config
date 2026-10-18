@@ -16616,6 +16616,69 @@
     "post_set_action": null
   },
   {
+    "node": "route_server",
+    "param": "SemanticScorer.semantic_classes",
+    "type": "string_array",
+    "default": [],
+    "range": null,
+    "unit": "",
+    "description": "List of semantic class names the SemanticScorer recognises. For each name listed here the scorer also reads a separate double parameter 'SemanticScorer.<class_name>' giving that class's cost contribution, and builds a lookup from class name to cost. Edges/nodes whose metadata reference one of these classes have the matching cost added to their score.",
+    "impact": "Add the class names used in your route graph's semantic annotations (e.g. 'highway', 'crosswalk') so their per-class costs are applied; a class omitted here is ignored even if annotated on the graph. Each listed class requires a companion 'SemanticScorer.<class_name>' cost parameter to be declared. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SemanticScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "semantic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "SemanticScorer.semantic_key",
+    "type": "string",
+    "default": "class",
+    "range": null,
+    "unit": "",
+    "description": "Metadata key the SemanticScorer uses to find a semantic class value on an edge or node. When non-empty the scorer reads the value stored under this key and adds the cost of the matching class. When set to an empty string the scorer instead treats every metadata key itself as a potential class name and sums the cost of any key that matches a configured class.",
+    "impact": "Set it to the key your graph uses to tag semantic classes (default 'class'); clear it to an empty string to score by matching metadata key names instead of a single key's value. A key that does not match how the graph was authored means no semantic cost is ever applied. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SemanticScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "semantic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "SemanticScorer.weight",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "Proportional weight applied to the SemanticScorer edge cost function. The scorer sums the per-class costs matched on an edge/node metadata and multiplies that sum by this weight before it is combined with the other configured edge cost functions.",
+    "impact": "Raise it to make semantic class costs dominate route selection more strongly relative to the distance/time/costmap scorers; lower it to make them a gentle bias. Only meaningful when multiple edge cost functions are combined. Read once at configure time.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SemanticScorer",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "scoring",
+      "semantic"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "planner_server",
     "param": "GridBased.smoother.tolerance",
     "type": "double",
