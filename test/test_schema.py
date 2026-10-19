@@ -407,6 +407,36 @@ def test_unit_has_no_surrounding_whitespace(entry: dict):
 
 
 @pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_compound_unit_segment_count_matches_array_default(entry: dict):
+    """A compound (comma-separated) unit must have one segment per array element.
+
+    ``test_compound_unit_only_on_array_type`` asserts that a comma-bearing unit
+    only appears on an ``*_array`` type, and its docstring promises that "the
+    comma count mirrors the element count" — but nothing actually enforces that
+    correspondence. A compound unit encodes a *per-element* label (e.g.
+    ``velocity_smoother.max_velocity`` is ``[vx, vy, vtheta]`` with unit
+    ``"m/s, m/s, rad/s"``: three values, three units), so if the unit lists a
+    different number of segments than the default vector has elements, one of the
+    two is wrong — a dropped element, a stray comma, or a mismatched type/unit
+    edit. This closes that gap: when the unit is compound *and* the default is a
+    concrete list, the segment count (split on commas) must equal the default's
+    length. Scalar-defaulted params (no concrete vector to measure against) are
+    left to ``test_compound_unit_only_on_array_type``.
+    """
+    unit = entry.get("unit", "")
+    default = entry.get("default")
+    if not (isinstance(unit, str) and "," in unit and isinstance(default, list)):
+        return
+    segments = unit.split(",")
+    assert len(segments) == len(default), (
+        f"Param '{entry['param']}' has a compound unit {unit!r} with "
+        f"{len(segments)} comma-separated segment(s) but its default vector "
+        f"{default} has {len(default)} element(s); a per-element unit must carry "
+        f"exactly one label per array element"
+    )
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
 def test_tags_are_non_empty_strings(entry: dict):
     tags = entry.get("tags")
     assert isinstance(tags, list), f"Param '{entry['param']}' tags must be a list"
