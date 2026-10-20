@@ -631,6 +631,58 @@ def test_hot_reload_not_contradicted_by_restart_action(entry: dict):
         )
 
 
+# Node-scoped follow-up actions: ``node._run_post_set_action`` dispatches each of
+# these against the *running node's own* service (node.py: ``clear_costmaps(node_name)``,
+# ``load_map(map_url, node_name)``, ``nomotion_update(node_name)``), and
+# ``restart_controller`` is only meaningful for the controller plugin host. So each
+# may only sit on a node that actually exposes the corresponding service:
+#   - clear_costmaps  -> the costmap nodes that expose clear_entirely_* services
+#   - load_map        -> nav2_map_server instances that expose a load_map service
+#     (map_server proper plus the two filter-mask servers, which are MapServer nodes)
+#   - nomotion_update -> AMCL's /request_nomotion_update service only
+#   - restart_controller -> the controller_server, which hosts the controller plugin
+# ``restart_stack``/``restart_node`` are deliberately omitted: they are generic
+# (any node/stack can be restarted) and carry no per-node service dependency.
+ACTION_ALLOWED_NODES = {
+    "clear_costmaps": {"local_costmap", "global_costmap"},
+    "load_map": {"map_server", "keepout_filter_mask_server", "speed_filter_mask_server"},
+    "nomotion_update": {"amcl"},
+    "restart_controller": {"controller_server"},
+}
+
+
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_node_scoped_post_set_action_matches_node(entry: dict):
+    """A node-scoped ``post_set_action`` must sit on a node that exposes its service.
+
+    ``node._run_post_set_action`` dispatches the follow-up against the *running
+    node's own* service, passing the live ``node_name`` straight through:
+    ``clear_costmaps(node_name)``, ``load_map(map_url, node_name)`` and
+    ``nomotion_update(node_name)`` (node.py). Those services only exist on the
+    nodes that host them — the ``clear_entirely_*`` services live on the costmap
+    nodes, ``load_map`` on ``nav2_map_server`` instances (``map_server`` and the two
+    filter-mask servers, which are MapServer nodes), and ``/request_nomotion_update``
+    on AMCL. ``restart_controller`` likewise only makes sense on ``controller_server``,
+    the node that reads the controller plugin at configure time. If one of these
+    actions were attached to a param on the wrong node, the set would appear to
+    succeed while the follow-up fired a service the node cannot answer — a silent
+    no-op that ``test_post_set_action_is_valid`` (which only checks the action is a
+    known string) cannot catch. This guards the action→node binding so each stays on
+    a node that can actually honour it. ``restart_stack``/``restart_node`` are generic
+    (no per-node service dependency) and are intentionally not constrained here.
+    """
+    action = entry.get("post_set_action")
+    allowed = ACTION_ALLOWED_NODES.get(action)
+    if allowed is None:
+        return  # action is None, generic, or validated by test_post_set_action_is_valid
+    assert entry["node"] in allowed, (
+        f"Param '{entry['param']}' on node '{entry['node']}' has post_set_action "
+        f"'{action}', but that action is dispatched against the node's own service "
+        f"and is only valid on {sorted(allowed)}; on '{entry['node']}' it would fire "
+        f"a service the node does not expose (a silent no-op)"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Default value type matching
 # ---------------------------------------------------------------------------
