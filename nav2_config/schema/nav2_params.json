@@ -14443,6 +14443,196 @@
   },
   {
     "node": "controller_server",
+    "param": "follow_path.ObstaclesCritic.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enables or disables the ObstaclesCritic in the MPPI optimizer. ObstaclesCritic is the inflation-layer-based alternative to CostCritic: it rejects trajectories that collide and adds a repulsive preference that pushes sampled trajectories away from obstacles using the costmap's inflation potential field. The 'enabled' field is common to all MPPI critics and is declared in nav2_mppi_controller/include/nav2_mppi_controller/critic_function.hpp; when false the critic's score() returns immediately.",
+    "impact": "Disabling removes this critic's collision rejection and obstacle repulsion from the MPPI cost function, so the optimizer may select trajectories through obstacles. Only disable if CostCritic is used in its place, or in obstacle-free test environments.",
+    "category": "path_tracking",
+    "plugin_specific": true,
+    "plugin": "MPPIController/ObstaclesCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "obstacles",
+      "enabled"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ObstaclesCritic.consider_footprint",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, ObstaclesCritic checks the full robot footprint polygon for collisions instead of the inscribed-circle point cost. Must be consistent with the costmap's use_radius setting; MPPI logs a warning and throws if use_radius is true but no footprint is provided. Declared in nav2_mppi_controller/src/critics/obstacles_critic.cpp.",
+    "impact": "Enable for non-circular robots in tight spaces to catch footprint-corner collisions the circular approximation misses, at higher CPU cost per trajectory point. Disabling (default) only checks the centre point against the costmap, which is faster but less precise for elongated robots.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController/ObstaclesCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "obstacles",
+      "footprint"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ObstaclesCritic.cost_power",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 10
+    },
+    "unit": "",
+    "description": "Exponent applied to the combined weighted obstacle cost (critical_weight * raw_cost + repulsion_weight * normalized_repulsion) before it is added to the MPPI trajectory score. When 1 the penalty is linear; values greater than 1 apply a power-law penalty. Declared in nav2_mppi_controller/src/critics/obstacles_critic.cpp.",
+    "impact": "Increase beyond 1 to disproportionately penalise the worst (closest-to-obstacle) trajectories relative to mildly-penalised ones. In practice 1 (linear) is sufficient for most environments; large exponents can destabilise the MPPI cost accumulation.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController/ObstaclesCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "obstacles",
+      "cost_power",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ObstaclesCritic.repulsion_weight",
+    "type": "double",
+    "default": 1.5,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "Weight on the preferential repulsion term that pushes trajectories further from obstacles. For each trajectory point inside the inflation band (and not near the goal) the critic accumulates inflation_radius - distance_to_obstacle; this sum is normalised by trajectory length and the lowest score, then multiplied by this weight. Declared in nav2_mppi_controller/src/critics/obstacles_critic.cpp.",
+    "impact": "Increase to make the robot prefer staying well clear of the inflation band even when obstacles are not imminent, producing smoother centre-of-corridor motion. Too high relative to path-following critics causes the robot to hug the path centre and deviate from the plan near walls; too low lets it brush close to obstacles.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController/ObstaclesCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "obstacles",
+      "repulsion_weight",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ObstaclesCritic.critical_weight",
+    "type": "double",
+    "default": 20.0,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "Weight on the critical obstacle cost term: the per-trajectory raw cost, which is either the near-collision penalty (summed collision_margin_distance - distance for points closer than collision_margin_distance) or collision_cost if the trajectory collides. Declared in nav2_mppi_controller/src/critics/obstacles_critic.cpp.",
+    "impact": "Increase to strongly penalise near-collision and colliding trajectories relative to the softer repulsion term, making obstacle avoidance more decisive. Set much larger than repulsion_weight (default 20 vs 1.5) so that actual collision risk dominates the mild preference to stay clear; too low lets the optimizer tolerate near-collision trajectories.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController/ObstaclesCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "obstacles",
+      "critical_weight",
+      "tuning"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ObstaclesCritic.collision_cost",
+    "type": "double",
+    "default": 100000.0,
+    "range": {
+      "min": 0.0,
+      "max": 1000000.0
+    },
+    "unit": "",
+    "description": "Cost assigned to a trajectory that is found to be in collision (a trajectory point reaching lethal/inscribed cost). This becomes the trajectory's raw_cost, which is then scaled by critical_weight. Declared in nav2_mppi_controller/src/critics/obstacles_critic.cpp.",
+    "impact": "A large value (default 100000) ensures colliding trajectories are effectively eliminated from the MPPI weighted average. Lowering it too far lets colliding trajectories still influence the optimizer's chosen control; there is rarely a reason to reduce it below the scale of the other critics' costs.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController/ObstaclesCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "obstacles",
+      "collision_cost"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ObstaclesCritic.collision_margin_distance",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "m",
+    "description": "Distance (metres) from an obstacle below which trajectory points are penalised with a near-collision cost proportional to how far inside the margin they are (collision_margin_distance - distance_to_obstacle). Declared in nav2_mppi_controller/src/critics/obstacles_critic.cpp.",
+    "impact": "Increase to make the robot keep a larger clearance buffer and slow its approach to obstacles; decrease to allow closer approaches (e.g. for narrow doorways). Values that are too large relative to the environment can make the robot overly timid near any obstacle.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController/ObstaclesCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "obstacles",
+      "collision_margin_distance",
+      "clearance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ObstaclesCritic.near_goal_distance",
+    "type": "double",
+    "default": 0.5,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "m",
+    "description": "Remaining local path length (metres) below which the preferential repulsion term is suppressed, so the robot is allowed to approach obstacles near the goal (e.g. a docking target or a goal set close to a wall). Collision checking still applies. Declared in nav2_mppi_controller/src/critics/obstacles_critic.cpp.",
+    "impact": "Increase if the robot refuses to drive close enough to goals located near obstacles because the repulsion term keeps pushing it away. Decrease to keep obstacle repulsion active until very close to the goal. Only affects the soft repulsion preference, never the hard collision rejection.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController/ObstaclesCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "obstacles",
+      "near_goal_distance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
     "param": "follow_path.TwirlingCritic.cost_power",
     "type": "int",
     "default": 1,
