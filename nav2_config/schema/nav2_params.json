@@ -16993,5 +16993,116 @@
       "refinement"
     ],
     "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.lattice_filepath",
+    "type": "string",
+    "default": "sample_primitives/5cm_resolution/0.5m_turning_radius/ackermann/output.json",
+    "range": null,
+    "unit": "",
+    "description": "Path to the JSON file of state-lattice motion primitives the SmacPlannerLattice expands over; it defines the robot's model, turning radius and primitive set. Relative paths are resolved against the nav2_smac_planner package share directory, where the bundled 0.5 m-turning-radius ackermann primitives are the default.",
+    "impact": "Must point at a primitive set generated for this robot's kinematics; a mismatched file plans motions the robot cannot execute. Changing it reinitialises the planner and reloads the lattice metadata (turning radius, heading bins), so expect a brief rebuild on set.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerLattice",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "lattice",
+      "primitives",
+      "kinematics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.rotation_penalty",
+    "type": "double",
+    "default": 5.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "",
+    "description": "Penalty applied to in-place (pure-rotation) lattice primitives, discouraging the planner from using rotate-in-place motions unless they clearly shorten the path. Only applies to lattice primitive sets that include rotation motions.",
+    "impact": "Raise it to produce smoother paths that avoid spinning in place; lower it (toward 0) to let the planner rotate in place more freely, which can help in tight spaces but yields more stop-and-turn motion.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerLattice",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "lattice",
+      "penalty",
+      "rotation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.allow_reverse_expansion",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Whether the lattice search may expand reversing primitives, letting the planner produce paths that drive the robot backwards. Only meaningful for primitive sets that contain reverse motions; it is ignored (with a warning) for omnidirectional models.",
+    "impact": "Enable it for robots that can safely reverse to reach goals in constrained areas; this roughly doubles the branching factor of the search, increasing planning time and memory. Leave it off for forward-only driving.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerLattice",
+    "hot_reload": true,
+    "tags": [
+      "planner",
+      "smac",
+      "lattice",
+      "reversing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.use_quadratic_cost_penalty",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Whether the obstacle cost term in the traversal cost is applied quadratically rather than linearly, more strongly penalising travel through higher-cost (near-obstacle) cells.",
+    "impact": "Enable it to push paths further from obstacles into lower-cost space at some extra planning cost; leave it off for the standard linear cost weighting. Read once at configure time, so toggling it needs a planner restart.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerLattice",
+    "hot_reload": false,
+    "tags": [
+      "planner",
+      "smac",
+      "lattice",
+      "cost",
+      "obstacle"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "planner_server",
+    "param": "GridBased.downsample_obstacle_heuristic",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Whether the obstacle heuristic is computed on a 2x-downsampled costmap. The coarser grid makes the heuristic cheaper to compute at the cost of some precision.",
+    "impact": "Keep it enabled for faster planning on large maps; disable it for a more accurate heuristic (and potentially fewer search expansions) when planning time is not the bottleneck. Read once at configure time, so a change needs a planner restart.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "SmacPlannerLattice",
+    "hot_reload": false,
+    "tags": [
+      "planner",
+      "smac",
+      "lattice",
+      "heuristic"
+    ],
+    "post_set_action": null
   }
 ]
