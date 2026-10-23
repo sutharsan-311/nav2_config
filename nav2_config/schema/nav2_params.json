@@ -15982,6 +15982,198 @@
   },
   {
     "node": "following_server",
+    "param": "k_phi",
+    "ros2_name": "controller.k_phi",
+    "type": "double",
+    "default": 3.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "",
+    "description": "Proportional gain of the smooth-control-law that acts on the angle from the robot to the target (phi error). The following server reuses the opennav_docking Controller to drive toward the tracked object, so this gain governs how strongly curvature commands react to the bearing error during the approach.",
+    "impact": "Higher values turn the robot toward the followed object more aggressively. Too high causes oscillation or overshoot; too low causes sluggish lateral convergence. Tune together with k_delta for a stable follow trajectory.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "control",
+      "gains"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "k_delta",
+    "ros2_name": "controller.k_delta",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "",
+    "description": "Proportional gain of the smooth-control-law that acts on the heading error relative to the target (delta error). Part of the graceful/smooth control law the following server borrows from the docking Controller; governs how strongly the robot corrects its heading as it closes on the followed object.",
+    "impact": "Increasing this gain makes the robot align its heading toward the target earlier and more forcefully. Excessively high values cause oscillatory heading correction; too low results in poor final orientation relative to the object.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "control",
+      "gains"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "beta",
+    "ros2_name": "controller.beta",
+    "type": "double",
+    "default": 0.4,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "",
+    "description": "Curvature decay constant in the smooth-control-law speed-reduction formula: v = v_linear_max / (1 + beta * |curvature|^lambda). Controls how aggressively the following server slows down when the instantaneous path curvature is high while approaching the tracked object.",
+    "impact": "Larger values cause more speed reduction on curved segments, giving a slower but more stable follow. Smaller values keep speed closer to v_linear_max even during tight curves. Tune together with lambda; both set the speed-vs-curvature trade-off.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "control",
+      "gains"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "lambda",
+    "ros2_name": "controller.lambda",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "",
+    "description": "Curvature exponent in the smooth-control-law speed formula: v = v_linear_max / (1 + beta * |curvature|^lambda). Determines how steeply the following server drops speed as curvature increases; higher values create a sharper knee in the speed-curvature curve.",
+    "impact": "Increasing lambda keeps the robot near maximum speed on straight segments but slows it rapidly when curvature rises. Decreasing it produces a more gradual speed reduction across all curvatures. Tune together with beta.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "control",
+      "gains"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "v_linear_min",
+    "ros2_name": "controller.v_linear_min",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "m/s",
+    "description": "Minimum linear speed commanded while following the object. The smooth control law will not issue a forward/backward velocity below this value, ensuring the robot keeps moving even when the computed command would otherwise stall.",
+    "impact": "Set low enough that the robot can make fine positional corrections near the target, but high enough to prevent stalling. Too high prevents slow creeping toward the object; too low may cause jitter when nearly at the desired distance.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "velocity",
+      "control"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "v_linear_max",
+    "ros2_name": "controller.v_linear_max",
+    "type": "double",
+    "default": 0.25,
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "unit": "m/s",
+    "description": "Maximum linear speed commanded while following the object. The smooth control law caps forward/backward velocity to this value regardless of the distance to the target.",
+    "impact": "Higher values let the robot close distance to the object faster but reduce accuracy and increase collision risk. Keep at or below the robot's comfortable low-speed driving limit; typical values are 0.1-0.5 m/s indoors.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "velocity",
+      "control"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "v_angular_max",
+    "ros2_name": "controller.v_angular_max",
+    "type": "double",
+    "default": 0.75,
+    "range": {
+      "min": 0.0,
+      "max": 3.14
+    },
+    "unit": "rad/s",
+    "description": "Maximum angular velocity commanded while following the object. Angular commands computed from the k_phi/k_delta gains are clamped to +/-v_angular_max before being sent to the robot.",
+    "impact": "Lower values produce gentler turns, which helps with precise alignment but slows lateral correction toward a moving object. Higher values allow sharper turns but may destabilise tracking if odometry updates slowly.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "velocity",
+      "control"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "slowdown_radius",
+    "ros2_name": "controller.slowdown_radius",
+    "type": "double",
+    "default": 0.25,
+    "range": {
+      "min": 0.0,
+      "max": 5.0
+    },
+    "unit": "m",
+    "description": "Distance from the target at which the smooth-control-law begins linearly scaling the linear speed down to zero. Inside this radius the commanded speed is at most v_linear_max * (r / slowdown_radius), removing the singularity as the robot converges on the desired follow pose.",
+    "impact": "Larger values create a gentler, longer deceleration ramp - useful when precise final spacing matters. Too large makes the robot slow down excessively early, lagging a moving object. Too small may cause overshoot past the desired distance.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "velocity",
+      "control"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
     "param": "detection_timeout",
     "type": "double",
     "default": 2.0,
