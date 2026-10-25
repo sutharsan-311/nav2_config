@@ -16545,6 +16545,78 @@
     "post_set_action": null
   },
   {
+    "node": "following_server",
+    "param": "deceleration_max",
+    "ros2_name": "controller.deceleration_max",
+    "type": "double",
+    "default": 2.5,
+    "range": {
+      "min": 0.0,
+      "max": 20.0
+    },
+    "unit": "m/s²",
+    "description": "Maximum deceleration used to kinematically constrain the follow approach speed inside the smooth control law: the commanded linear speed is capped so the robot can always stop within the remaining distance to the target (v <= sqrt(2 * r * deceleration_max)). Shared opennav_docking::Controller parameter (controller.deceleration_max); the following server reuses that controller, so this is active regardless of collision settings.",
+    "impact": "Lower values force earlier, gentler braking as the robot closes on the followed object, improving final spacing accuracy but slowing the response to a moving target. Higher values permit faster closing speeds but require good odometry and a drivetrain that can actually achieve the deceleration.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "velocity",
+      "control"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "rotate_to_heading_angular_vel",
+    "ros2_name": "controller.rotate_to_heading_angular_vel",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 6.28
+    },
+    "unit": "rad/s",
+    "description": "Angular velocity magnitude commanded during the control law's rotate-to-heading phase, when the robot spins in place to align with the required approach heading toward the followed object before translating. Shared opennav_docking::Controller parameter (controller.rotate_to_heading_angular_vel), subject to rotate_to_heading_max_angular_accel.",
+    "impact": "Higher values shorten the in-place rotation, letting the robot re-orient toward a moving object faster, but may overshoot the target heading if the acceleration limit is not matched. Lower values give more accurate alignment at the cost of slower reaction.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "rotation",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "rotate_to_heading_max_angular_accel",
+    "ros2_name": "controller.rotate_to_heading_max_angular_accel",
+    "type": "double",
+    "default": 3.2,
+    "range": {
+      "min": 0.0,
+      "max": 20.0
+    },
+    "unit": "rad/s²",
+    "description": "Maximum angular acceleration used to ramp the angular velocity during the rotate-to-heading phase. The commanded angular velocity is clamped each cycle to [current_vel - accel*dt, current_vel + accel*dt] and is also tapered near the target heading (sqrt(2 * accel * angular_distance)) to avoid overshoot. Shared opennav_docking::Controller parameter (controller.rotate_to_heading_max_angular_accel).",
+    "impact": "Higher values let the robot spin up and settle its heading more quickly when reacquiring a moving object. Lower values produce smoother in-place rotation, reducing wheel slip and odometry drift on robots sensitive to abrupt angular changes.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "rotation",
+      "control"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "route_server",
     "param": "CostmapScorer.weight",
     "type": "double",
