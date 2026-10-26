@@ -10182,6 +10182,184 @@
     "post_set_action": null
   },
   {
+    "node": "collision_detector",
+    "param": "frequency",
+    "type": "double",
+    "default": 10.0,
+    "range": {
+      "min": 1.0,
+      "max": 100.0
+    },
+    "unit": "Hz",
+    "description": "Rate at which the collision detector evaluates all configured polygons against incoming sensor data and publishes its CollisionDetectorState. Unlike the collision monitor, the detector only reports detections and never modifies velocity commands.",
+    "impact": "Higher values give more timely detection reports at the cost of CPU. Lower values reduce load but increase the latency before an intrusion into a zone is reported.",
+    "category": "performance",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_detector",
+      "frequency",
+      "performance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_detector",
+    "param": "base_frame_id",
+    "type": "string",
+    "default": "base_footprint",
+    "range": null,
+    "unit": "",
+    "description": "TF frame attached to the robot base used as the reference frame for all polygon and source transformations.",
+    "impact": "Must match the robot's TF tree. Wrong value causes transform failures and disables all collision detection.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_detector",
+      "tf",
+      "frame"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_detector",
+    "param": "odom_frame_id",
+    "type": "string",
+    "default": "odom",
+    "range": null,
+    "unit": "",
+    "description": "Odometry TF frame used by sensor sources to correct for robot base motion between data capture and processing.",
+    "impact": "Must match the odometry frame in the TF tree. An incorrect value breaks base-shift correction and can produce inaccurate detections.",
+    "category": "frames",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_detector",
+      "tf",
+      "odom",
+      "frame"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_detector",
+    "param": "transform_tolerance",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "s",
+    "description": "Maximum age of a TF transform before it is considered too old to use. Applies to all source and polygon frame lookups.",
+    "impact": "Increase on systems with high TF latency or slow sensors. Too large a value may use stale poses and produce incorrect collision estimates.",
+    "category": "timing",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_detector",
+      "tf",
+      "tolerance",
+      "timing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_detector",
+    "param": "source_timeout",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "s",
+    "description": "Maximum time a sensor source may go without publishing before it is considered invalid and ignored.",
+    "impact": "Lower values make the detector more sensitive to sensor dropouts. Higher values tolerate slow sensors but may report stale obstacle data during outages.",
+    "category": "timing",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_detector",
+      "sensor",
+      "timeout",
+      "timing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_detector",
+    "param": "base_shift_correction",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "When true, sensor data is shifted to account for robot base motion between the time the data was captured and the time it is processed, improving accuracy at higher speeds.",
+    "impact": "Disable only on very slow robots or when transform latency causes overcorrection. Leaving it enabled is the safe default; disabling may cause phantom or missed detections at speed.",
+    "category": "general",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_detector",
+      "motion",
+      "correction",
+      "accuracy"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_detector",
+    "param": "polygons",
+    "type": "string_array",
+    "default": [
+      "PolygonFront"
+    ],
+    "range": null,
+    "unit": "",
+    "description": "List of named polygon (or circle / velocity_polygon) zone identifiers the detector will configure and evaluate. Each entry must have a corresponding set of <name>.type and shape parameters. Unlike the collision monitor, every zone must use action_type 'none' since the detector only reports detections.",
+    "impact": "Defines which detection zones are active. Adding zones increases CPU usage slightly. Omitting this parameter causes the node to fail on startup.",
+    "category": "general",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_detector",
+      "polygons",
+      "zones"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_detector",
+    "param": "observation_sources",
+    "type": "string_array",
+    "default": [
+      "scan"
+    ],
+    "range": null,
+    "unit": "",
+    "description": "List of named sensor source identifiers (e.g. laser scans, point clouds) that feed obstacle data into the collision detector. Each entry must have a corresponding set of <name>.type and <name>.topic parameters.",
+    "impact": "Determines which sensors are used for detection. Missing or mismatched names cause sources to be silently ignored. Omitting this parameter causes the node to fail on startup.",
+    "category": "general",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "collision_detector",
+      "sensors",
+      "sources",
+      "topics"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "bt_navigator",
     "param": "bt_search_directories",
     "type": "string_array",
