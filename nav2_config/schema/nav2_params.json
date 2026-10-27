@@ -16795,6 +16795,121 @@
     "post_set_action": null
   },
   {
+    "node": "following_server",
+    "param": "projection_time",
+    "ros2_name": "controller.projection_time",
+    "type": "double",
+    "default": 5.0,
+    "range": {
+      "min": 0.5,
+      "max": 30.0
+    },
+    "unit": "s",
+    "description": "Time horizon over which the controller forward-projects the trajectory for collision checking. Declared by the reused opennav_docking::Controller (controller.projection_time). The following server always constructs this Controller, so the parameter is declared, but collision detection is unsupported in the following server (the node fails to configure if controller.use_collision_detection is true), so the projected-trajectory collision check is never run and this value has no behavioral effect here.",
+    "impact": "Inert in the following server because collision detection cannot be enabled there; the collision check short-circuits to always collision-free. It is kept only for compatibility with the shared controller and can be left at its default.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "collision",
+      "trajectory"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "simulation_time_step",
+    "ros2_name": "controller.simulation_time_step",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.01,
+      "max": 1.0
+    },
+    "unit": "s",
+    "description": "Discrete time step used to forward-simulate the trajectory for collision checking; the number of simulated poses is ceil(projection_time / simulation_time_step). Declared by the reused opennav_docking::Controller (controller.simulation_time_step). Because collision detection is unsupported in the following server (configure fails if controller.use_collision_detection is true), the simulation loop is never executed and this value has no behavioral effect here.",
+    "impact": "Inert in the following server since collision detection cannot be enabled there. Retained for compatibility with the shared controller and can be left at its default.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "collision",
+      "simulation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "dock_collision_threshold",
+    "ros2_name": "controller.dock_collision_threshold",
+    "type": "double",
+    "default": 0.3,
+    "range": {
+      "min": 0.0,
+      "max": 2.0
+    },
+    "unit": "m",
+    "description": "Distance below which the controller suspends collision checking near the target pose. Declared by the reused opennav_docking::Controller (controller.dock_collision_threshold). Collision detection is unsupported in the following server (the node fails to configure if controller.use_collision_detection is true), so this threshold is never consulted and has no behavioral effect here.",
+    "impact": "Inert in the following server because collision detection cannot be enabled there. Kept for compatibility with the shared controller; leave at the default.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "following",
+      "collision",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "costmap_topic",
+    "ros2_name": "controller.costmap_topic",
+    "type": "string",
+    "default": "local_costmap/costmap_raw",
+    "range": null,
+    "unit": "",
+    "description": "ROS topic providing the raw costmap used by the controller's collision checker. Declared by the reused opennav_docking::Controller (controller.costmap_topic). It is only read when the collision checker is configured, which never happens in the following server because collision detection is unsupported there (configure fails if controller.use_collision_detection is true), so this topic is not subscribed.",
+    "impact": "Inert in the following server; the collision checker is never constructed. Retained for compatibility with the shared controller and can be left at its default.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "following",
+      "collision",
+      "costmap"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "following_server",
+    "param": "footprint_topic",
+    "ros2_name": "controller.footprint_topic",
+    "type": "string",
+    "default": "local_costmap/published_footprint",
+    "range": null,
+    "unit": "",
+    "description": "ROS topic providing the robot footprint polygon used by the controller's collision checker. Declared by the reused opennav_docking::Controller (controller.footprint_topic). It is only read when the collision checker is configured, which never happens in the following server because collision detection is unsupported there (configure fails if controller.use_collision_detection is true), so this topic is not subscribed.",
+    "impact": "Inert in the following server; the collision checker is never constructed. Retained for compatibility with the shared controller and can be left at its default.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "following",
+      "collision",
+      "footprint",
+      "costmap"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "route_server",
     "param": "CostmapScorer.weight",
     "type": "double",
