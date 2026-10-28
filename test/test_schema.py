@@ -575,6 +575,38 @@ def test_ros2_name_is_non_empty_string_when_present(entry: dict):
     )
 
 
+@pytest.mark.parametrize("entry", [pytest.param(e, id=f"{e.get('node','?')}.{e.get('param','?')}") for e in json.loads(SCHEMA_PATH.read_text())])
+def test_ros2_name_leaf_matches_param(entry: dict):
+    """An explicit ``ros2_name`` must be a namespace-prefixed form of ``param``.
+
+    ``ros2_name`` only ever exists to add the qualifying prefix a running node
+    reports for a parameter the GUI shows under the shorter ``param`` name — e.g.
+    ``param`` ``projection_time`` binds to the live key ``controller.projection_time``
+    (following_server), and ``param`` ``voxel_layer.scan.max_obstacle_height`` is
+    reported verbatim (``ros2_name`` equal to ``param``). In every case the bound
+    key must *end with* the ``param`` leaf: ``ros2_name == param`` or
+    ``ros2_name.endswith("." + param)``.
+
+    This matters because the two names are used for different things:
+    ``fetch_node_params`` binds the live value by ``ros2_name`` while the GUI lists
+    and groups the entry by ``param`` (param_client.py). If the leaf drifts from
+    ``param`` (a typo like ``controller.projection_timeout`` against
+    ``projection_time``), the lookup misses ``existing_names`` silently, exactly as
+    ``test_ros2_name_is_non_empty_string_when_present`` describes, and the param
+    renders as its schema default forever while appearing correctly labelled.
+    """
+    value = entry.get("ros2_name")
+    if not (isinstance(value, str) and value.strip()):
+        return
+    param = entry["param"]
+    assert value == param or value.endswith("." + param), (
+        f"Param '{entry['param']}' ros2_name {value!r} must end with the param "
+        f"leaf '{param}' (ros2_name is only a namespace-prefixed form of param); "
+        f"a drifting leaf binds the wrong live key and the param silently renders "
+        f"as its schema default"
+    )
+
+
 # The closed set of follow-up actions understood by the app. Keep in sync with
 # the ``post_set_action`` docstring in nav2_config/types/params.py and the
 # dispatch in node.py. A typo here (e.g. "restart_stak") would silently be
