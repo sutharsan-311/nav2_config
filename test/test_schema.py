@@ -1349,3 +1349,40 @@ def test_plugin_classes_are_non_empty(raw_plugins):
             assert plugin["plugin_class"].strip(), (
                 f"Plugin '{plugin.get('name')}' has empty plugin_class"
             )
+
+
+def test_plugin_advertised_params_exist_in_schema(raw_plugins, raw_params):
+    """Every param a plugin advertises in its ``params`` list must exist in the schema.
+
+    Each plugin entry in ``plugins.json`` carries a curated ``params`` list — the
+    parameters that plugin exposes (e.g. NavFn advertises ``GridBased.tolerance``,
+    ``GridBased.use_astar`` …). Those strings are hand-maintained in a *separate*
+    file from ``nav2_params.json``, so nothing but this test keeps the two in sync:
+    if a schema param is later renamed (e.g. the ``param``/``ros2_name`` leaf
+    changes) or dropped, the plugin's advertised reference silently dangles and
+    points at a parameter the schema no longer defines. The structural
+    ``test_plugin_entries_have_required_fields`` only checks each plugin's own
+    descriptive fields, never that these cross-references resolve. Match against the
+    union of every entry's display ``param`` and its effective ``ros2_name`` (the
+    live-binding key, ``ros2_name or param``) so a reference stated in either form
+    is accepted; a reference matching neither is a stale pointer and fails here.
+    """
+    known = set()
+    for entry in raw_params:
+        known.add(entry["param"])
+        ros2_name = entry.get("ros2_name")
+        known.add(ros2_name if ros2_name else entry["param"])
+
+    dangling = []
+    for category, plugins in raw_plugins.items():
+        for plugin in plugins:
+            for advertised in plugin.get("params", []):
+                if advertised not in known:
+                    dangling.append(
+                        f"{category}/{plugin.get('name', '?')} -> {advertised!r}"
+                    )
+    assert not dangling, (
+        "plugins.json advertises param(s) with no matching entry in "
+        "nav2_params.json (renamed or removed from the schema): "
+        + "; ".join(dangling)
+    )
