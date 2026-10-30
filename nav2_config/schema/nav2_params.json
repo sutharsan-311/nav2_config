@@ -12982,6 +12982,144 @@
     "post_set_action": null
   },
   {
+    "node": "controller_server",
+    "param": "general_goal_checker.fine_xy_goal_tolerance",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "m",
+    "description": "Tight (tier-1) positional tolerance for the AdaptiveToleranceGoalChecker. When the robot comes within this distance of the goal XY, the XY goal is accepted immediately without waiting for the robot to stop.",
+    "impact": "Set to the precision you genuinely need at the goal. Must be smaller than coarse_xy_goal_tolerance; if fine >= coarse the checker logs a warning and degrades to behaving like a plain SimpleGoalChecker.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "AdaptiveToleranceGoalChecker",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "goal_checker",
+      "tolerance",
+      "goal"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "general_goal_checker.coarse_xy_goal_tolerance",
+    "type": "double",
+    "default": 0.25,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "m",
+    "description": "Relaxed (tier-2) positional tolerance for the AdaptiveToleranceGoalChecker. Inside this radius but outside fine_xy_goal_tolerance, the XY goal is accepted only once the robot has crossed the goal line, stopped, or stopped improving its distance for required_stagnation_cycles control cycles.",
+    "impact": "Widen to let the robot settle for the goal when it cannot reach the fine tolerance (e.g. blocked by an obstacle near the goal); narrow to demand a closer final position before the stagnation fallback can accept the goal.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "AdaptiveToleranceGoalChecker",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "goal_checker",
+      "tolerance",
+      "goal"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "general_goal_checker.symmetric_yaw_tolerance",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, the AdaptiveToleranceGoalChecker accepts the goal heading if the robot's yaw matches either the goal orientation or its 180-degree reverse, allowing a goal to be reached while facing forward or backward.",
+    "impact": "Enable for robots that may approach or dock at a goal in either orientation; leave false to require the exact goal heading within yaw_goal_tolerance.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "AdaptiveToleranceGoalChecker",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "goal_checker",
+      "tolerance",
+      "heading"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "general_goal_checker.trans_stopped_velocity",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "m/s",
+    "description": "Linear speed below which the robot is treated as stopped when the AdaptiveToleranceGoalChecker evaluates its coarse-tolerance stagnation fallback. Combined with rot_stopped_velocity to decide whether the robot has halted inside the coarse zone.",
+    "impact": "Raise to count the robot as stopped while it is still drifting slowly (accepts the goal sooner via the stopped-stagnation trigger); lower to require a more complete halt before that fallback accepts the goal.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "AdaptiveToleranceGoalChecker",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "goal_checker",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "general_goal_checker.rot_stopped_velocity",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "rad/s",
+    "description": "Angular speed below which the robot is treated as stopped when the AdaptiveToleranceGoalChecker evaluates its coarse-tolerance stagnation fallback. Combined with trans_stopped_velocity to decide whether the robot has halted inside the coarse zone.",
+    "impact": "Raise to count the robot as stopped while it is still rotating slowly (accepts the goal sooner); lower to require rotation to fully settle before the stopped-stagnation fallback accepts the goal.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "AdaptiveToleranceGoalChecker",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "goal_checker",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "general_goal_checker.required_stagnation_cycles",
+    "type": "int",
+    "default": 15,
+    "range": {
+      "min": 1,
+      "max": 1000
+    },
+    "unit": "",
+    "description": "Number of consecutive control cycles the robot must stay stopped, or fail to improve its distance to the goal, inside the coarse tolerance zone before the AdaptiveToleranceGoalChecker accepts the goal via its stagnation fallback. Acceptance can also be triggered immediately by crossing the goal finish line.",
+    "impact": "Increase to require longer confirmation that the robot is truly settled or stuck before declaring success (fewer premature accepts); decrease to accept the goal faster once progress stalls. Must be >= 1.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "AdaptiveToleranceGoalChecker",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "goal_checker",
+      "stagnation"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "planner_server",
     "param": "allow_partial_planning",
     "type": "bool",
