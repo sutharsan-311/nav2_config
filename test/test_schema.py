@@ -1226,6 +1226,61 @@ def test_effective_ros2_name_unique_per_node(parsed_params):
         seen[key] = p.param
 
 
+# Parameter keys that appear in Nav2's *sample* nav2_params.yaml but do not
+# match the name the owning node actually declares in source — so a schema entry
+# under the mislabeled key would never bind on a running node (it fails the
+# ``ros2_name in existing_names`` set membership in
+# ``param_client.fetch_node_params``) and would always render as its schema
+# default while silently masking the correctly-named entry. Each maps
+# (node, wrong_key) -> the real declared param, with the source that proves it.
+# Extend this as new sample-YAML mislabels are found.
+#
+#   docking_server.simulation_step: the bundled nav2_params.yaml lists
+#   ``controller: { ... simulation_step: 0.1 ... }``, but the docking controller
+#   declares ``controller.simulation_time_step`` (default 0.1) in
+#   nav2_docking/opennav_docking/src/controller.cpp. The schema already carries
+#   the correct ``simulation_time_step`` entry; this guard stops a future
+#   maintainer (e.g. following the auto-generated param-gap backlog, which reads
+#   the sample YAML) from adding the dead ``simulation_step`` key.
+KNOWN_SAMPLE_YAML_MISLABELS = {
+    ("docking_server", "simulation_step"): "simulation_time_step",
+}
+
+
+@pytest.mark.parametrize(
+    "wrong_key,correct_param",
+    [
+        pytest.param((node, wrong), correct, id=f"{node}.{wrong}")
+        for (node, wrong), correct in KNOWN_SAMPLE_YAML_MISLABELS.items()
+    ],
+)
+def test_no_known_sample_yaml_mislabels(parsed_params, wrong_key, correct_param):
+    """The schema must not adopt a parameter key that Nav2's sample YAML mislabels.
+
+    A few keys in the bundled ``nav2_params.yaml`` do not match the name the
+    owning node actually declares in source. The auto-generated param-gap backlog
+    is derived from that sample YAML, so it keeps surfacing such a key as a
+    "missing" parameter — but adding it would be a silent defect: the wrong name
+    fails the ``ros2_name in existing_names`` set membership in
+    ``param_client.fetch_node_params``, so the entry would never bind to a running
+    node and would always render as its schema default, masking the correctly
+    named entry. This asserts, for each known mislabel, that the dead key is
+    absent *and* its correctly-declared counterpart is present under the same
+    node. See ``KNOWN_SAMPLE_YAML_MISLABELS`` for the per-case source citation.
+    """
+    node, wrong = wrong_key
+    names = {(p.node, p.param) for p in parsed_params}
+    assert (node, wrong) not in names, (
+        f"Schema contains the sample-YAML-mislabeled key '{node}.{wrong}', which "
+        f"does not match the name the node declares in source; it would never "
+        f"bind on a running node. Use '{node}.{correct_param}' instead."
+    )
+    assert (node, correct_param) in names, (
+        f"Schema is missing the correctly-declared '{node}.{correct_param}' "
+        f"(the real name for the mislabeled '{wrong}')."
+    )
+
+
 # ---------------------------------------------------------------------------
 # Category taxonomy consistency
 # ---------------------------------------------------------------------------
