@@ -10705,6 +10705,30 @@
   },
   {
     "node": "controller_server",
+    "param": "follow_path.ackermann.min_turning_r",
+    "type": "double",
+    "default": 0.2,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Minimum turning radius of the robot, read by the Ackermann motion model (only active when follow_path.motion_model is \"ackermann\"). It bounds the sampled angular velocity so that |wz| never exceeds |vx| / min_turning_r, keeping every candidate trajectory within the vehicle's steering limit. The parameter lives under the block named after the motion_model value (e.g. follow_path.ackermann.min_turning_r). Declared in nav2_mppi_controller/include/nav2_mppi_controller/motion_models.hpp.",
+    "impact": "Set this to the robot's real minimum turning radius. Too small lets MPPI plan turns the steering cannot physically execute, so the robot cuts corners or fails to track the path; too large over-constrains wz and produces sluggish, wide turns. Has no effect unless the Ackermann motion model is selected.",
+    "category": "general",
+    "plugin_specific": true,
+    "plugin": "MPPIController/AckermannMotionModel",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "kinematics",
+      "ackermann"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
     "param": "follow_path.vx_max",
     "type": "double",
     "default": 0.5,
@@ -11772,6 +11796,27 @@
       "goal_angle",
       "threshold",
       "approach"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.GoalAngleCritic.symmetric_yaw_tolerance",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, GoalAngleCritic scores each trajectory's final heading against both the goal yaw and the goal yaw rotated by 180 degrees, keeping the smaller error. This lets a robot satisfy the goal orientation while facing either forward or backward, useful for symmetric platforms or bidirectional driving. Declared in nav2_mppi_controller/src/critics/goal_angle_critic.cpp.",
+    "impact": "Enable for robots that can legitimately reach the goal pose facing either direction; it avoids an unnecessary in-place flip when the reversed heading is already close, reducing final-approach maneuvering. Leave disabled when the goal orientation is strict and the robot must face exactly the commanded yaw.",
+    "category": "goal_tolerance",
+    "plugin_specific": true,
+    "plugin": "MPPIController/GoalAngleCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "goal_angle",
+      "orientation"
     ],
     "post_set_action": null
   },
@@ -14944,6 +14989,28 @@
       "mppi",
       "obstacles",
       "near_goal_distance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "controller_server",
+    "param": "follow_path.ObstaclesCritic.inflation_layer_name",
+    "type": "string",
+    "default": "",
+    "range": null,
+    "unit": "",
+    "description": "Name of the inflation layer in the local costmap that ObstaclesCritic queries to compute the circumscribed-radius cost used for its fast potential-field collision checking. When empty, the critic searches the costmap for any available inflation layer. Set to the exact layer name when the costmap declares more than one inflation layer or when the auto-search selects the wrong one. Declared in nav2_mppi_controller/src/critics/obstacles_critic.cpp.",
+    "impact": "Typically left empty. Specify the layer name only when the local costmap has multiple inflation layers and ObstaclesCritic picks the wrong one; an incorrect or missing inflation layer disables the potential-field speed-up, forcing full-footprint checks and slowing the controller while weakening obstacle avoidance.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "MPPIController/ObstaclesCritic",
+    "hot_reload": true,
+    "tags": [
+      "controller",
+      "mppi",
+      "obstacles",
+      "costmap",
+      "inflation"
     ],
     "post_set_action": null
   },
