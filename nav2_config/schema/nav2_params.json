@@ -10360,6 +10360,199 @@
     "post_set_action": null
   },
   {
+    "node": "collision_detector",
+    "param": "type",
+    "type": "string",
+    "default": "polygon",
+    "range": {
+      "options": [
+        "polygon",
+        "circle",
+        "velocity_polygon"
+      ]
+    },
+    "unit": "",
+    "description": "Shape type of this named detection zone. Accepted values: 'polygon' (static vertex list, or a footprint/polygon subscribed at runtime), 'circle' (static radius around the base frame), 'velocity_polygon' (a set of sub-polygons selected by the current commanded velocity). Set per zone as <polygon_name>.type.",
+    "impact": "Determines which shape parameters the zone reads ('points' for polygon, 'radius' for circle, 'velocity_polygons' for velocity_polygon). Required with no source default -- omitting it or giving an unknown value causes collision_detector configuration to fail.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_detector",
+      "polygon",
+      "shape",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_detector",
+    "param": "action_type",
+    "type": "string",
+    "default": "none",
+    "range": {
+      "options": [
+        "none"
+      ]
+    },
+    "unit": "",
+    "description": "Action type declared for the zone. The polygon classes shared with collision_monitor accept 'stop', 'slowdown', 'limit', 'approach' and 'none', but collision_detector is detection-only and does not modify velocity: configurePolygons rejects any value other than 'none' and the node fails to configure. Set per zone as <polygon_name>.action_type.",
+    "impact": "Must be 'none' for collision_detector; the only effect of the detector is to publish each zone's triggered state on the collision_detector_state topic. Required with no source default -- omitting it causes configuration to fail.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_detector",
+      "polygon",
+      "action",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_detector",
+    "param": "points",
+    "type": "string",
+    "default": "[[0.3, 0.3], [0.3, -0.3], [0.0, -0.3], [0.0, 0.3]]",
+    "range": null,
+    "unit": "m",
+    "description": "Static vertex list defining a 'polygon' type zone, given as a string of [x, y] pairs in the base frame (e.g. \"[[0.3, 0.3], [0.3, -0.3], [0.0, -0.3], [0.0, 0.3]]\"). Has no source default: if omitted or unparsable the zone falls back to a dynamic subscription (polygon_sub_topic) for its shape.",
+    "impact": "Larger zones register detections from obstacles further away. Leave unset to drive the shape at runtime from a topic instead -- if neither static points nor a subscription topic is available, configuration fails.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": false,
+    "tags": [
+      "collision_detector",
+      "polygon",
+      "shape",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_detector",
+    "param": "radius",
+    "type": "double",
+    "default": 0.3,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "m",
+    "description": "Static radius of a 'circle' type zone, centered on the base frame. Has no source default: if not set, the circle falls back to a dynamic subscription (polygon_sub_topic) for its radius at runtime.",
+    "impact": "Larger radius registers detections further from the robot. No source default -- either this or a subscription topic must be provided or configuration fails.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "circle",
+    "hot_reload": false,
+    "tags": [
+      "collision_detector",
+      "circle",
+      "shape",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_detector",
+    "param": "min_points",
+    "type": "int",
+    "default": 4,
+    "range": {
+      "min": 1,
+      "max": null
+    },
+    "unit": "",
+    "description": "Minimum number of sensor data points that must fall inside the zone for it to be reported as triggered in the collision_detector_state output. Helps reject spurious single-point detections. (Supersedes the deprecated max_points parameter.)",
+    "impact": "Increase to reduce false positives from sensor noise. Decrease for more sensitive detection of sparse obstacles (e.g. thin poles). A value of 1 reports a detection on any single point inside the zone.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": true,
+    "tags": [
+      "collision_detector",
+      "polygon",
+      "threshold",
+      "noise"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_detector",
+    "param": "trigger_consecutive_points",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": null
+    },
+    "unit": "",
+    "description": "Number of consecutive processing cycles in which the zone must see at least min_points before it is reported as triggered. Must be >= 1; a value below 1 fails validation at configuration.",
+    "impact": "Raise above 1 to debounce transient sensor noise so a single spurious frame does not report a detection -- at the cost of slightly delayed reporting of real obstacles. Keep at 1 for the fastest detection reporting.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": true,
+    "tags": [
+      "collision_detector",
+      "polygon",
+      "debounce",
+      "noise",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_detector",
+    "param": "release_consecutive_points",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": null
+    },
+    "unit": "",
+    "description": "Number of consecutive processing cycles in which the zone must see fewer than min_points before a reported detection is cleared. Must be >= 1; a value below 1 fails validation at configuration.",
+    "impact": "Raise above 1 to add hysteresis so the reported detection state does not rapidly oscillate when an obstacle sits right at the zone boundary. Higher values keep the detection latched longer after the obstacle clears.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": true,
+    "tags": [
+      "collision_detector",
+      "polygon",
+      "debounce",
+      "hysteresis",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_detector",
+    "param": "visualize",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "When true, publishes a PolygonStamped marker on the topic '<polygon_name>' (configurable via polygon_pub_topic) so the zone can be visualised in RViz.",
+    "impact": "Enable during development and tuning to confirm zone shapes are correct. Adds a small topic-publishing overhead; disable in production if not needed.",
+    "category": "debug",
+    "plugin_specific": true,
+    "plugin": "polygon",
+    "hot_reload": true,
+    "tags": [
+      "collision_detector",
+      "polygon",
+      "visualize",
+      "rviz",
+      "debug"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "bt_navigator",
     "param": "bt_search_directories",
     "type": "string_array",
