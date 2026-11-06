@@ -54,11 +54,13 @@ overwrites), this file is hand-maintained and safe for long-lived notes.
   (`defn.range.min is not None and defn.range.max is not None`); otherwise it
   falls through to the free-form `ParamInput` at the end of the method.
   `ParamInput` carries no validator/clamp logic, so a param that declares only
-  one bound gets a plain text box that accepts any value. 10 schema entries do
-  this today — all `collision_monitor`, each with a `min` and `max: null`:
-  `min_points`, `min_height`, `max_height`, `min_range`, `time_before_collision`,
+  one bound gets a plain text box that accepts any value. 14 schema entries do
+  this today, each with a `min` and `max: null`: 10 on `collision_monitor`
+  (`min_points`, `min_height`, `max_height`, `min_range`, `time_before_collision`,
   `radius`, `linear_limit`, `angular_limit`, `trigger_consecutive_points`,
-  `release_consecutive_points`. For these the declared lower bound (e.g.
+  `release_consecutive_points`) and 4 on `collision_detector` (`radius`,
+  `min_points`, `trigger_consecutive_points`, `release_consecutive_points`).
+  For these the declared lower bound (e.g.
   `radius >= 0.0`, `min_points >= 1`) is documented and still used by
   `test_numeric_default_within_range` to validate the schema default, but it does
   **not** constrain what the user can type in the GUI — a negative radius or a
