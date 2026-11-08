@@ -12038,6 +12038,196 @@
   },
   {
     "node": "docking_server",
+    "param": "controller.k_phi",
+    "type": "double",
+    "default": 3.0,
+    "range": {
+      "min": 0.0,
+      "max": 1000.0
+    },
+    "unit": "",
+    "description": "Gain in the graceful (smooth) control law governing the ratio of the rate of change in heading angle (phi) to the rate of change in radial distance to the dock. Drives how aggressively the robot turns to align with the dock while closing range.",
+    "impact": "Higher k_phi produces tighter, more aggressive heading corrections during approach; too high can cause overshoot or oscillation near the dock, while too low makes the robot slow to align with the dock axis.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "controller",
+      "control-law",
+      "graceful"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.k_delta",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.0,
+      "max": 1000.0
+    },
+    "unit": "",
+    "description": "Constant factor applied to the heading-error feedback term in the graceful control law. Determines how strongly the controller reacts to the difference between the robot's heading and the desired approach heading.",
+    "impact": "Raising k_delta makes heading-error correction snappier and reduces cross-track drift, but excessive values induce oscillation; lowering it yields smoother but slower convergence to the dock heading.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "controller",
+      "control-law",
+      "graceful"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.beta",
+    "type": "double",
+    "default": 0.4,
+    "range": {
+      "min": 0.0,
+      "max": 1000.0
+    },
+    "unit": "",
+    "description": "Constant factor applied to the path curvature that drops the commanded linear velocity as curvature increases. Part of the graceful control law's speed-shaping behaviour.",
+    "impact": "Larger beta slows the robot more on curved segments of the approach, improving tracking accuracy at the cost of docking time; smaller beta keeps speed up through curves but can degrade path following.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "controller",
+      "control-law",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.lambda",
+    "type": "double",
+    "default": 2.0,
+    "range": {
+      "min": 0.0,
+      "max": 1000.0
+    },
+    "unit": "",
+    "description": "Constant factor applied to the path curvature controlling the sharpness of the generated approach curve in the graceful control law. Higher lambda implies sharper curves.",
+    "impact": "Increasing lambda yields sharper, more direct approach curves to the dock; too high can demand turn rates the robot cannot execute smoothly, while too low produces wide, gentle arcs.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "controller",
+      "control-law"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.v_linear_min",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "m/s",
+    "description": "Minimum linear velocity the docking controller will command while approaching or leaving the dock. Prevents the robot from stalling at very low speeds near the goal.",
+    "impact": "Raising this keeps motion going through the final approach but reduces precision at contact; setting it too high can cause the robot to drive into the dock too fast. Must not exceed v_linear_max.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "controller",
+      "velocity",
+      "limit"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.v_linear_max",
+    "type": "double",
+    "default": 0.25,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "m/s",
+    "description": "Maximum linear velocity the docking controller will command during dock approach and undocking.",
+    "impact": "Higher values speed up docking but reduce reaction time to collisions and can overshoot the dock; lower values give safer, more precise approaches at the cost of docking duration.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "controller",
+      "velocity",
+      "limit"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.v_angular_max",
+    "type": "double",
+    "default": 0.75,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "rad/s",
+    "description": "Maximum angular velocity the docking controller will command while turning to align with the dock.",
+    "impact": "Higher values let the robot reorient faster toward the dock heading but can cause jerky motion or overshoot; lower values smooth rotation but slow alignment during approach.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "controller",
+      "velocity",
+      "limit"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.slowdown_radius",
+    "type": "double",
+    "default": 0.25,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "m",
+    "description": "Radial distance from the dock at which the graceful control law begins decelerating the robot toward the final approach speed.",
+    "impact": "A larger slowdown_radius starts braking earlier for gentler, more accurate final docking; a smaller radius keeps speed up longer but risks abrupt deceleration or overshoot close to the dock.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "controller",
+      "velocity"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
     "param": "initial_perception_timeout",
     "type": "double",
     "default": 5.0,
@@ -17130,7 +17320,7 @@
       "min": 0.0,
       "max": 20.0
     },
-    "unit": "m/s²",
+    "unit": "m/s\u00b2",
     "description": "Maximum deceleration used to kinematically constrain the follow approach speed inside the smooth control law: the commanded linear speed is capped so the robot can always stop within the remaining distance to the target (v <= sqrt(2 * r * deceleration_max)). Shared opennav_docking::Controller parameter (controller.deceleration_max); the following server reuses that controller, so this is active regardless of collision settings.",
     "impact": "Lower values force earlier, gentler braking as the robot closes on the followed object, improving final spacing accuracy but slowing the response to a moving target. Higher values permit faster closing speeds but require good odometry and a drivetrain that can actually achieve the deceleration.",
     "category": "control",
@@ -17178,7 +17368,7 @@
       "min": 0.0,
       "max": 20.0
     },
-    "unit": "rad/s²",
+    "unit": "rad/s\u00b2",
     "description": "Maximum angular acceleration used to ramp the angular velocity during the rotate-to-heading phase. The commanded angular velocity is clamped each cycle to [current_vel - accel*dt, current_vel + accel*dt] and is also tapered near the target heading (sqrt(2 * accel * angular_distance)) to avoid overshoot. Shared opennav_docking::Controller parameter (controller.rotate_to_heading_max_angular_accel).",
     "impact": "Higher values let the robot spin up and settle its heading more quickly when reacquiring a moving object. Lower values produce smoother in-place rotation, reducing wheel slip and odometry drift on robots sensitive to abrupt angular changes.",
     "category": "control",
