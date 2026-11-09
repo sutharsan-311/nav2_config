@@ -9164,6 +9164,186 @@
     "post_set_action": null
   },
   {
+    "node": "local_costmap",
+    "param": "range_sensor_layer.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enable or disable the range sensor layer, which marks and clears costmap cells from sonar/IR range messages (sensor_msgs/Range) using a probabilistic cone sensor model.",
+    "impact": "Disable to stop fusing range-sensor readings into the costmap; useful when relying solely on lidar/voxel layers or when range sensors are noisy.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "RangeSensorLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "range_sensor_layer"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "range_sensor_layer.phi",
+    "type": "double",
+    "default": 1.2,
+    "range": {
+      "min": 0.0,
+      "max": 3.14159
+    },
+    "unit": "rad",
+    "description": "Reference angle of the probabilistic sensor model's radial term (phi_v). The per-cell delta weight is 1 - (1 + tanh(2 * (phi - phi_v))) / 2, so phi sets the angular offset at which a reading's confidence falls off along the cone.",
+    "impact": "Larger values widen the angular region treated as confidently sensed; smaller values tighten it. Tune to the real beam width of the range sensor.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "RangeSensorLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "range_sensor_layer",
+      "sensor-model"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "range_sensor_layer.inflate_cone",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Fraction of the sensor's field-of-view cone to update per reading. When set below 1.0, only cells inside that fraction of the triangular cone area are marked/cleared; a value of 1.0 updates the full cone.",
+    "impact": "Lower values restrict updates toward the beam centerline, reducing spurious marking at the cone edges at the cost of covering less area. Set near 1.0 for wide-beam sensors you trust across the full FOV.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "RangeSensorLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "range_sensor_layer",
+      "sensor-model"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "range_sensor_layer.no_readings_timeout",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0,
+      "max": 60.0
+    },
+    "unit": "s",
+    "description": "If greater than zero, the layer is flagged as not current (stale) when no range reading has arrived within this many seconds, warning that the sensor data is outdated. A value of 0 disables the staleness check.",
+    "impact": "Set to a few seconds to make the costmap flag loss of range-sensor data; leave at 0 to never time out, which hides sensor dropouts.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "RangeSensorLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "range_sensor_layer",
+      "timeout"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "range_sensor_layer.clear_threshold",
+    "type": "double",
+    "default": 0.2,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Occupancy probability below which a cell is marked as free space. Cells whose accumulated probability falls under this threshold are cleared in the master costmap.",
+    "impact": "Raising it clears cells more readily (more free space, risk of erasing real obstacles); lowering it makes clearing more conservative. Must stay below mark_threshold.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "RangeSensorLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "range_sensor_layer",
+      "threshold"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "range_sensor_layer.mark_threshold",
+    "type": "double",
+    "default": 0.8,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "",
+    "description": "Occupancy probability above which a cell is marked as a lethal obstacle. Cells whose accumulated probability exceeds this threshold become lethal in the master costmap.",
+    "impact": "Lowering it marks obstacles more eagerly (more lethal cells, risk of false positives); raising it requires stronger evidence before marking. Must stay above clear_threshold.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "RangeSensorLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "range_sensor_layer",
+      "threshold"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "range_sensor_layer.clear_on_max_reading",
+    "type": "bool",
+    "default": false,
+    "range": null,
+    "unit": "",
+    "description": "Whether a range reading at (or above) the sensor's maximum range clears the cells along the beam. When false, max-range readings are ignored instead of treated as free space.",
+    "impact": "Enable when a max-range return reliably means 'nothing detected' so the robot clears space ahead; keep disabled for sensors that report max range on invalid/no echo, which would otherwise erase real obstacles.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "RangeSensorLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "range_sensor_layer",
+      "clearing"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "range_sensor_layer.input_sensor_type",
+    "type": "string",
+    "default": "ALL",
+    "range": {
+      "options": [
+        "ALL",
+        "VARIABLE",
+        "FIXED"
+      ]
+    },
+    "unit": "",
+    "description": "Selects how incoming sensor_msgs/Range messages are interpreted. FIXED handles fixed-distance rangers (min_range == max_range) that report only +Inf (no object) or -Inf (object detected); VARIABLE handles rangers that report an actual distance value; ALL auto-detects per message (FIXED when min_range == max_range, otherwise VARIABLE). The value is upper-cased before matching, and an unknown value falls back to ALL.",
+    "impact": "Set to FIXED or VARIABLE to match your range sensor's type and skip ALL's per-message auto-detection; the wrong choice makes readings be processed by the mismatched handler (e.g. a VARIABLE setting treats a fixed-ranger's Inf value as an out-of-bounds range and rejects it).",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "RangeSensorLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "range_sensor_layer",
+      "sensor-model"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "collision_monitor",
     "param": "enabled",
     "type": "bool",
