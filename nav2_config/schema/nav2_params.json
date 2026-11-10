@@ -12408,6 +12408,167 @@
   },
   {
     "node": "docking_server",
+    "param": "controller.use_collision_detection",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enables collision checking of the projected docking trajectory against the local costmap before commanding motion. When true, the controller subscribes to the costmap and published footprint and aborts the approach if a collision is predicted.",
+    "impact": "Leaving this on adds a safety layer that stops the robot before driving into unexpected obstacles during docking, at the cost of a costmap subscription and per-cycle footprint collision checks. Disable only if no local costmap is available or collision checking is handled elsewhere.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "controller",
+      "collision",
+      "safety"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.costmap_topic",
+    "type": "string",
+    "default": "local_costmap/costmap_raw",
+    "range": null,
+    "unit": "",
+    "description": "Topic of the raw local costmap used for collision checking of the projected docking trajectory. Only subscribed when controller.use_collision_detection is true.",
+    "impact": "Must point at a valid nav2_costmap_2d raw costmap covering the dock area; a wrong or empty topic leaves the collision checker without data so predicted collisions are missed. Read once at configuration time, so it is not dynamically reconfigurable.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "controller",
+      "collision",
+      "costmap",
+      "topic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.footprint_topic",
+    "type": "string",
+    "default": "local_costmap/published_footprint",
+    "range": null,
+    "unit": "",
+    "description": "Topic publishing the robot footprint polygon used by the docking collision checker. Only subscribed when controller.use_collision_detection is true.",
+    "impact": "Should match the footprint published by the local costmap so collision checking uses the true robot shape; a mismatched or missing footprint makes collision predictions inaccurate. Read once at configuration time, so it is not dynamically reconfigurable.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "controller",
+      "collision",
+      "footprint",
+      "topic"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.transform_tolerance",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "s",
+    "description": "TF transform tolerance used by the docking collision checker when transforming projected poses into the costmap frame for footprint collision testing.",
+    "impact": "Increase if TF lookups fail due to timing jitter between the costmap and robot pose; too large a tolerance allows stale transforms that reduce collision-check accuracy. Applied at configuration time.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "docking",
+      "controller",
+      "collision",
+      "tf"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.projection_time",
+    "type": "double",
+    "default": 5.0,
+    "range": {
+      "min": 0.0,
+      "max": 60.0
+    },
+    "unit": "s",
+    "description": "Time horizon over which the docking trajectory is forward-simulated for collision checking. The controller projects the dock approach ahead by this duration and tests each step against the costmap.",
+    "impact": "Longer projection detects obstacles further along the approach path, giving earlier aborts, but increases the number of collision-check iterations per cycle. Must be non-negative; dynamically reconfigurable.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "controller",
+      "collision",
+      "projection"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.simulation_time_step",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 1.0
+    },
+    "unit": "s",
+    "description": "Time step used when forward-simulating the docking trajectory for collision checking. The number of projected poses is projection_time divided by this step.",
+    "impact": "Smaller steps produce a denser, more accurate projected path for collision detection but increase computation per control cycle; larger steps are cheaper but may skip over thin obstacles. Must be non-negative; dynamically reconfigurable.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "controller",
+      "collision",
+      "simulation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.dock_collision_threshold",
+    "type": "double",
+    "default": 0.3,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "m",
+    "description": "Distance from the dock within which collision checking of the projected trajectory is suppressed. Because the robot is expected to make contact with the dock, poses closer than this threshold to the dock are not treated as collisions.",
+    "impact": "Set roughly to the distance at which the robot/charging contacts legitimately touch the dock; too small a value causes false collision aborts at the moment of docking, while too large a value disables collision checking over a wide region near the dock. Must be non-negative; dynamically reconfigurable.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "controller",
+      "collision",
+      "threshold"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
     "param": "initial_perception_timeout",
     "type": "double",
     "default": 5.0,
