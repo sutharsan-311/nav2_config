@@ -12408,6 +12408,77 @@
   },
   {
     "node": "docking_server",
+    "param": "controller.deceleration_max",
+    "type": "double",
+    "default": 2.5,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "m/s^2",
+    "description": "Maximum deceleration the graceful control law assumes when braking the robot during the dock approach. The commanded linear speed is capped so the robot can always stop within the remaining distance to the dock (v <= sqrt(2 * r * deceleration_max)).",
+    "impact": "Higher values let the robot stay faster for longer and brake harder close to the dock, risking overshoot or abrupt stops; lower values force an earlier, gentler slowdown for more accurate but slower docking. Dynamically reconfigurable.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "controller",
+      "acceleration"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.rotate_to_heading_angular_vel",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "rad/s",
+    "description": "Target angular velocity commanded when the docking controller rotates in place to align the robot with the dock heading before or during approach.",
+    "impact": "Higher values rotate the robot toward the dock heading faster but can overshoot or move jerkily; lower values rotate more smoothly but lengthen alignment time. Dynamically reconfigurable.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "controller",
+      "velocity",
+      "rotation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
+    "param": "controller.rotate_to_heading_max_angular_accel",
+    "type": "double",
+    "default": 3.2,
+    "range": {
+      "min": 0.0,
+      "max": 100.0
+    },
+    "unit": "rad/s^2",
+    "description": "Maximum angular acceleration used to ramp the in-place rotation command toward rotate_to_heading_angular_vel. It also bounds the velocity-to-stop limit (sqrt(2 * accel * angular_distance)) so the robot slows before overshooting the target heading.",
+    "impact": "Higher values let rotation reach and leave the target speed faster at the risk of jerk and overshoot; lower values produce smoother, more damped turns that take longer to settle on the dock heading. Dynamically reconfigurable.",
+    "category": "control",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": true,
+    "tags": [
+      "docking",
+      "controller",
+      "acceleration",
+      "rotation"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "docking_server",
     "param": "controller.use_collision_detection",
     "type": "bool",
     "default": true,
