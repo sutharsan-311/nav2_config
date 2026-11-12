@@ -1238,12 +1238,14 @@ def test_effective_ros2_name_unique_per_node(parsed_params):
 #   docking_server.simulation_step: the bundled nav2_params.yaml lists
 #   ``controller: { ... simulation_step: 0.1 ... }``, but the docking controller
 #   declares ``controller.simulation_time_step`` (default 0.1) in
-#   nav2_docking/opennav_docking/src/controller.cpp. The schema already carries
-#   the correct ``simulation_time_step`` entry; this guard stops a future
-#   maintainer (e.g. following the auto-generated param-gap backlog, which reads
-#   the sample YAML) from adding the dead ``simulation_step`` key.
+#   nav2_docking/opennav_docking/src/controller.cpp. The schema carries the
+#   correct ``controller.simulation_time_step`` entry (the full dotted name the
+#   node reports, which is what binds — a bare ``simulation_time_step`` would not
+#   match ``existing_names`` either); this guard stops a future maintainer (e.g.
+#   following the auto-generated param-gap backlog, which reads the sample YAML)
+#   from adding the dead ``simulation_step`` key.
 KNOWN_SAMPLE_YAML_MISLABELS = {
-    ("docking_server", "simulation_step"): "simulation_time_step",
+    ("docking_server", "simulation_step"): "controller.simulation_time_step",
 }
 
 

@@ -19,35 +19,6 @@ overwrites), this file is hand-maintained and safe for long-lived notes.
   `signals.restart_suggested` (or a dedicated notification) for these two
   actions. Behavioural change — leave for Sutharsan to triage.
 
-- **`docking_server` controller params never bind to the live node.** All 18
-  parameters the docking controller declares under the `controller.` prefix in
-  `nav2_docking/opennav_docking/src/controller.cpp`
-  (`k_phi`, `k_delta`, `beta`, `lambda`, `v_linear_min`, `v_linear_max`,
-  `v_angular_max`, `slowdown_radius`, `deceleration_max`,
-  `rotate_to_heading_angular_vel`, `rotate_to_heading_max_angular_accel`,
-  `use_collision_detection`, `costmap_topic`, `footprint_topic`,
-  `transform_tolerance`, `projection_time`, `simulation_time_step`,
-  `dock_collision_threshold`) are declared via
-  `declare_or_get_parameter("controller.<name>", ...)`, so the running node
-  reports them as `controller.<name>`. In the schema these entries store the
-  bare name (e.g. `param: "k_phi"`) with no `ros2_name`, so
-  `Nav2ParamDef.ros2_name` falls back to `"k_phi"`.
-  `param_client.get_all_nav2_params` binds live values by intersecting
-  `d.ros2_name` against the node's reported names
-  (`ros2_names = [d.ros2_name for d in node_defs if d.ros2_name in existing_names]`,
-  param_client.py). `"k_phi"` is never in `existing_names` (which holds
-  `"controller.k_phi"`), so these params are never fetched and never set — they
-  always render the schema default and silently no-op on write. Contrast the
-  established nested-param convention (e.g. `controller_server`
-  `FollowPath.desired_linear_vel`), where the full dotted name lives in `param`
-  itself and `ros2_name` is null. Suggested fix: make the docking controller
-  entries match that convention — either rename `param` to `controller.<name>`
-  (changes the GUI display label and the `(node, param)` key, matching
-  `FollowPath.*`) or add an explicit `ros2_name: "controller.<name>"` (keeps the
-  short display label but diverges from the convention). Behavioural change
-  touching 18 entries plus a display/convention decision — leave for Sutharsan
-  to triage.
-
 - **One-sided numeric ranges never reach a slider and are silently unenforced.**
   `param_row._make_input_widget` (nav2_config/gui/widgets/param_row.py) only
   builds a `ParamSlider` when a `double`/`int` param has **both** bounds set
@@ -71,6 +42,24 @@ overwrites), this file is hand-maintained and safe for long-lived notes.
   from a one-sided `range`, or let `ParamSlider` accept a single bound with a
   sensible open other end. GUI/behavioural change — leave for Sutharsan to triage.
 
+## Resolved
+
+- **Duplicate `docking_server` controller params (bare vs `controller.`-prefixed).**
+  The 18 docking controller parameters declared as
+  `declare_or_get_parameter("controller.<name>", ...)` in
+  `nav2_docking/opennav_docking/src/controller.cpp` existed in the schema
+  *twice*: once under the bare leaf name (e.g. `param: "k_phi"`, the older
+  entries) and once under the correct `controller.`-prefixed name (e.g.
+  `controller.k_phi`, added later when the gap tool re-flagged them as missing
+  because the bare names did not match the YAML's `controller:` namespace). The
+  bare entries never bound to a running node: `param_client` intersects
+  `d.ros2_name` against the node's reported names, and the node reports
+  `controller.k_phi`, never `k_phi`, so the bare rows always rendered the schema
+  default and silently no-opped on write. The 18 bare duplicates were removed,
+  keeping the correctly-binding `controller.<name>` entries (defaults verified
+  against controller.cpp). This also resolves the former "docking_server
+  controller params never bind" idea above.
+
 ## Known false positives in the coverage backlog
 
 - **`docking_server` `simulation_step`.** `scripts/nav2_param_gap.py` derives
@@ -79,6 +68,6 @@ overwrites), this file is hand-maintained and safe for long-lived notes.
   the parameter actually declared in
   `nav2_docking/opennav_docking/src/controller.cpp` is
   `controller.simulation_time_step` (default `0.1`), which is already covered in
-  the schema as `docking_server.simulation_time_step`. Do **not** add a
+  the schema as `docking_server` `controller.simulation_time_step`. Do **not** add a
   `simulation_step` entry — it would fabricate a parameter that no longer exists
   in the Nav2 source.
