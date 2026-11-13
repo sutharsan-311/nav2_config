@@ -14470,6 +14470,116 @@
     "post_set_action": null
   },
   {
+    "node": "route_server",
+    "param": "CollisionMonitor.costmap_topic",
+    "type": "string",
+    "default": "local_costmap/costmap_raw",
+    "range": null,
+    "unit": "",
+    "description": "Costmap topic (nav2_msgs/Costmap raw) that the CollisionMonitor route operation subscribes to for checking the route ahead for obstacles. Defaults to the local costmap's raw topic. If set to a value different from the route server's own costmap_topic parameter, the operation creates its own CostmapSubscriber on this topic; otherwise it reuses the server's shared subscriber.",
+    "impact": "Point this at a costmap that covers the robot's immediate surroundings (typically the local costmap) so collision checks reflect live sensor data. Using a different topic than the server's costmap_topic spawns an extra subscription; keeping them equal reuses the shared one and saves resources. Read once at configure time.",
+    "category": "topics",
+    "plugin_specific": true,
+    "plugin": "CollisionMonitor",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "collision",
+      "costmap",
+      "topics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "CollisionMonitor.rate",
+    "type": "double",
+    "default": 1.0,
+    "range": {
+      "min": 0.01,
+      "max": 100.0
+    },
+    "unit": "Hz",
+    "description": "Frequency at which the CollisionMonitor route operation re-checks the remaining route against the costmap. Internally converted to a checking period of 1/rate seconds; checks performed more often than this period are skipped.",
+    "impact": "Higher rates detect newly appearing obstacles sooner but increase costmap lookups and CPU load; lower rates are cheaper but slow to react. Must be greater than zero. Read once at configure time.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "CollisionMonitor",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "collision",
+      "performance"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "CollisionMonitor.reroute_on_collision",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "When true, a collision detected along the current route causes the CollisionMonitor operation to request a reroute around the blocked edge. When false, the operation reports the collision without triggering a reroute.",
+    "impact": "Enable so the robot automatically plans around obstacles that appear on its route. Disable if rerouting is handled elsewhere or if you only want the operation to flag collisions without altering the route. Read once at configure time.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "CollisionMonitor",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "collision",
+      "reroute"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "CollisionMonitor.max_cost",
+    "type": "double",
+    "default": 253.0,
+    "range": {
+      "min": 0.0,
+      "max": 255.0
+    },
+    "unit": "",
+    "description": "Costmap cell cost at or above which a point on the route is treated as in collision by the CollisionMonitor route operation. The default of 253 corresponds to the inscribed-inflated obstacle cost, so lethal and inscribed cells count as collisions.",
+    "impact": "Lower it to treat high-but-not-lethal inflation cells as collisions, making the monitor more conservative; raise it (toward 255) to only flag definitely-lethal cells. Read once at configure time.",
+    "category": "collision",
+    "plugin_specific": true,
+    "plugin": "CollisionMonitor",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "collision",
+      "costmap"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "CollisionMonitor.check_resolution",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1,
+      "max": 100
+    },
+    "unit": "cells",
+    "description": "Stride, in costmap cells, at which the route is sampled when checking for collisions: 1 checks every cell along the edge, 2 every other cell, and so on. Larger strides skip cells to reduce the number of costmap lookups.",
+    "impact": "Increase to lower CPU cost on fine-resolution costmaps at the risk of stepping over small obstacles between samples; keep at 1 for exhaustive checking when accuracy matters more than speed. Read once at configure time.",
+    "category": "performance",
+    "plugin_specific": true,
+    "plugin": "CollisionMonitor",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "collision",
+      "performance"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "keepout_costmap_filter_info_server",
     "param": "type",
     "type": "int",
