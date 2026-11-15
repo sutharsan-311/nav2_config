@@ -10362,6 +10362,99 @@
     "post_set_action": null
   },
   {
+    "node": "collision_monitor",
+    "param": "obstacles_angle",
+    "type": "double",
+    "default": 0.0174532925,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "rad",
+    "description": "Angular increment used to discretize a Range (IR/ultrasonic) sensor's field-of-view arc into obstacle points. Points are generated from -field_of_view/2 to +field_of_view/2 in steps of this value at the reported range. Set per source as <source_name>.obstacles_angle. Default is 1 degree (pi/180).",
+    "impact": "Smaller angles sample the sensor cone more densely, producing a finer obstacle arc that is less likely to slip between polygon vertices, at the cost of more points per cycle. Larger angles are cheaper but may under-sample a wide cone and miss the zone.",
+    "category": "filter",
+    "plugin_specific": true,
+    "plugin": "range",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "range",
+      "filter",
+      "resolution"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "sampling_distance",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": null
+    },
+    "unit": "m",
+    "description": "Spacing between points sampled along the edges of an incoming polygon from a PolygonInstanceStamped source. Each edge is divided into ceil(segment_length / sampling_distance) segments (at least one) to turn the polygon outline into discrete obstacle points. Set per source as <source_name>.sampling_distance.",
+    "impact": "Smaller spacing yields a denser point representation of the polygon boundary so thin zones are less likely to be missed, at the cost of more points to process; larger spacing is cheaper but can leave gaps along long edges that an obstacle could fall between.",
+    "category": "filter",
+    "plugin_specific": true,
+    "plugin": "polygon_source",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "polygon_source",
+      "filter",
+      "resolution"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "cost_threshold",
+    "type": "int",
+    "default": 253,
+    "range": {
+      "min": 0,
+      "max": 255
+    },
+    "unit": "",
+    "description": "Minimum cost value in a Costmap observation source for a cell to be treated as an obstacle. Cells with cost greater than or equal to this threshold produce obstacle points. 253 corresponds to the inscribed-cost boundary, 254 to lethal, and 255 to NO_INFORMATION. Values are clamped to the 0-255 range. Set per source as <source_name>.cost_threshold.",
+    "impact": "Lower it to react to inflated/near-obstacle cells earlier (more conservative, more triggers); raise it toward 254 to only stop on strictly lethal cells. Too low makes the monitor over-sensitive to inflation; too high can ignore cells that are effectively blocked.",
+    "category": "filter",
+    "plugin_specific": true,
+    "plugin": "costmap",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "costmap",
+      "filter",
+      "threshold"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "collision_monitor",
+    "param": "treat_unknown_as_obstacle",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Whether cells with cost 255 (NO_INFORMATION / unknown) in a Costmap observation source are treated as obstacles. When true, unknown space triggers the safety action the same as a lethal cell; when false, unknown cells are ignored. Set per source as <source_name>.treat_unknown_as_obstacle.",
+    "impact": "Keep true for a conservative monitor that halts when the costmap has no information (e.g. sensor dropout or unmapped area). Set false to let the robot move through unknown space, which is less safe but avoids spurious stops where the costmap is simply unpopulated.",
+    "category": "safety",
+    "plugin_specific": true,
+    "plugin": "costmap",
+    "hot_reload": false,
+    "tags": [
+      "collision_monitor",
+      "costmap",
+      "safety",
+      "unknown"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "collision_detector",
     "param": "frequency",
     "type": "double",
