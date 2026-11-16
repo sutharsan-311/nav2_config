@@ -10959,7 +10959,13 @@
     "param": "introspection_mode",
     "type": "string",
     "default": "disabled",
-    "range": null,
+    "range": {
+      "options": [
+        "disabled",
+        "metadata",
+        "contents"
+      ]
+    },
     "unit": "",
     "description": "Controls ROS 2 service-call introspection for the navigator's action server. Valid values: 'disabled' (off), 'metadata' (record request/response metadata only), 'contents' (record full request/response data). Requires rclcpp >= 29.",
     "impact": "Enabling introspection is useful for debugging action call flow but adds overhead. Use 'metadata' for lightweight tracing and 'contents' only during focused debugging sessions.",
@@ -14888,7 +14894,13 @@
     "param": "introspection_mode",
     "type": "string",
     "default": "disabled",
-    "range": null,
+    "range": {
+      "options": [
+        "disabled",
+        "metadata",
+        "contents"
+      ]
+    },
     "unit": "",
     "description": "Controls ROS 2 service introspection for the docking server's internal services. Accepted values: 'disabled' (no introspection, default), 'metadata' (publishes request/response metadata only), 'contents' (publishes full message contents). Requires rclcpp >= 29.0.0; on older builds this parameter is declared but has no effect.",
     "impact": "Setting to 'metadata' or 'contents' makes service traffic visible on dedicated ROS topics, which is valuable for debugging docking failures but adds serialization and publication overhead. Leave as 'disabled' in production environments.",
