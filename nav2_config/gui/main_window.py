@@ -2192,6 +2192,18 @@ class MainWindow(QMainWindow):
             logger.warning('Failed to restore window state', exc_info=True)
 
     def closeEvent(self, event: QCloseEvent) -> None:  # type: ignore[override]
+        """Handle window close: guard unsaved edits, then shut down cleanly.
+
+        When there are unsaved changes against a loaded config file, prompts the
+        user to Save, Discard, or Cancel. Choosing Cancel calls
+        ``event.ignore()`` to veto the close and keep the window open; a failed
+        save is logged but does not block closing. Before delegating to the base
+        handler, persists window geometry/state and calls
+        ``self._node.unwatch_node()`` to stop the background parameter watcher.
+
+        Args:
+            event: The Qt close event; ``ignore()`` is called on it to cancel.
+        """
         if self._dirty and self._config_file:
             reply = QMessageBox.question(
                 self,
