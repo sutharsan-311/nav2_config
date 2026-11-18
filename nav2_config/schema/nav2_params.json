@@ -17997,6 +17997,66 @@
   },
   {
     "node": "route_server",
+    "param": "AdjustSpeedLimit.speed_tag",
+    "type": "string",
+    "default": "speed_limit",
+    "range": null,
+    "unit": "",
+    "description": "Name of the graph edge metadata tag the AdjustSpeedLimit route operation reads a per-edge speed limit from. As each edge is entered the operation looks up this tag and publishes the value as a percentage SpeedLimit message; if the edge does not define the tag it falls back to 100.0 (full speed).",
+    "impact": "Change it to match the tag name used when authoring the route graph's speed annotations. A mismatch means the operation never finds a limit and always publishes 100% speed, silently ignoring the graph's per-edge speed data. Read once at configure time.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "AdjustSpeedLimit",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "operations",
+      "speed_limit"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "AdjustSpeedLimit.speed_limit_topic",
+    "type": "string",
+    "default": "speed_limit",
+    "range": null,
+    "unit": "",
+    "description": "Topic on which the AdjustSpeedLimit route operation publishes its SpeedLimit messages (percentage-based) as the robot enters edges carrying a speed-limit tag.",
+    "impact": "Set it to the topic the controller/velocity smoother subscribes to for speed limits; a mismatched topic means the published limits are never received and edge speed annotations have no effect on motion. Read once at configure time to create the publisher.",
+    "category": "topics",
+    "plugin_specific": true,
+    "plugin": "AdjustSpeedLimit",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "operations",
+      "topics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
+    "param": "TimeMarker.time_tag",
+    "type": "string",
+    "default": "abs_time_taken",
+    "range": null,
+    "unit": "",
+    "description": "Name of the graph edge metadata tag the TimeMarker route operation writes the measured traversal time to. When the robot exits an edge, the operation records how many seconds it took and stores that value on the edge under this tag, where a scorer such as TimeScorer can later read it.",
+    "impact": "Keep it aligned with the tag name the consuming scorer expects (TimeScorer's time_tag defaults to the same 'abs_time_taken'); a mismatch means measured traversal times are stored under a tag nothing reads, so time-based scoring never improves from real driving. Read once at configure time.",
+    "category": "behavior",
+    "plugin_specific": true,
+    "plugin": "TimeMarker",
+    "hot_reload": false,
+    "tags": [
+      "route_server",
+      "operations",
+      "graph"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "route_server",
     "param": "GoalOrientationScorer.orientation_weight",
     "type": "double",
     "default": 1.0,
