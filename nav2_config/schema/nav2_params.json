@@ -17718,6 +17718,30 @@
     "post_set_action": null
   },
   {
+    "node": "following_server",
+    "param": "controller.transform_tolerance",
+    "type": "double",
+    "default": 0.1,
+    "range": {
+      "min": 0.0,
+      "max": 10.0
+    },
+    "unit": "s",
+    "description": "TF transform tolerance used by the shared opennav_docking Controller when transforming projected poses into the costmap frame for footprint collision checking during the follow approach. Distinct from the following_server's own node-level transform_tolerance, which governs object-pose lookups between the detection, fixed and base frames.",
+    "impact": "Increase if TF lookups inside the controller's collision projection fail due to timing jitter between the costmap and robot pose; too large a tolerance admits stale transforms that reduce collision-check accuracy. Read at configuration time.",
+    "category": "safety",
+    "plugin_specific": false,
+    "plugin": null,
+    "hot_reload": false,
+    "tags": [
+      "following",
+      "controller",
+      "collision",
+      "tf"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "route_server",
     "param": "CostmapScorer.weight",
     "type": "double",
