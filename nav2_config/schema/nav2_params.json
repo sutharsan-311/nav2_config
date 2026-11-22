@@ -13860,7 +13860,12 @@
     "param": "dock_direction",
     "type": "string",
     "default": "forward",
-    "range": null,
+    "range": {
+      "options": [
+        "forward",
+        "backward"
+      ]
+    },
     "unit": "",
     "description": "Direction in which the SimpleChargingDock plugin approaches the dock. \"forward\" drives the robot forward into the dock; \"backward\" reverses the robot onto the dock. Must match the physical orientation of the charging connector relative to the robot base.",
     "impact": "Using \"backward\" enables reverse-approach docking and may be combined with rotate_to_dock to spin the robot 180\u00b0 before backing in. An incorrect setting will drive the robot in the wrong direction and fail to make contact with the dock.",
