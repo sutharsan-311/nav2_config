@@ -159,3 +159,80 @@ def select_node(app, node_path: str, param: str | None = None, timeout: float = 
 
     wait_until(lambda: find() is not None, timeout, what=f"row for {param} built")
     return find()
+
+
+def navigate(nav, x: float, y: float, yaw: float = 0.0, timeout: float = 120.0) -> bool:
+    """Send a NavigateToPose goal in the map frame; True only if Nav2 reports SUCCEEDED."""
+    import math
+    from geometry_msgs.msg import PoseStamped
+    from nav2_simple_commander.robot_navigator import TaskResult
+    from PyQt6.QtCore import QCoreApplication
+
+    pose = PoseStamped()
+    pose.header.frame_id = "map"  # stamp left at 0 = "latest transform"
+    pose.pose.position.x, pose.pose.position.y = x, y
+    pose.pose.orientation.z, pose.pose.orientation.w = math.sin(yaw / 2), math.cos(yaw / 2)
+    nav.goToPose(pose)
+    deadline = time.monotonic() + timeout
+    while not nav.isTaskComplete():  # spins the navigator node ~0.1 s per call
+        QCoreApplication.processEvents()
+        if time.monotonic() > deadline:
+            nav.cancelTask()
+            return False
+    return nav.getResult() == TaskResult.SUCCEEDED
+
+
+class PeakSpeed:
+    """Track the peak |linear x| seen on /odom while the context is open."""
+
+    def __init__(self, node) -> None:
+        self._node = node
+        self.peak = 0.0
+
+    def __enter__(self) -> "PeakSpeed":
+        from nav_msgs.msg import Odometry
+
+        def cb(msg) -> None:
+            self.peak = max(self.peak, abs(msg.twist.twist.linear.x))
+
+        self._sub = self._node.create_subscription(Odometry, "/odom", cb, 10)
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self._node.destroy_subscription(self._sub)
+
+
+def lifecycle_states() -> dict[str, str]:
+    """{node: state} for every lifecycle node, read with the ros2 CLI (an independent oracle)."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    names = _run(["ros2", "lifecycle", "nodes"], timeout=30).stdout.split()
+
+    def state(name: str) -> str:
+        try:
+            out = _run(["ros2", "lifecycle", "get", name], timeout=10).stdout.strip()
+        except subprocess.TimeoutExpired:
+            return "unreachable"          # a node that does not answer is a state, not a crash
+        return out.split()[0] if out else "unknown"   # e.g. "active [3]"
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        return dict(zip(names, pool.map(state, names)))
+
+
+INITIAL_POSE_MSG = (
+    "{header: {frame_id: map}, pose: {pose: {position: {x: -2.0, y: -0.5}, "
+    "orientation: {w: 1.0}}, covariance: [0.25,0,0,0,0,0, 0,0.25,0,0,0,0, "
+    "0,0,0,0,0,0, 0,0,0,0.07,0,0, 0,0,0,0,0.07,0, 0,0,0,0,0,0.07]}}"
+)
+
+
+def publish_initial_pose() -> None:
+    """Tell AMCL where the TurtleBot3 spawned (the nav2_bringup world's start pose)."""
+    _run(["ros2", "topic", "pub", "--once", "/initialpose",
+          "geometry_msgs/msg/PoseWithCovarianceStamped", INITIAL_POSE_MSG], timeout=15)
+
+
+def amcl_pose_received() -> bool:
+    r = _run(["ros2", "topic", "echo", "--once", "--qos-durability", "transient_local",
+              "--qos-reliability", "reliable", "/amcl_pose"], timeout=6)
+    return r.returncode == 0 and "pose:" in r.stdout
