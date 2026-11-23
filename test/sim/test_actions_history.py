@@ -23,12 +23,32 @@ def _set_and_wait_action(app, node, name, value, hint, action):
     return next(c for c in rec.calls if c[1] == action)
 
 
-def test_clear_costmaps_action(app, restore_params):
-    node, name = "/local_costmap/local_costmap", "inflation_layer.inflation_radius"
+@pytest.mark.parametrize("name,value", [
+    ("inflation_layer.inflation_radius", 0.5),
+    ("inflation_layer.cost_scaling_factor", 5.0),
+], ids=["inflation_radius", "cost_scaling_factor"])
+def test_clear_costmaps_action(app, restore_params, name, value):
+    node = "/local_costmap/local_costmap"
     restore_params(node, name)
-    param, action, ok, _msg = _set_and_wait_action(app, node, name, 0.5, "double", "clear_costmaps")
+    param, action, ok, _msg = _set_and_wait_action(app, node, name, value, "double", "clear_costmaps")
     assert ok is True
     assert param == name
+
+
+def test_param_without_post_action_triggers_nothing(app, restore_params):
+    node, name = "/controller_server", "controller_frequency"
+    restore_params(node, name)
+    actions = SignalRecorder(app.node.signals.post_action_result)
+    restarts = SignalRecorder(app.node.signals.restart_suggested)
+    maps = SignalRecorder(app.node.signals.load_map_result)
+    sets = SignalRecorder(app.node.signals.param_set_result)
+    app.node.request_set_param(node, name, 25.0, "double")
+    wait_until(lambda: sets.calls, 30, what="param_set_result")
+    assert sets.calls[-1] == (node, name, True)
+    assert "25.0" in ros2_param_get(node, name)
+    with pytest.raises(TimeoutError):   # nothing follows: no action, restart hint, or map load
+        wait_until(lambda: actions.calls or restarts.calls or maps.calls, 3,
+                   what="an unexpected follow-up action")
 
 
 def test_nomotion_update_action(app, restore_params):
