@@ -1,0 +1,33 @@
+# Schema params that are NOT declared by a live Nav2 Humble stack (tb3 sim).
+# The schema tracks newer Nav2 releases; the tool falls back to schema defaults for these.
+# Format: <bare node> <param>   -- generated from a live run, review before adding.
+amcl random_seed
+amcl introspection_mode
+behavior_server local_frame
+behavior_server local_costmap_topic
+behavior_server global_costmap_topic
+behavior_server local_footprint_topic
+behavior_server global_footprint_topic
+bt_navigator enable_groot_monitoring
+bt_navigator navigators
+bt_navigator bt_search_directories
+bt_navigator default_cancel_timeout
+bt_navigator error_code_name_prefixes
+bt_navigator filter_duration
+bt_navigator groot_server_port
+bt_navigator introspection_mode
+bt_navigator search_window
+controller_server costmap_update_timeout
+controller_server use_realtime_priority
+controller_server progress_checker_plugins
+controller_server path_handler_plugins
+controller_server odom_duration
+controller_server search_window
+map_server introspection_mode
+planner_server allow_partial_planning
+planner_server costmap_update_timeout
+planner_server introspection_mode
+velocity_smoother use_realtime_priority
+waypoint_follower introspection_mode
+waypoint_follower global_frame_id
+assert not ['amcl random_seed', 'amcl introspection_mode: in schema, absent live', 'behavior_server local...er global_costmap_topic: in schema, absent live', 'behavior_server local_footprint_topic: in schema, absent live', ...]
