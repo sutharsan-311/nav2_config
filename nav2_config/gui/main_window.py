@@ -1431,9 +1431,17 @@ class MainWindow(QMainWindow):
                 old_value = None
             self._param_panel.update_param_value(param_name, new_value)
             self._param_panel.highlight_external_change(param_name)
-            # Record to history
+            # Record to history. Use the real type so Undo of this entry encodes
+            # the value correctly (a hard-coded "string" made the node reject it).
             if _HISTORY_AVAILABLE and self._history is not None:
                 entry_id = str(uuid.uuid4())
+                type_hint, ros2_name, hot_reload = "string", param_name, True
+                for _pv in self._current_params:
+                    if _pv.definition.param == param_name:
+                        type_hint = _pv.definition.type
+                        ros2_name = _pv.definition.ros2_name
+                        hot_reload = _pv.definition.hot_reload
+                        break
                 entry = ParamHistoryEntry(
                     entry_id=entry_id,
                     timestamp=datetime.now(),
@@ -1442,9 +1450,9 @@ class MainWindow(QMainWindow):
                     new_value=new_value,
                     source=ChangeSource.EXTERNAL_CHANGE,
                     batch_id=None,
-                    ros2_name=param_name,
-                    type_hint="string",
-                    hot_reload=True,
+                    ros2_name=ros2_name,
+                    type_hint=type_hint,
+                    hot_reload=hot_reload,
                     status="applied",
                 )
                 self._history.record_change(entry)
