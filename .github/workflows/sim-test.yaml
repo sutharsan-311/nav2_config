@@ -33,6 +33,9 @@ jobs:
       - name: Install Nav2, TurtleBot3 simulation and Python deps
         run: |
           sudo apt-get update
+          # The runner image preinstalls libunwind-14-dev, which conflicts with the
+          # libunwind-dev that Nav2's dependencies need.
+          sudo apt-get remove -y 'libunwind-*-dev' || true
           sudo apt-get install -y \
             ros-humble-navigation2 ros-humble-nav2-bringup \
             ros-humble-turtlebot3-gazebo ros-humble-nav2-simple-commander \
