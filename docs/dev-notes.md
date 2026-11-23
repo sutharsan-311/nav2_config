@@ -6,19 +6,6 @@ overwrites), this file is hand-maintained and safe for long-lived notes.
 
 ## Ideas for review
 
-- **`restart_node` / `restart_controller` post_set_actions are not dispatched.**
-  `Nav2ParamDef.post_set_action` (nav2_config/types/params.py) defines
-  `restart_node` and `restart_controller`, and the schema currently uses them on
-  9 params (4 `behavior_server` costmap/footprint topic params → `restart_node`;
-  5 `controller_server` `follow_path.*` / `path_handler.*` params →
-  `restart_controller`). However `node.py`'s `_after_param_set` dispatch only
-  handles `clear_costmaps`, `load_map`, `nomotion_update` and `restart_stack`;
-  the two restart actions fall through to a silent no-op, so the GUI gives the
-  user no signal that the change requires a node/controller restart to take
-  effect. Suggested fix: mirror the `restart_stack` branch and emit
-  `signals.restart_suggested` (or a dedicated notification) for these two
-  actions. Behavioural change — leave for Sutharsan to triage.
-
 - **One-sided numeric ranges never reach a slider and are silently unenforced.**
   `param_row._make_input_widget` (nav2_config/gui/widgets/param_row.py) only
   builds a `ParamSlider` when a `double`/`int` param has **both** bounds set
@@ -41,13 +28,6 @@ overwrites), this file is hand-maintained and safe for long-lived notes.
   fixes: give `ParamInput` an optional `QDoubleValidator`/`QIntValidator` seeded
   from a one-sided `range`, or let `ParamSlider` accept a single bound with a
   sensible open other end. GUI/behavioural change — leave for Sutharsan to triage.
-
-- **Saving a loaded config re-wraps long inline arrays.** `ConfigFile` uses ruamel's
-  default width (80), so a one-value edit to `nav2_params.yaml` rewrites about 35
-  lines: `True` becomes `true` (documented in `docs/yaml-round-trip.md`) and long
-  `[...]` arrays wrap onto a second line (not documented; the README says inline
-  arrays survive unchanged). Probable fix: `self._yaml.width = 4096` in `ConfigFile`.
-  Found by the sim test; cosmetic, leave for Sutharsan to triage.
 
 - **The tool's own Set can be re-reported as an external change.** The 2 s watcher can
   poll between a successful set and the baseline update, so the GUI's own change shows
@@ -78,10 +58,20 @@ PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 QT_QPA_PLATFORM=offscreen \
   leaves the sim running, which breaks the next run.
 - CI: `.github/workflows/sim-test.yaml` runs it on every push and PR, parallel to `ci.yaml`.
 - `test/sim/schema_absent.txt` lists schema params a Humble stack does not declare.
-- The two `xfail(strict=True)` restart tests track the bug in "Ideas for review"; fixing
-  it makes them pass, which fails the strict xfail and tells you to remove the marker.
 
 ## Resolved
+
+- **`restart_node` / `restart_controller` post_set_actions were not dispatched.** The
+  schema uses them on 9 params, but `node._after_param_set` only handled
+  `restart_stack`, so the GUI gave no signal that a restart was needed. They now emit
+  `restart_suggested` like `restart_stack`, which shows the restart bar (which offers a
+  whole-stack restart; a narrower per-node restart would be a bigger change).
+  Unit-tested in `test/test_post_set_actions.py`, live in `test/sim/test_actions_history.py`.
+
+- **Saving a loaded config re-wrapped long inline arrays.** `ConfigFile` used ruamel's
+  default width (80), so a one-value edit rewrote about 35 lines. `width = 4096` keeps
+  arrays on one line. Only boolean respelling (`True` to `true`, see
+  `docs/yaml-round-trip.md`) still changes. Found by the sim test.
 
 - **Duplicate `docking_server` controller params (bare vs `controller.`-prefixed).**
   The 18 docking controller parameters declared as
