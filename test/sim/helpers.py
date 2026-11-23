@@ -129,13 +129,33 @@ def start_stack(
     )
 
 
-def select_node(app, node_path: str, timeout: float = 30.0) -> None:
-    """Select *node_path* in the window as a user would, and wait for its params to load."""
+def select_node(app, node_path: str, param: str | None = None, timeout: float = 30.0):
+    """Select *node_path* in the window as a user would; wait for freshly built rows.
+
+    Re-selecting the same node rebuilds the row widgets (progressively), and results are
+    routed to the new rows, so a test must never keep a row from before the rebuild.
+    With *param*, also wait until that param's row exists and return it.
+    """
     bare = node_path.rstrip("/").rsplit("/", 1)[-1]
+    old_rows = list(app.window._param_panel._all_rows)
     app.window._on_node_selected(node_path)
+
+    def fresh_rows() -> list:
+        return [r for r in app.window._param_panel._all_rows
+                if all(r is not o for o in old_rows)]
 
     def loaded() -> bool:
         params = app.window._current_params
-        return bool(params) and params[0].definition.node == bare
+        fresh = fresh_rows()
+        return (bool(params) and params[0].definition.node == bare
+                and bool(fresh) and fresh[0]._param_value.definition.node == bare)
 
-    wait_until(loaded, timeout, what=f"params of {node_path} loaded in the window")
+    wait_until(loaded, timeout, what=f"params and fresh rows of {node_path} loaded in the window")
+    if param is None:
+        return None
+
+    def find():
+        return next((r for r in fresh_rows() if r._param_value.definition.param == param), None)
+
+    wait_until(lambda: find() is not None, timeout, what=f"row for {param} built")
+    return find()
