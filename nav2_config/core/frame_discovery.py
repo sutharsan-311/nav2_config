@@ -77,7 +77,13 @@ class FrameDiscovery:
                 return []
             data = yaml.safe_load(frames_yaml)
             if isinstance(data, dict):
-                return sorted(data.keys())
+                # tf2 keys only frames that have a parent, so a root frame such
+                # as `map` appears solely as another frame's parent.
+                parents = {
+                    v['parent'] for v in data.values()
+                    if isinstance(v, dict) and v.get('parent')
+                }
+                return sorted(set(data) | parents)
         except Exception:
             logger.debug('FrameDiscovery.get_all_frames failed', exc_info=True)
         return []
