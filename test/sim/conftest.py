@@ -67,9 +67,22 @@ def _ready() -> bool:
     return _all_lifecycle_active() and _amcl_pose_received()
 
 
+def _assert_no_nav2_running() -> None:
+    """Refuse to start on top of an existing Nav2 graph (stale sim, or a real robot)."""
+    names = _cli(["ros2", "node", "list", "--no-daemon"], timeout=30).stdout.split()
+    live = sorted(n for n in names if n.split("/")[-1] in
+                  {"controller_server", "planner_server", "bt_navigator", "amcl", "map_server"})
+    if live:
+        raise RuntimeError(
+            f"Nav2 nodes already running {live}: stop that stack first. "
+            "The sim test launches its own and changes live parameters."
+        )
+
+
 @pytest.fixture(scope="session")
 def sim_stack():
     """Boot headless TurtleBot3 Nav2; yield the sim log path; always tear down."""
+    _assert_no_nav2_running()
     log_dir = Path(os.environ.get("SIM_LOG_DIR", "/tmp/nav2_config_sim"))
     shutil.rmtree(log_dir, ignore_errors=True)
     log_path = log_dir / "sim.log"
@@ -92,15 +105,19 @@ class App:
 
 
 @pytest.fixture(scope="session")
-def app(sim_stack):
+def app(sim_stack, tmp_path_factory):
     """The real tool, wired like nav2_config/main.py, running offscreen."""
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     import rclpy
     from rclpy.executors import MultiThreadedExecutor
     from PyQt6.QtWidgets import QApplication
     from nav2_config.node import Nav2ConfigNode
+    import nav2_config.gui.main_window as main_window_module
     from nav2_config.gui.main_window import MainWindow
     from nav2_config.types.params import load_schema
+
+    # Never touch the developer's real ~/.config/nav2_config/settings.json.
+    main_window_module._CONFIG_PATH = tmp_path_factory.mktemp("settings") / "settings.json"
 
     rclpy.init()
     node = Nav2ConfigNode()
@@ -123,6 +140,7 @@ def app(sim_stack):
     try:
         yield App(node, window, schema, rec)
     finally:
+        window._dirty = False  # closeEvent would otherwise block on an unanswerable dialog
         window.close()
         executor.shutdown(timeout_sec=0.0)
         thread.join(timeout=5.0)
