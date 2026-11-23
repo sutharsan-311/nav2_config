@@ -6768,6 +6768,180 @@
     "post_set_action": null
   },
   {
+    "node": "smoother_server",
+    "param": "constrained_smoother.minimum_turning_radius",
+    "type": "double",
+    "default": 0.4,
+    "range": null,
+    "unit": "m",
+    "description": "Minimum turning radius the smoothed path may contain. The ConstrainedSmoother caps path curvature at 1/minimum_turning_radius via its curvature-constraint term.",
+    "impact": "Larger radii force gentler turns suited to constrained kinematics (Ackermann/car-like robots) but can stop the path fitting through tight spaces; smaller radii permit sharper turns. Set to the robot's real minimum radius.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "ConstrainedSmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "constrained_smoother",
+      "kinematics"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "constrained_smoother.w_smooth",
+    "type": "double",
+    "default": 2000000.0,
+    "range": {
+      "min": 0.0
+    },
+    "unit": "",
+    "description": "Weight on the smoothness (second-derivative) term of the Ceres optimizer, pulling consecutive path points into a smooth curve. The value is square-rooted internally before use.",
+    "impact": "Higher values yield smoother paths that may drift from the original route and from obstacle clearance; it dominates the other cost terms at the default. Lower it to let w_cost/w_dist have more influence.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "ConstrainedSmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "constrained_smoother",
+      "weights"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "constrained_smoother.w_cost",
+    "type": "double",
+    "default": 0.015,
+    "range": {
+      "min": 0.0
+    },
+    "unit": "",
+    "description": "Weight on the costmap cost term, pushing the path away from high-cost cells near obstacles. The value is square-rooted internally before use.",
+    "impact": "Higher values keep the path farther from obstacles at the expense of smoothness and length; too high can cause the optimizer to oscillate or fail to converge. 0.0 disables obstacle avoidance in the smoother.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "ConstrainedSmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "constrained_smoother",
+      "weights"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "constrained_smoother.w_curve",
+    "type": "double",
+    "default": 30.0,
+    "range": {
+      "min": 0.0
+    },
+    "unit": "",
+    "description": "Weight on the curvature-constraint term that keeps path curvature below the 1/minimum_turning_radius limit. The value is square-rooted internally before use.",
+    "impact": "Higher values enforce the turning-radius limit more strictly; lower values let the optimizer exceed it in favour of smoothness or clearance. 0.0 removes the kinematic constraint entirely.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "ConstrainedSmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "constrained_smoother",
+      "weights"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "constrained_smoother.w_dist",
+    "type": "double",
+    "default": 0.0,
+    "range": {
+      "min": 0.0
+    },
+    "unit": "",
+    "description": "Weight on the term keeping smoothed points close to their original positions. Disabled (0.0) by default. The value is square-rooted internally before use.",
+    "impact": "Raising it anchors the result to the input path, reducing deviation but limiting how much the smoothness and cost terms can reshape the path. Useful when the original plan must be closely respected.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "ConstrainedSmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "constrained_smoother",
+      "weights"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "constrained_smoother.w_cost_cusp_multiplier",
+    "type": "double",
+    "default": 3.0,
+    "range": {
+      "min": 0.0
+    },
+    "unit": "",
+    "description": "Multiplier applied to w_cost within cusp (direction-reversal) zones, increasing obstacle avoidance where the robot reverses.",
+    "impact": "Higher values push the path farther from obstacles around cusps, where reversing manoeuvres are riskier; 1.0 applies the normal w_cost everywhere and effectively disables the extra cusp weighting.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "ConstrainedSmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "constrained_smoother",
+      "cusp"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "constrained_smoother.cusp_zone_length",
+    "type": "double",
+    "default": 2.5,
+    "range": {
+      "min": 0.0
+    },
+    "unit": "m",
+    "description": "Length of the zone around each path cusp (reversal point) over which the w_cost_cusp_multiplier weighting is applied.",
+    "impact": "Larger zones apply the heightened obstacle avoidance over a longer stretch on each side of a reversal; smaller zones confine it to the immediate cusp, trading clearance for closer path following.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "ConstrainedSmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "constrained_smoother",
+      "cusp"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "smoother_server",
+    "param": "constrained_smoother.path_downsampling_factor",
+    "type": "int",
+    "default": 1,
+    "range": {
+      "min": 1
+    },
+    "unit": "",
+    "description": "Factor by which the input path is downsampled before optimization (1 = no downsampling).",
+    "impact": "Higher values reduce the number of points the Ceres solver optimizes, speeding up the solve but lowering path resolution; 1 keeps full resolution. Pair with path_upsampling_factor to restore density afterwards.",
+    "category": "planning",
+    "plugin_specific": true,
+    "plugin": "ConstrainedSmoother",
+    "hot_reload": false,
+    "tags": [
+      "smoother",
+      "constrained_smoother",
+      "resolution"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "waypoint_follower",
     "param": "wait_at_waypoint.plugin",
     "type": "string",
