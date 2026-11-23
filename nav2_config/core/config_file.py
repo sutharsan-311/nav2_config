@@ -159,6 +159,7 @@ class ConfigFile:
         self._yaml = YAML()
         self._yaml.preserve_quotes = True
         self._yaml.allow_unicode = True
+        self._yaml.width = 4096  # never re-wrap long inline arrays (default is 80)
         self._yaml.indent(mapping=2, sequence=4, offset=2)
 
     # ------------------------------------------------------------------

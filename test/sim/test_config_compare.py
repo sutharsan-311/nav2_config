@@ -108,7 +108,8 @@ def test_save_roundtrip_preserves_comments(app, restore_params, tmp_path):
     saved_text = path.read_text()
     saved = saved_text.splitlines()
     # What docs/yaml-round-trip.md promises: comments and blank lines survive.
-    # (Booleans may be respelled and long inline arrays re-wrapped: cosmetic, ledgered.)
+    # (Booleans may be respelled, True to true: documented in docs/yaml-round-trip.md.)
+    assert len(saved) == len(original)  # nothing re-wrapped, added or removed
     comments = lambda lines: [l[l.index("#"):] for l in lines if "#" in l]  # noqa: E731
     assert comments(saved) == comments(original)
     assert sum(1 for l in saved if not l.strip()) == sum(1 for l in original if not l.strip())
