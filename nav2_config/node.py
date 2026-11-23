@@ -1021,8 +1021,9 @@ class Nav2ConfigNode(Node):
                     param_name, 'nomotion_update', False, 'AMCL update failed'
                 )
 
-        elif action == 'restart_stack':
-            # Don't auto-restart — show notification to user.
+        elif action in ('restart_stack', 'restart_node', 'restart_controller'):
+            # Don't auto-restart — show notification to user. restart_node and
+            # restart_controller used to fall through here as a silent no-op.
             self.signals.restart_suggested.emit(node_name, param_name)
 
     # ------------------------------------------------------------------

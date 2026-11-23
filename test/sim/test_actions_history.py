@@ -74,14 +74,11 @@ def test_restart_stack_action_suggests_restart(app, restore_params):
     assert rec.calls[-1] == (node, name)
 
 
-@pytest.mark.xfail(strict=True, raises=TimeoutError, reason=(
-    "restart_node / restart_controller post_set_actions are not dispatched in "
-    "node._after_param_set (see docs/dev-notes.md)"))
 @pytest.mark.parametrize("node,bare,param", [
     ("/behavior_server", "behavior_server", "local_costmap_topic"),         # restart_node
     ("/controller_server", "controller_server", "follow_path.model_dt"),    # restart_controller
 ])
-def test_restart_actions_known_bug(app, node, bare, param):
+def test_restart_actions_suggest_restart(app, node, bare, param):
     # These params do not exist on a Humble stack, so call the dispatcher directly.
     entry = next(d for d in app.schema if d.node == bare and d.param == param)
     assert entry.post_set_action in ("restart_node", "restart_controller")

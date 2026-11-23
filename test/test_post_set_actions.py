@@ -203,3 +203,41 @@ class TestFindSchemaEntry:
         assert entry is not None, "_find_schema_entry returned None for controller_frequency"
         assert entry.post_set_action is None, \
             f"Expected None post_set_action, got {entry.post_set_action!r}"
+
+
+# ---------------------------------------------------------------------------
+# Mock-based unit test: restart_* post_set_actions reach the GUI as a suggestion
+# (they used to fall through _after_param_set as a silent no-op)
+# ---------------------------------------------------------------------------
+
+class TestRestartActionsAreSuggested:
+    @staticmethod
+    def _node_and_calls():
+        from nav2_config.node import Nav2ConfigNode, SignalBridge
+        obj = Nav2ConfigNode.__new__(Nav2ConfigNode)
+        obj.signals = SignalBridge()
+        calls = []
+        obj.signals.restart_suggested.connect(lambda n, p: calls.append((n, p)))
+        return obj, calls
+
+    @pytest.mark.parametrize("action", ["restart_stack", "restart_node", "restart_controller"])
+    def test_restart_actions_emit_restart_suggested(self, action):
+        from nav2_config.types.params import Nav2ParamDef
+        obj, calls = self._node_and_calls()
+        entry = Nav2ParamDef(
+            node="controller_server", param="x", type="string", default="", range=None,
+            unit="", description="", impact="", category="", plugin_specific=False,
+            plugin=None, hot_reload=True, post_set_action=action,
+        )
+        obj._after_param_set("/controller_server", "x", "v", entry)
+        assert calls == [("/controller_server", "x")]
+
+    def test_schema_restart_params_all_have_a_dispatched_action(self):
+        """Every post_set_action used by the schema is one _after_param_set handles."""
+        import inspect
+        from nav2_config.node import Nav2ConfigNode
+        from nav2_config.types.params import load_schema
+        used = {d.post_set_action for d in load_schema() if d.post_set_action}
+        src = inspect.getsource(Nav2ConfigNode._after_param_set)
+        missing = {a for a in used if f"'{a}'" not in src}
+        assert not missing, f"post_set_actions with no branch in _after_param_set: {missing}"
