@@ -19,7 +19,8 @@ SRC_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(SRC_ROOT))
 
 from sim.helpers import (  # noqa: E402
-    SignalRecorder, start_stack, stop_stack, ros2_param_get, ros2_param_set,
+    SignalRecorder, amcl_pose_received, publish_initial_pose,
+    start_stack, stop_stack, ros2_param_get, ros2_param_set,
 )
 
 SIM_START_TIMEOUT = 120.0
@@ -28,15 +29,6 @@ LAUNCH_CMD = [
     "headless:=True", "use_rviz:=False",
 ]
 SIM_ENV = {"TURTLEBOT3_MODEL": "waffle", "GAZEBO_MODEL_DATABASE_URI": ""}
-# Default TurtleBot3 spawn pose in the nav2_bringup world.
-START_X, START_Y = -2.0, -0.5
-
-INITIAL_POSE_MSG = (
-    "{header: {frame_id: map}, pose: {pose: {position: {x: %s, y: %s}, "
-    "orientation: {w: 1.0}}, covariance: [0.25,0,0,0,0,0, 0,0.25,0,0,0,0, "
-    "0,0,0,0,0,0, 0,0,0,0.07,0,0, 0,0,0,0,0.07,0, 0,0,0,0,0,0.07]}}"
-) % (START_X, START_Y)
-
 
 def _cli(cmd: list[str], timeout: float = 15.0) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
@@ -51,20 +43,9 @@ def _all_lifecycle_active() -> bool:
     )
 
 
-def _publish_initial_pose() -> None:
-    _cli(["ros2", "topic", "pub", "--once", "/initialpose",
-          "geometry_msgs/msg/PoseWithCovarianceStamped", INITIAL_POSE_MSG])
-
-
-def _amcl_pose_received() -> bool:
-    r = _cli(["ros2", "topic", "echo", "--once", "--qos-durability",
-              "transient_local", "--qos-reliability", "reliable", "/amcl_pose"], 6)
-    return r.returncode == 0 and "pose:" in r.stdout
-
-
 def _ready() -> bool:
-    _publish_initial_pose()  # harmless when already localized
-    return _all_lifecycle_active() and _amcl_pose_received()
+    publish_initial_pose()  # harmless when already localized
+    return _all_lifecycle_active() and amcl_pose_received()
 
 
 def _assert_no_nav2_running() -> None:
@@ -161,3 +142,15 @@ def restore_params():
     yield touch
     for node, name, value in reversed(saved):
         ros2_param_set(node, name, value)
+
+
+@pytest.fixture(scope="session")
+def nav(app):
+    """A BasicNavigator for sending real navigation goals (rclpy is up via `app`)."""
+    from nav2_simple_commander.robot_navigator import BasicNavigator
+
+    navigator = BasicNavigator()
+    try:
+        yield navigator
+    finally:
+        navigator.destroyNode()
