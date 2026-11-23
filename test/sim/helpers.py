@@ -127,3 +127,15 @@ def start_stack(
     raise RuntimeError(
         f"stack did not become ready after {retries + 1} attempt(s):\n{tail}"
     )
+
+
+def select_node(app, node_path: str, timeout: float = 30.0) -> None:
+    """Select *node_path* in the window as a user would, and wait for its params to load."""
+    bare = node_path.rstrip("/").rsplit("/", 1)[-1]
+    app.window._on_node_selected(node_path)
+
+    def loaded() -> bool:
+        params = app.window._current_params
+        return bool(params) and params[0].definition.node == bare
+
+    wait_until(loaded, timeout, what=f"params of {node_path} loaded in the window")
