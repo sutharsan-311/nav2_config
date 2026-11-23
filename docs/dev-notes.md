@@ -42,6 +42,45 @@ overwrites), this file is hand-maintained and safe for long-lived notes.
   from a one-sided `range`, or let `ParamSlider` accept a single bound with a
   sensible open other end. GUI/behavioural change — leave for Sutharsan to triage.
 
+- **Saving a loaded config re-wraps long inline arrays.** `ConfigFile` uses ruamel's
+  default width (80), so a one-value edit to `nav2_params.yaml` rewrites about 35
+  lines: `True` becomes `true` (documented in `docs/yaml-round-trip.md`) and long
+  `[...]` arrays wrap onto a second line (not documented; the README says inline
+  arrays survive unchanged). Probable fix: `self._yaml.width = 4096` in `ConfigFile`.
+  Found by the sim test; cosmetic, leave for Sutharsan to triage.
+
+- **The tool's own Set can be re-reported as an external change.** The 2 s watcher can
+  poll between a successful set and the baseline update, so the GUI's own change shows
+  up as an `EXTERNAL_CHANGE` history row and resets the row's Set button right after
+  SUCCESS. Seen in the sim test. Probable fix: update the baseline before the set is
+  sent, or ignore a poll that lands while a set is pending.
+
+## Running the sim test
+
+`test/sim/` boots a headless TurtleBot3 Nav2 simulation, runs the real
+`Nav2ConfigNode` and `MainWindow` (offscreen) against it, and checks every feature:
+discovery, param set, post-set actions, history/undo, config files, Compare, the GUI,
+a real navigation goal (including a param change that changes robot speed), and
+lifecycle control. It is the `sim` pytest marker and is deselected by default.
+
+```bash
+source /opt/ros/humble/setup.bash
+PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 QT_QPA_PLATFORM=offscreen \
+  python3 -m pytest -m sim test/sim -v
+```
+
+- Needs `ros-humble-navigation2`, `nav2-bringup`, `turtlebot3-gazebo`, `nav2-simple-commander`.
+- Takes about 6 minutes (about 40 to 100 s of that is booting the sim).
+- Refuses to start if Nav2 nodes already exist, and changes live params (it restores them).
+- `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` avoids ROS Humble's `launch_testing` pytest plugin,
+  which breaks bare pytest on newer pytest versions.
+- Stop a run with Ctrl+C or `timeout -s INT`, never `-s KILL`: KILL skips teardown and
+  leaves the sim running, which breaks the next run.
+- CI: `.github/workflows/sim-test.yaml` runs it on every push and PR, parallel to `ci.yaml`.
+- `test/sim/schema_absent.txt` lists schema params a Humble stack does not declare.
+- The two `xfail(strict=True)` restart tests track the bug in "Ideas for review"; fixing
+  it makes them pass, which fails the strict xfail and tells you to remove the marker.
+
 ## Resolved
 
 - **Duplicate `docking_server` controller params (bare vs `controller.`-prefixed).**
