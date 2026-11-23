@@ -74,7 +74,7 @@ def test_history_records_and_undo(app, restore_params):
     node, name = "/controller_server", "FollowPath.max_vel_x"
     restore_params(node, name)
     original = float(re.search(r"[-\d.]+$", ros2_param_get(node, name)).group())
-    select_node(app, node)
+    select_node(app, node, name)
     history = app.window._history
     live_sets = lambda: [e for e in history.get_history()  # noqa: E731
                          if e.source is ChangeSource.LIVE_SET and e.ref.param_name == name]
@@ -101,7 +101,7 @@ def test_undo_of_external_change_restores_live_value(app, restore_params):
     node, name = "/controller_server", "FollowPath.max_vel_x"
     restore_params(node, name)
     original = float(re.search(r"[-\d.]+$", ros2_param_get(node, name)).group())
-    select_node(app, node)
+    select_node(app, node, name)
     history = app.window._history
     external = lambda: [e for e in history.get_history()  # noqa: E731
                         if e.source is ChangeSource.EXTERNAL_CHANGE and e.ref.param_name == name
