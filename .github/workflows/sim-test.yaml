@@ -1,0 +1,59 @@
+name: Sim test
+
+# Boots a headless TurtleBot3 Nav2 simulation and runs the real nav2_config tool
+# against it (see docs/superpowers/specs/2026-11-23-sim-test-design.md).
+# Runs in parallel with ci.yaml so a slow or flaky sim never blocks the fast checks.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+concurrency:
+  group: sim-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sim:
+    name: Live Nav2 sim (humble)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up ROS2 humble
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: humble
+
+      - name: Install Nav2, TurtleBot3 simulation and Python deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ros-humble-navigation2 ros-humble-nav2-bringup \
+            ros-humble-turtlebot3-gazebo ros-humble-nav2-simple-commander \
+            python3-pip libegl1 libxkbcommon0
+          pip install PyQt6 pytest ruamel.yaml
+
+      - name: Run sim tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+          SIM_LOG_DIR: ${{ runner.temp }}/sim-logs
+        run: |
+          source /opt/ros/humble/setup.bash
+          python3 -m pytest -m sim test/sim -v --tb=short -p no:cacheprovider
+
+      - name: Upload sim logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-logs
+          path: |
+            ${{ runner.temp }}/sim-logs
+            ~/.ros/log
+          if-no-files-found: ignore
