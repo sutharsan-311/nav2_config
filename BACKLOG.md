@@ -7,3 +7,20 @@ the cited source, plus a genuine description + tuning `impact`) for one node's p
 
 ## docking_server (1)
 - [ ] `simulation_step` (default `0.1`, double)
+
+## Ideas for review
+
+_Not auto-generated; survives regeneration only if appended after running the gap script. For Sutharsan to triage — do not implement unsupervised._
+
+- **SimpleNonChargingDock plugin is unrepresented.** Nav2 ships a second dock
+  plugin, `opennav_docking::SimpleNonChargingDock`
+  (`nav2_docking/opennav_docking/src/simple_non_charging_dock.cpp`,
+  `plugins.xml`), that a user can select per dock instance. It declares the same
+  leaf params as SimpleChargingDock *except* `use_battery_status` and
+  `charging_threshold` (which are charging-only). The schema currently models the
+  dock-plugin params only under `plugin: "SimpleChargingDock"`. Because schema
+  `(node, param)` pairs must be unique (see `test_node_param_uniqueness`), the
+  non-charging variant cannot simply be duplicated — representing it needs a model
+  decision: either a per-plugin disambiguation of same-named params, or marking the
+  two charging-only params as inapplicable when the non-charging plugin is chosen.
+  This is a GUI/schema-model change, so flagging rather than implementing.

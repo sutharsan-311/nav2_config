@@ -1283,6 +1283,92 @@ def test_no_known_sample_yaml_mislabels(parsed_params, wrong_key, correct_param)
     )
 
 
+# The full set of parameters the SimpleChargingDock plugin declares in source,
+# mapped to the exact default each ``declare_or_get_parameter`` call uses, from
+# nav2_docking/opennav_docking/src/simple_charging_dock.cpp (ROS 2 Jazzy). The
+# schema's core promise is accurate defaults, yet nothing pins a specific real
+# value — the generic tests only check structural consistency (a default that
+# matches its own declared ``type``), so a silent edit from 0.5 to 5.0 would
+# pass. This table locks the dock plugin's defaults to source truth and, via
+# ``test_simple_charging_dock_param_set_matches_source``, also forbids a
+# hallucinated or dropped plugin param. Update it only alongside a verified
+# upstream change, citing the source line.
+SIMPLE_CHARGING_DOCK_SOURCE_DEFAULTS = {
+    "use_battery_status": True,
+    "detector_service_name": "",
+    "detector_service_timeout": 5.0,
+    "subscribe_toggle": False,
+    "use_external_detection_pose": False,
+    "external_detection_timeout": 1.0,
+    "external_detection_translation_x": -0.20,
+    "external_detection_translation_y": 0.0,
+    "external_detection_rotation_yaw": 0.0,
+    "external_detection_rotation_pitch": 1.57,
+    "external_detection_rotation_roll": -1.57,
+    "filter_coef": 0.1,
+    "charging_threshold": 0.5,
+    "use_stall_detection": False,
+    "stall_joint_names": [],
+    "stall_velocity_threshold": 1.0,
+    "stall_effort_threshold": 1.0,
+    "docking_threshold": 0.05,
+    "staging_x_offset": -0.7,
+    "staging_yaw_offset": 0.0,
+    "dock_direction": "forward",
+    "rotate_to_dock": False,
+}
+
+
+@pytest.mark.parametrize(
+    "param,expected_default",
+    [pytest.param(p, d, id=p) for p, d in SIMPLE_CHARGING_DOCK_SOURCE_DEFAULTS.items()],
+)
+def test_simple_charging_dock_default_matches_source(parsed_params, param, expected_default):
+    """Each SimpleChargingDock plugin param must carry its source-declared default.
+
+    Guards the schema's most important correctness property — the default value a
+    user sees for a parameter they have not overridden — against silent drift.
+    Values are taken from ``simple_charging_dock.cpp``; see
+    ``SIMPLE_CHARGING_DOCK_SOURCE_DEFAULTS``.
+    """
+    matches = [
+        p for p in parsed_params
+        if p.node == "docking_server" and p.plugin == "SimpleChargingDock" and p.param == param
+    ]
+    assert matches, f"SimpleChargingDock param '{param}' is missing from the schema"
+    actual = matches[0].default
+    if isinstance(expected_default, float):
+        assert isinstance(actual, (int, float)) and not isinstance(actual, bool), (
+            f"'{param}' default {actual!r} is not numeric (source declares a double)"
+        )
+        assert abs(actual - expected_default) < 1e-9, (
+            f"'{param}' default is {actual!r}; source declares {expected_default!r}"
+        )
+    else:
+        assert actual == expected_default, (
+            f"'{param}' default is {actual!r}; source declares {expected_default!r}"
+        )
+
+
+def test_simple_charging_dock_param_set_matches_source(parsed_params):
+    """The schema's SimpleChargingDock plugin params must be exactly the source set.
+
+    A missing entry means lost coverage; an extra entry means a hallucinated
+    parameter that would never bind on a running node. Both are regressions this
+    pins against ``SIMPLE_CHARGING_DOCK_SOURCE_DEFAULTS`` (from
+    simple_charging_dock.cpp).
+    """
+    schema_params = {
+        p.param for p in parsed_params
+        if p.node == "docking_server" and p.plugin == "SimpleChargingDock"
+    }
+    expected = set(SIMPLE_CHARGING_DOCK_SOURCE_DEFAULTS)
+    assert schema_params == expected, (
+        f"SimpleChargingDock schema params differ from source: "
+        f"missing={expected - schema_params}, unexpected={schema_params - expected}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Category taxonomy consistency
 # ---------------------------------------------------------------------------
