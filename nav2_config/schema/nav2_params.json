@@ -8850,6 +8850,74 @@
     "post_set_action": null
   },
   {
+    "node": "global_costmap",
+    "param": "denoise_layer.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enable or disable the DenoiseLayer, which removes small isolated groups of occupied cells (salt-and-pepper sensor noise) from the costmap before it is used for planning and control.",
+    "impact": "Disable to keep every occupied cell, including isolated noise spikes; enable to suppress spurious single-cell or tiny obstacle clusters that would otherwise block valid paths. The value is read only when the costmap is configured, so a change takes effect after a costmap reconfigure/restart rather than live.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "DenoiseLayer",
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "denoise",
+      "layer",
+      "noise"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "denoise_layer.minimal_group_size",
+    "type": "int",
+    "default": 2,
+    "range": {
+      "min": 1
+    },
+    "unit": "",
+    "description": "Minimum number of connected occupied cells a group must contain to be kept. Connected groups smaller than this are erased as noise. A value of 1 or less disables filtering entirely (every cell is left unchanged).",
+    "impact": "Increase to strip larger noise blobs for more aggressive denoising, at the risk of deleting genuinely small obstacles; the default of 2 removes only single stray cells. Read only when the costmap is configured, so changes require a costmap reconfigure/restart.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "DenoiseLayer",
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "denoise",
+      "layer",
+      "noise"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "global_costmap",
+    "param": "denoise_layer.group_connectivity_type",
+    "type": "int",
+    "default": 8,
+    "range": {
+      "min": 4,
+      "max": 8
+    },
+    "unit": "",
+    "description": "Pixel connectivity used when grouping occupied cells. 4 connects cells only horizontally and vertically; 8 additionally connects diagonal neighbours. Only 4 and 8 are valid \u2014 any other value falls back to 8 with a warning.",
+    "impact": "Use 8 (default) so diagonally touching cells count as one group, the usual choice; use 4 for stricter grouping that treats diagonal neighbours as separate groups, which makes the filter remove more cells. Read only when the costmap is configured, so changes require a costmap reconfigure/restart.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "DenoiseLayer",
+    "hot_reload": false,
+    "tags": [
+      "global_costmap",
+      "denoise",
+      "layer",
+      "connectivity"
+    ],
+    "post_set_action": null
+  },
+  {
     "node": "local_costmap",
     "param": "filters",
     "type": "string_array",
@@ -9514,6 +9582,74 @@
       "local_costmap",
       "range_sensor_layer",
       "sensor-model"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "denoise_layer.enabled",
+    "type": "bool",
+    "default": true,
+    "range": null,
+    "unit": "",
+    "description": "Enable or disable the DenoiseLayer, which removes small isolated groups of occupied cells (salt-and-pepper sensor noise) from the costmap before it is used for planning and control.",
+    "impact": "Disable to keep every occupied cell, including isolated noise spikes; enable to suppress spurious single-cell or tiny obstacle clusters that would otherwise block valid paths. The value is read only when the costmap is configured, so a change takes effect after a costmap reconfigure/restart rather than live.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "DenoiseLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "denoise",
+      "layer",
+      "noise"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "denoise_layer.minimal_group_size",
+    "type": "int",
+    "default": 2,
+    "range": {
+      "min": 1
+    },
+    "unit": "",
+    "description": "Minimum number of connected occupied cells a group must contain to be kept. Connected groups smaller than this are erased as noise. A value of 1 or less disables filtering entirely (every cell is left unchanged).",
+    "impact": "Increase to strip larger noise blobs for more aggressive denoising, at the risk of deleting genuinely small obstacles; the default of 2 removes only single stray cells. Read only when the costmap is configured, so changes require a costmap reconfigure/restart.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "DenoiseLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "denoise",
+      "layer",
+      "noise"
+    ],
+    "post_set_action": null
+  },
+  {
+    "node": "local_costmap",
+    "param": "denoise_layer.group_connectivity_type",
+    "type": "int",
+    "default": 8,
+    "range": {
+      "min": 4,
+      "max": 8
+    },
+    "unit": "",
+    "description": "Pixel connectivity used when grouping occupied cells. 4 connects cells only horizontally and vertically; 8 additionally connects diagonal neighbours. Only 4 and 8 are valid \u2014 any other value falls back to 8 with a warning.",
+    "impact": "Use 8 (default) so diagonally touching cells count as one group, the usual choice; use 4 for stricter grouping that treats diagonal neighbours as separate groups, which makes the filter remove more cells. Read only when the costmap is configured, so changes require a costmap reconfigure/restart.",
+    "category": "plugins",
+    "plugin_specific": true,
+    "plugin": "DenoiseLayer",
+    "hot_reload": false,
+    "tags": [
+      "local_costmap",
+      "denoise",
+      "layer",
+      "connectivity"
     ],
     "post_set_action": null
   },
