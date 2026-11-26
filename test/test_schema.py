@@ -1369,6 +1369,88 @@ def test_simple_charging_dock_param_set_matches_source(parsed_params):
     )
 
 
+# The full set of ``controller.*`` parameters the docking Controller declares in
+# source, mapped to the exact default each ``declare_or_get_parameter`` call
+# uses, from nav2_docking/opennav_docking/src/controller.cpp (ROS 2 Jazzy). The
+# Controller is not a pluginized dock but a fixed sub-component of the
+# docking_server, so these entries carry ``plugin: null``; the generic tests
+# only verify a default matches its own declared type, which would let a silent
+# edit of (for example) projection_time from 5.0 to 50.0 pass. This table locks
+# the approach control law's defaults to source truth and, via
+# ``test_docking_controller_param_set_matches_source``, forbids a dropped or
+# hallucinated controller param. Update it only alongside a verified upstream
+# change, citing the source line.
+DOCKING_CONTROLLER_SOURCE_DEFAULTS = {
+    "controller.k_phi": 3.0,
+    "controller.k_delta": 2.0,
+    "controller.beta": 0.4,
+    "controller.lambda": 2.0,
+    "controller.v_linear_min": 0.1,
+    "controller.v_linear_max": 0.25,
+    "controller.v_angular_max": 0.75,
+    "controller.slowdown_radius": 0.25,
+    "controller.deceleration_max": 2.5,
+    "controller.rotate_to_heading_angular_vel": 1.0,
+    "controller.rotate_to_heading_max_angular_accel": 3.2,
+    "controller.use_collision_detection": True,
+    "controller.costmap_topic": "local_costmap/costmap_raw",
+    "controller.footprint_topic": "local_costmap/published_footprint",
+    "controller.transform_tolerance": 0.1,
+    "controller.projection_time": 5.0,
+    "controller.simulation_time_step": 0.1,
+    "controller.dock_collision_threshold": 0.3,
+}
+
+
+@pytest.mark.parametrize(
+    "param,expected_default",
+    [pytest.param(p, d, id=p) for p, d in DOCKING_CONTROLLER_SOURCE_DEFAULTS.items()],
+)
+def test_docking_controller_default_matches_source(parsed_params, param, expected_default):
+    """Each docking Controller ``controller.*`` param must carry its source default.
+
+    Guards the schema's most important correctness property — the default value a
+    user sees for a parameter they have not overridden — against silent drift.
+    Values are taken from ``controller.cpp``; see
+    ``DOCKING_CONTROLLER_SOURCE_DEFAULTS``.
+    """
+    matches = [
+        p for p in parsed_params
+        if p.node == "docking_server" and p.param == param
+    ]
+    assert matches, f"docking Controller param '{param}' is missing from the schema"
+    actual = matches[0].default
+    if isinstance(expected_default, float):
+        assert isinstance(actual, (int, float)) and not isinstance(actual, bool), (
+            f"'{param}' default {actual!r} is not numeric (source declares a double)"
+        )
+        assert abs(actual - expected_default) < 1e-9, (
+            f"'{param}' default is {actual!r}; source declares {expected_default!r}"
+        )
+    else:
+        assert actual == expected_default, (
+            f"'{param}' default is {actual!r}; source declares {expected_default!r}"
+        )
+
+
+def test_docking_controller_param_set_matches_source(parsed_params):
+    """The schema's docking ``controller.*`` params must be exactly the source set.
+
+    A missing entry means lost coverage; an extra entry means a hallucinated
+    parameter that would never bind on a running node. Both are regressions this
+    pins against ``DOCKING_CONTROLLER_SOURCE_DEFAULTS`` (from controller.cpp).
+    """
+    schema_params = {
+        p.param for p in parsed_params
+        if p.node == "docking_server" and p.param.startswith("controller.")
+    }
+    expected = set(DOCKING_CONTROLLER_SOURCE_DEFAULTS)
+    assert schema_params == expected, (
+        f"docking Controller schema params differ from source: "
+        f"missing={expected - schema_params}, unexpected={schema_params - expected}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Category taxonomy consistency
 # ---------------------------------------------------------------------------
