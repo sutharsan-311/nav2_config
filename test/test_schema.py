@@ -1451,6 +1451,80 @@ def test_docking_controller_param_set_matches_source(parsed_params):
     )
 
 
+# The docking_server's own (non-plugin, non-``controller.*``) parameters, mapped
+# to the exact default each ``declare_or_get_parameter`` call uses in
+# nav2_docking/opennav_docking/src/parameter_handler.cpp (ROS 2 Jazzy). These
+# are the server-level timeouts, tolerances and frames shared across every dock
+# plugin, so a silent default drift here affects all docking behaviour. The
+# generic ``test_numeric_default_within_range`` only checks a default sits in
+# its own declared range, which would let an edit of (for example)
+# dock_approach_timeout from 30.0 to 3.0 pass. This table locks these defaults
+# to source truth. Scope is deliberately limited to parameter_handler.cpp;
+# other top-level docking_server params (dock_plugins, docks, dock_database,
+# navigator_bt_xml, dock_backwards) are declared in different source files and
+# are not asserted here, so no param-set equality test accompanies this table.
+# Update it only alongside a verified upstream change, citing the source line.
+DOCKING_SERVER_SOURCE_DEFAULTS = {
+    "controller_frequency": 50.0,
+    "initial_perception_timeout": 5.0,
+    "wait_charge_timeout": 5.0,
+    "dock_approach_timeout": 30.0,
+    "rotate_to_dock_timeout": 10.0,
+    "undock_linear_tolerance": 0.05,
+    "undock_angular_tolerance": 0.05,
+    "max_retries": 3,
+    "base_frame": "base_link",
+    "fixed_frame": "odom",
+    "dock_prestaging_tolerance": 0.5,
+    "rotation_angular_tolerance": 0.05,
+    "odom_topic": "odom",
+    "odom_duration": 0.3,
+}
+
+
+@pytest.mark.parametrize(
+    "param,expected_default",
+    [pytest.param(p, d, id=p) for p, d in DOCKING_SERVER_SOURCE_DEFAULTS.items()],
+)
+def test_docking_server_default_matches_source(parsed_params, param, expected_default):
+    """Each docking_server top-level param must carry its source-declared default.
+
+    Guards the schema's most important correctness property — the default value a
+    user sees for a parameter they have not overridden — against silent drift.
+    Values are taken from ``parameter_handler.cpp``; see
+    ``DOCKING_SERVER_SOURCE_DEFAULTS``. Only the server's own (non-plugin,
+    non-``controller.*``) parameters are matched.
+    """
+    matches = [
+        p for p in parsed_params
+        if p.node == "docking_server"
+        and not p.plugin
+        and not p.param.startswith("controller.")
+        and p.param == param
+    ]
+    assert matches, f"docking_server param '{param}' is missing from the schema"
+    actual = matches[0].default
+    if isinstance(expected_default, bool):
+        assert actual is expected_default, (
+            f"'{param}' default is {actual!r}; source declares {expected_default!r}"
+        )
+    elif isinstance(expected_default, float):
+        assert isinstance(actual, (int, float)) and not isinstance(actual, bool), (
+            f"'{param}' default {actual!r} is not numeric (source declares a double)"
+        )
+        assert abs(actual - expected_default) < 1e-9, (
+            f"'{param}' default is {actual!r}; source declares {expected_default!r}"
+        )
+    elif isinstance(expected_default, int):
+        assert actual == expected_default and not isinstance(actual, bool), (
+            f"'{param}' default is {actual!r}; source declares {expected_default!r}"
+        )
+    else:
+        assert actual == expected_default, (
+            f"'{param}' default is {actual!r}; source declares {expected_default!r}"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Category taxonomy consistency
 # ---------------------------------------------------------------------------

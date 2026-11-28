@@ -7,3 +7,25 @@ the cited source, plus a genuine description + tuning `impact`) for one node's p
 
 ## docking_server (1)
 - [ ] `simulation_step` (default `0.1`, double)
+
+## Ideas for review
+
+_Spotted by the daily agent on 2026-11-28; not actioned — needs Sutharsan's triage._
+
+- **Stale `docking_server.simulation_step` false positive.** The gap script lists
+  `controller.simulation_step` as missing, but that name only exists in the stale
+  `nav2_bringup/params/nav2_params.yaml` example. Source
+  (`nav2_docking/opennav_docking/src/controller.cpp`) renamed it to
+  `controller.simulation_time_step` (default 0.1), which the schema already covers.
+  The entry is therefore unactionable. Consider teaching `nav2_param_gap.py` to
+  suppress yaml-only names that have a verified source rename, or just accept it as
+  a permanent known false positive.
+- **`SimpleNonChargingDock` plugin is uncovered.** The schema has the full
+  `SimpleChargingDock` param set but nothing for `SimpleNonChargingDock`
+  (`nav2_docking/opennav_docking/src/simple_non_charging_dock.cpp`, 20 params, a
+  near-mirror minus `use_battery_status`/`charging_threshold`). It can't be added
+  today because dock-plugin params are keyed by bare `(node, param)` under
+  `docking_server`, so a second dock plugin collides with the charging one
+  (`test_node_param_uniqueness` / `test_effective_ros2_name_unique_per_node`).
+  Representing it needs a namespacing/keying decision for coexisting dock plugins —
+  core schema/GUI-binding work, not a drop-in param add.
